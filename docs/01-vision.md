@@ -8,6 +8,16 @@ Hacer un mueble a medida hoy implica saltar entre cinco herramientas: un program
 
 Handy junta todo eso en una sola herramienta **abierta** y **local**, y la expone a las IAs para que diseñar sea una conversación: "hazme un closet de 2,4 m con dos cajoneras, que no se vean tornillos y dime cuánto cuesta en mi ferretería".
 
+## Idea central
+
+Prototipos rápidos y fieles. Fieles en medidas (milímetros reales, muros con su grosor, el escaneo de tu cuarto), fieles en materiales (el decorado y el ladrillo que vas a comprar, con su precio) y fieles en comportamiento (una simulación simple dice si aguanta). Y rápidos: minutos, en el navegador, sin aprender un CAD. Cuando el prototipo convence, se exporta a Blender u otro programa profesional para el render final o la fabricación.
+
+## Tres secciones
+
+- **Espacios**: apartamentos, cuartos, casas. Mapa del lugar, grosor de muros, aberturas, puntos eléctricos y sanitarios, sol.
+- **Muebles**: madera, tablero y ladrillo. Medidas, lista de corte, herrajes, cotización, esfuerzos.
+- **Objetos**: piezas pequeñas, repuestos y accesorios para imprimir en 3D.
+
 ## Para quién
 
 - **Carpinteros y talleres pequeños** que cotizan muebles de melamina a diario.
@@ -26,6 +36,6 @@ Handy junta todo eso en una sola herramienta **abierta** y **local**, y la expon
 
 ## Lo que Handy no es
 
-- No es un CAD general. Modela muebles de tablero y piezas paramétricas, no superficies libres.
-- No reemplaza al profesional en instalaciones eléctricas o sanitarias: entrega medidas de referencia y cita normas, no certifica.
+- No es un CAD general ni un reemplazo de Blender. Modela espacios, muebles de tablero o ladrillo y piezas paramétricas, y exporta a los programas profesionales para lo demás.
+- No reemplaza al profesional en instalaciones eléctricas, sanitarias ni en estructura: entrega medidas de referencia, inferencias con nivel de confianza y cálculos preliminares, no certifica.
 - No es un marketplace. Muestra precios, no vende.

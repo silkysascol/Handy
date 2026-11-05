@@ -31,11 +31,14 @@
 | Paquete | Rol | Estado |
 | --- | --- | --- |
 | `packages/core` | Motor puro, sin dependencias de UI. Todo lo que calcula Handy vive aquí. | Funcional (gabinete, corte, reglas, cotización) |
-| `packages/spaces` | Importación de habitaciones (RoomPlan JSON, USDZ, glTF, OBJ, PLY), paredes, puertas, ventanas, colisiones. | Planificado |
+| `packages/spaces` | Editor de mapa (muros con grosor, aberturas, niveles, recintos), importación de escaneos (RoomPlan JSON, USDZ, glTF, OBJ, PLY), puntos eléctricos e inferencia de canalización, colisiones. | Planificado |
 | `packages/arch` | Sol (posición solar, sombras, horas de sol por fachada), estándares eléctricos y sanitarios por país. | Planificado |
-| `packages/parts` | Piezas paramétricas imprimibles y exportación STL/3MF. | Planificado |
+| `packages/objects` | Piezas paramétricas imprimibles (CSG con manifold-3d). | Planificado |
+| `packages/structure` | Simulación de esfuerzos: analítico y método de rigidez; propiedades de materiales. | Planificado |
+| `packages/export` | glTF/GLB, OBJ, STL/3MF, DXF/SVG, PDF, CSV; más adelante IFC y USDZ. | Planificado |
+| `packages/masonry` | Muebles de ladrillo (asador, mesón): aparejos, conteo de ladrillos y mortero. | Planificado |
 | `packages/providers-*` | Adaptadores de tiendas por país (`providers-cl`, `providers-co`, ...). | Planificado |
-| `apps/web` | Editor 3D en navegador. | Diseño |
+| `apps/web` | Editor en navegador con las tres secciones (Espacios, Muebles, Objetos). Es la interfaz principal; el ejecutable la empaqueta. | Diseño |
 | `apps/desktop` | Tauri: empaqueta la web, expone API local y MCP, acceso a archivos. | Diseño |
 | `apps/mcp-server` | Servidor MCP stdio (y más adelante HTTP) sobre `core`. | Funcional (3 herramientas) |
 
@@ -53,6 +56,23 @@
 - `Project` (`.handy.json`): metadatos, región, lista de muebles, espacio importado, ubicación geográfica para el estudio solar, catálogos usados y la cotización congelada con fecha.
 - Todo en mm enteros; `grain` indica la dirección de la veta para el optimizador de corte.
 
+## Interfaz: tres secciones
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Handy   [ Espacios ]   [ Muebles ]   [ Objetos ]   proyecto ▾│
+├─────────────────────────────────────────────────────────────┤
+│ Espacios: mapa 2D + vista 3D · muros con grosor · aberturas  │
+│           puntos eléctricos y canalización probable · sol    │
+│ Muebles:  parámetros + visor 3D · lista de corte · cotización│
+│           avisos y esfuerzos · madera, tablero, ladrillo     │
+│ Objetos:  pieza paramétrica · tolerancias · imprimibilidad   │
+│           exportar STL/3MF                                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+El navegador es la versión principal (PWA, funciona offline). El ejecutable agrega acceso a disco, API local para IAs y conversión de formatos pesados.
+
 ## Flujo típico
 
 1. El usuario (o una IA vía MCP) describe el mueble → `generateCabinet()` y otros generadores producen el modelo.
@@ -60,4 +80,5 @@
 3. `buildCutlist()` calcula piezas, cantos, m² y tableros estimados.
 4. `buildQuote()` consulta los proveedores y arma la cotización con fecha y faltantes.
 5. La UI renderiza el modelo en 3D (cada panel es una caja en su `placement`), permite arrastrar medidas y vuelve a correr 1–4 en tiempo real (es barato: ms).
-6. El proyecto se guarda como JSON; exportaciones a PDF (planos y lista de corte), CSV (lista para el aserradero), DXF (optimización de corte), STL/3MF (repuestos).
+6. `analyzeStructure()` evalúa flecha, tensión y pandeo con cargas típicas y colorea el modelo.
+7. El proyecto se guarda como JSON; exportaciones a glTF/OBJ (Blender), PDF (planos y lista de corte), CSV, DXF, STL/3MF (objetos). Ver [modulos/exportacion.md](modulos/exportacion.md).

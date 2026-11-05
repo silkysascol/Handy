@@ -19,7 +19,7 @@ Valores habituales de referencia (verificar con la norma local; se guardarán en
 | TV en pared | 1000–1300 | Según altura de montaje. |
 | Tablero eléctrico | 1500–1800 al borde superior | Accesible, fuera de baño/cocina. |
 
-Funciones: capa de puntos eléctricos sobre el plano/espacio, conteo por tipo para cotizar, aviso de enchufes tapados por muebles, sugerencia de puntos faltantes por recinto (p.ej. mínimo de enchufes por metro de pared según norma).
+Funciones: capa de puntos eléctricos sobre el plano/espacio, conteo por tipo para cotizar, aviso de enchufes tapados por muebles, sugerencia de puntos faltantes por recinto (p.ej. mínimo de enchufes por metro de pared según norma) e inferencia de canalización y circuitos con nivel de confianza (ver [espacios.md](espacios.md)).
 
 ## 2. Sanitaria: reglas de tuberías
 

@@ -15,9 +15,14 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 - [ ] Sistema 32 mm: perforaciones para repisas y bisagras calculadas y exportadas.
 - [ ] Optimizador de corte (nesting) con veta y sierra de 3–4 mm; plano de corte por tablero.
 - [ ] Exportación: CSV y PDF de lista de corte, JSON del proyecto.
+- [ ] Esfuerzos nivel 1: flecha y tensión de repisas y cubiertas, pandeo de costados, con cargas típicas.
+- [ ] Exportación glTF/OBJ del mueble para Blender.
 - [ ] Catálogos reales de al menos 2 países (comunidad).
 
-## M2 · App web
+## M2 · App web (versión principal)
+
+- [ ] Menú de tres secciones: Espacios, Muebles, Objetos.
+- [ ] Espacios: editor de mapa 2D con muros de grosor configurable, puertas, ventanas, recintos; vista 3D.
 
 - [ ] Visor 3D (react-three-fiber), piezas desde `placement`.
 - [ ] Edición por arrastre de medidas (gizmos en caras) y panel de parámetros.
@@ -31,24 +36,30 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 - [ ] API HTTP local (OpenAPI) + MCP por stdio y HTTP; detección automática por Claude Desktop/Claude Code.
 - [ ] Puente para IAs locales (Ollama, LM Studio) con tool calling sobre el mismo esquema.
 
-## M4 · Espacios (LiDAR)
+## M4 · Espacios avanzado (LiDAR y eléctrica)
+
+- [ ] Puntos eléctricos con alturas por país e inferencia de canalización y circuitos con nivel de confianza.
 
 - [ ] Importar RoomPlan JSON/USDZ, glTF, OBJ, PLY; detectar paredes, puertas, ventanas, enchufes si vienen.
 - [ ] Colocar muebles en el espacio con snapping a paredes y detección de colisión con puertas/ventanas.
 - [ ] Vista "proyección": medidas del mueble se adaptan al hueco disponible.
 
-## M5 · Arquitectura
+## M5 · Arquitectura y estructura
+
+- [ ] Esfuerzos nivel 2: método de rigidez para muebles completos, mapa de color; nivel 3 preliminar para luces y aberturas en espacios.
+- [ ] Muebles de ladrillo: generador de asador, aparejos, conteo de ladrillos y mortero, cotización.
 
 - [ ] Estudio solar: posición del sol, sombras en el visor, horas de sol directo por fachada y ventana, diagrama anual.
 - [ ] Capa eléctrica: alturas estándar de enchufes/interruptores por país, distancias a agua, conteo de puntos.
 - [ ] Capa sanitaria: diámetros y pendientes de desagüe, trazado con avisos de pendiente insuficiente.
 
-## M6 · Asistente de diseño e impresión 3D
+## M6 · Asistente de diseño y Objetos
 
 - [ ] Colorimetría: paletas armónicas a partir del decorado del tablero y colores de la habitación; vista previa con texturas.
 - [ ] Propuestas constructivas: cambiar a uniones ocultas, añadir refuerzos, dividir puertas, ajustar proporciones.
 - [ ] Biblioteca de repuestos paramétricos imprimibles (soportes, tapas, patas, clips, tiradores) con export STL/3MF y tolerancias.
 - [ ] Generación de repuestos desde el modelo del mueble (p.ej. tapa a medida para un herraje).
+- [ ] Add-on de Blender para importar `.handy.json`; exportación IFC.
 
 ## Más adelante
 

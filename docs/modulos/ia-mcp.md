@@ -20,7 +20,9 @@ Variable `HANDY_CATALOG` para apuntar a un catálogo propio.
 
 - `create_project`, `open_project`, `save_project`: trabajar sobre `.handy.json`.
 - `add_furniture`, `modify_furniture` (comandos tipo "ensancha 100 mm"), `place_in_space`.
-- `import_space` (RoomPlan/glTF), `sun_study`, `electrical_points`, `plumbing_route`.
+- `draw_space` (muros con grosor, aberturas), `import_space` (RoomPlan/glTF), `sun_study`, `electrical_points`, `infer_wiring`, `plumbing_route`.
+- `analyze_structure`: flecha, tensión y pandeo con cargas típicas.
+- `export` a glTF/OBJ/STL/3MF/DXF/PDF.
 - `suggest_improvements`: devuelve propuestas estéticas y constructivas con justificación.
 - `generate_part`: pieza imprimible a medida, STL/3MF.
 - Recursos MCP: catálogos, normativas por país, proyecto actual.

@@ -4,19 +4,19 @@
 
 > Estado: **pre-alpha / planificación**. El motor (`@handy/core`) y el servidor MCP ya funcionan por línea de comandos. La app web y el ejecutable de escritorio están en diseño. Ver [docs/03-roadmap.md](docs/03-roadmap.md).
 
-## Qué va a hacer Handy
+## La idea
 
-| Módulo | Qué resuelve |
-| --- | --- |
-| **Muebles** | Diseño paramétrico de gabinetes, closets, cocinas, bibliotecas y escritorios en melamina u otros tableros. Lista de corte, enchapado de cantos, herrajes y plano de armado. |
-| **Cotización** | Busca melaminas, herrajes y otros materiales en tiendas locales (o en catálogos propios) y actualiza el precio mientras diseñas. |
-| **Asistente de diseño** | Propone mejoras estéticas (colorimetría, texturas, proporciones) y constructivas (uniones sin tornillos visibles, refuerzos, holguras). |
-| **Espacios** | Importa habitaciones escaneadas con el LiDAR del iPhone (RoomPlan, Polycam, 3D Scanner App) y permite ubicar y estirar muebles en el espacio real arrastrando o con comandos. |
-| **Arquitectura** | Alturas estándar de enchufes e interruptores, reglas de tuberías y desagües, y estudio de luz solar según orientación, ubicación y fecha. |
-| **Impresión 3D** | Biblioteca paramétrica de repuestos y accesorios (soportes de repisa, tapas, patas, clips, tiradores) exportable a STL/3MF. |
-| **IA / MCP** | Servidor [MCP](https://modelcontextprotocol.io) para que Claude, Claude Code, Cursor, Ollama u otras IAs del PC diseñen, coticen y modifiquen proyectos. |
+Prototipos **rápidos y fieles** a lo que quieres, hechos en el navegador o en el ejecutable, que salen sin fricción a Blender y otros programas profesionales para presentarlos o fabricarlos. Un menú de tres secciones:
 
-Lee la visión completa en [docs/01-vision.md](docs/01-vision.md) y la arquitectura en [docs/02-arquitectura.md](docs/02-arquitectura.md).
+| Sección | Enfoque | Qué resuelve |
+| --- | --- | --- |
+| **Espacios** | interfaz y medidas de apartamentos, cuartos y casas | Dibujar el mapa del lugar con grosor de muros, puertas y ventanas; importar escaneos LiDAR del iPhone; puntos eléctricos con inferencia de por dónde va la canalización; reglas de tuberías; estudio de luz solar por orientación y ubicación. |
+| **Muebles** | interfaz y medidas de muebles de madera, tablero y ladrillo | Gabinetes, closets, cocinas, escritorios en melamina; asadores y mesones de ladrillo. Lista de corte o de ladrillos, herrajes, cotización en tiempo real con tiendas locales, asistente estético (colorimetría, texturas) y constructivo (sin tornillos visibles). |
+| **Objetos** | cosas pequeñas | Repuestos y accesorios paramétricos (soportes, tapas, patas, clips, tiradores) listos para imprimir en 3D en STL/3MF. |
+
+Transversal a las tres: **simulación de esfuerzos** para saber si una repisa, un asador o un espacio aguanta la carga, **cotización** con precios locales, **exportación** a glTF/OBJ/STL/DXF/PDF, y un servidor [MCP](https://modelcontextprotocol.io) para que Claude, Claude Code, Cursor, Ollama u otras IAs del PC diseñen y coticen contigo.
+
+Lee la visión en [docs/01-vision.md](docs/01-vision.md), la arquitectura en [docs/02-arquitectura.md](docs/02-arquitectura.md) y cada sección en [docs/modulos/](docs/modulos/).
 
 ## Prueba lo que ya existe
 
