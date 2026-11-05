@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "name": "Módulo cocina bajo 600",
+  "region": "CO",
+  "currency": "COP",
+  "furniture": [
+    {
+      "id": "base-600",
+      "generator": "cabinet",
+      "params": { "width": 600, "height": 720, "depth": 580, "shelves": 1, "doors": 1, "plinthHeight": 0, "joinery": "confirmat" },
+      "notes": "Zócalo corrido independiente de 100 mm; cubierta de 38 mm aparte."
+    }
+  ],
+  "catalogs": ["catalog-ejemplo.json"]
+}

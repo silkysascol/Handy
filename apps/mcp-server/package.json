@@ -1,0 +1,25 @@
+{
+  "name": "@handy/mcp-server",
+  "version": "0.0.1",
+  "description": "Servidor MCP de Handy: expone el diseño de muebles, lista de corte y cotización a Claude y otras IAs.",
+  "license": "MIT",
+  "type": "module",
+  "bin": { "handy-mcp": "./dist/index.js" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "tsx src/index.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@handy/core": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

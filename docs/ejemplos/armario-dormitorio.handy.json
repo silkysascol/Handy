@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "name": "Armario dormitorio principal",
+  "region": "CL",
+  "currency": "CLP",
+  "location": { "lat": -33.45, "lon": -70.66, "northAngle": 0 },
+  "space": {
+    "source": "roomplan",
+    "file": "dormitorio.json",
+    "walls": [
+      { "id": "w1", "from": [0, 0], "to": [3600, 0], "height": 2400, "thickness": 150 },
+      { "id": "w2", "from": [3600, 0], "to": [3600, 3200], "height": 2400, "thickness": 150 },
+      { "id": "w3", "from": [3600, 3200], "to": [0, 3200], "height": 2400, "thickness": 150 },
+      { "id": "w4", "from": [0, 3200], "to": [0, 0], "height": 2400, "thickness": 150 }
+    ],
+    "openings": [
+      { "id": "door", "type": "door", "wall": "w1", "offset": 200, "width": 800, "height": 2050, "swing": "in" },
+      { "id": "win", "type": "window", "wall": "w3", "offset": 1200, "width": 1200, "height": 1200, "sill": 1000 }
+    ]
+  },
+  "furniture": [
+    {
+      "id": "armario",
+      "generator": "cabinet",
+      "params": { "width": 800, "height": 2000, "depth": 500, "shelves": 3, "doors": 2, "plinthHeight": 80, "joinery": "minifix" },
+      "placement": { "wall": "w2", "offset": 1000, "x": 3100, "y": 0, "z": 1000, "rotation": 270 },
+      "finish": { "body": "Blanco", "fronts": "Roble Americano" }
+    }
+  ],
+  "catalogs": ["catalog-ejemplo.json"],
+  "quote": { "frozenAt": null, "subtotal": null }
+}

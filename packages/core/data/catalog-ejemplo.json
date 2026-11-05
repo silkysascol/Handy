@@ -1,0 +1,22 @@
+{
+  "id": "catalogo-ejemplo",
+  "name": "Catálogo de ejemplo (precios ficticios)",
+  "region": "XX",
+  "currency": "USD",
+  "updatedAt": "2026-11-05",
+  "items": [
+    { "sku": "MEL-18-BLA", "category": "board", "name": "Melamina 18 mm Blanco 1830x2500", "price": 42.0, "currency": "USD", "unit": "sheet", "attributes": { "thickness": 18, "finish": "Blanco", "width": 1830, "height": 2500 } },
+    { "sku": "MEL-18-ROB", "category": "board", "name": "Melamina 18 mm Roble 1830x2500", "price": 55.0, "currency": "USD", "unit": "sheet", "attributes": { "thickness": 18, "finish": "Roble", "width": 1830, "height": 2500 } },
+    { "sku": "HDF-3-BLA", "category": "board", "name": "HDF 3 mm Blanco 1830x2500", "price": 12.0, "currency": "USD", "unit": "sheet", "attributes": { "thickness": 3, "finish": "Blanco", "width": 1830, "height": 2500 } },
+    { "sku": "TAP-PVC-BLA", "category": "edgeband", "name": "Tapacanto PVC 19x0,45 Blanco (metro)", "price": 0.25, "currency": "USD", "unit": "meter", "attributes": { "finish": "Blanco" } },
+    { "sku": "BIS-35", "category": "hinge", "name": "Bisagra cazoleta 35 mm recta", "price": 1.1, "currency": "USD", "unit": "unit" },
+    { "sku": "MAN-128", "category": "handle", "name": "Manilla aluminio 128 mm", "price": 2.5, "currency": "USD", "unit": "unit" },
+    { "sku": "CONF-7x50", "category": "confirmat", "name": "Confirmat 7x50 (pack 100)", "price": 6.0, "currency": "USD", "unit": "pack", "packSize": 100 },
+    { "sku": "TAPA-CONF", "category": "cap", "name": "Tapa confirmat blanca (pack 100)", "price": 2.0, "currency": "USD", "unit": "pack", "packSize": 100 },
+    { "sku": "MINI-CAM", "category": "cam-lock", "name": "Excéntrica minifix 15 mm + perno (pack 50)", "price": 7.5, "currency": "USD", "unit": "pack", "packSize": 50 },
+    { "sku": "TAR-8x30", "category": "dowel", "name": "Tarugo 8x30 (pack 100)", "price": 2.2, "currency": "USD", "unit": "pack", "packSize": 100 },
+    { "sku": "SOP-5", "category": "shelf-pin", "name": "Soporte repisa 5 mm (pack 20)", "price": 1.5, "currency": "USD", "unit": "pack", "packSize": 20 },
+    { "sku": "TOR-3.5x16", "category": "screw", "name": "Tornillo 3,5x16 (pack 100)", "price": 1.8, "currency": "USD", "unit": "pack", "packSize": 100 },
+    { "sku": "PATA-NIV", "category": "foot", "name": "Pata niveladora 100 mm", "price": 0.9, "currency": "USD", "unit": "unit" }
+  ]
+}

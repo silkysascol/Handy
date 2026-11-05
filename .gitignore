@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+.turbo/
+*.tsbuildinfo
+# Tauri / Rust
+apps/desktop/src-tauri/target/

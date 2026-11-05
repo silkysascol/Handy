@@ -1,0 +1,16 @@
+{
+  "name": "handy-monorepo",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Handy: diseño de muebles, piezas imprimibles en 3D y herramientas de arquitectura, con cotización en tiempo real y acceso para IAs.",
+  "license": "MIT",
+  "packageManager": "pnpm@10.28.0",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "cli": "pnpm --filter @handy/core cli",
+    "mcp": "pnpm --filter @handy/mcp-server start"
+  }
+}
