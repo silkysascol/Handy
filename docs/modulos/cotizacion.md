@@ -37,7 +37,7 @@ Scraping: solo con respeto a `robots.txt`, caché local (24 h), tasa baja, y com
 ## Tiendas candidatas por país (a validar)
 
 - Chile: Sodimac/Homecenter, Easy, Imperial, Masisa Placacentro, Construmart.
-- Colombia: Homecenter, Easy, Madecentro, Duratex.
+- Colombia: Homecenter, Madecentro, Easy, Duratex, Tablemac (prioridad inicial del proyecto).
 - Argentina: Easy, Sodimac, Masisa Placacentro, distribuidores de Faplac/Egger.
 - Perú: Sodimac, Promart, Maestro.
 - México: Home Depot, Lowe's, Madecentro.
@@ -45,6 +45,10 @@ Scraping: solo con respeto a `robots.txt`, caché local (24 h), tasa baja, y com
 - Brasil: Leroy Merlin, Leo Madeiras, Telhanorte.
 
 Cada país tendrá `packages/providers-<cc>` y un `catalog-<cc>.json` comunitario.
+
+## Tiendas cercanas y conocidas
+
+El usuario fija su ubicación (o la del proyecto) y Handy prioriza tiendas **cercanas** (radio configurable, p.ej. 10 km) y **conocidas** que el usuario marca como favoritas, por ejemplo Homecenter y Madecentro en Colombia. Cada oferta guarda la sucursal, la distancia y la hora de consulta. La cotización calcula tres vistas: mezcla óptima entre tiendas, todo en una sola tienda (un viaje) y catálogo propio. Ver mock en `docs/mocks/Comparativa.html`.
 
 ## Qué muestra la UI
 

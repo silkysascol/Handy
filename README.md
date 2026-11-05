@@ -70,7 +70,7 @@ Handy/
 ├── apps/mcp-server/      Servidor MCP (stdio) para IAs
 ├── apps/web/             App web (React + Three.js)            [en diseño]
 ├── apps/desktop/         Ejecutable (Tauri) que empaqueta la web + API local  [en diseño]
-└── docs/                 Visión, arquitectura, roadmap, módulos, decisiones (ADR), ejemplos
+└── docs/                 Visión, arquitectura, roadmap, módulos, decisiones (ADR), ejemplos, mocks de UI
 ```
 
 ## Contribuir

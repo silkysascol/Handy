@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Handy · Objetos</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EEF0F2;font-family:Manrope,system-ui,sans-serif;color:#1B1F23}
+a{color:#1E7F86}a:hover{color:#155B61}
+input,select,button{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 900px; display: flex; flex-direction: column; background: #EEF0F2; font-size: 14px; line-height: 1.4">
+
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #D9DDE1">
+    <div style="display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; letter-spacing: -0.02em">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="3" y="6" width="22" height="18" rx="2" stroke="#1B1F23" stroke-width="2"/><path d="M3 12h22M14 12v12" stroke="#1B1F23" stroke-width="2"/><path d="M9 3v4M19 3v4" stroke="{{accent}}" stroke-width="2.5" stroke-linecap="round"/></svg>
+      Handy
+    </div>
+    <nav aria-label="Secciones" style="display: flex; gap: 4px; background: #EEF0F2; padding: 4px; border-radius: 10px">
+      <a href="Espacios.html" style="padding: 8px 16px; border-radius: 8px; text-decoration: none; color: #4A5560; font-weight: 600">Espacios</a>
+      <a href="Main.html" style="padding: 8px 16px; border-radius: 8px; text-decoration: none; color: #4A5560; font-weight: 600">Muebles</a>
+      <a href="Objetos.html" aria-current="page" style="padding: 8px 16px; border-radius: 8px; text-decoration: none; color: #1B1F23; background: #FFFFFF; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.08)">Objetos</a>
+    </nav>
+    <div style="display: flex; align-items: center; gap: 8px; color: #4A5560">
+      <span style="font-weight: 600; color: #1B1F23">Soporte de repisa · para Armario dormitorio</span>
+    </div>
+    <div style="flex: 1 1 auto"></div>
+    <div style="display: flex; gap: 8px">
+      <button type="button" style="height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid #D9DDE1; background: #FFFFFF; font-weight: 600; cursor: pointer">Abrir en Blender</button>
+      <button type="button" style="height: 40px; padding: 0 16px; border-radius: 8px; border: 0; background: {{accent}}; color: #FFFFFF; font-weight: 700; cursor: pointer">Exportar STL · 3MF ▾</button>
+    </div>
+  </header>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; padding: 16px 24px; flex: 1 1 auto">
+
+    <!-- Biblioteca -->
+    <aside aria-label="Biblioteca de piezas" style="flex: 0 1 280px; min-width: 240px; display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; border: 1px solid #D9DDE1; border-radius: 12px; padding: 12px">
+      <label for="buscar" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Buscar pieza</label>
+      <input id="buscar" type="search" placeholder="Buscar pieza…" style="height: 40px; border: 1px solid #D9DDE1; border-radius: 8px; padding: 0 12px; font-size: 14px">
+      <span style="font-size: 11px; font-weight: 700; color: #4A5560; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px">Sugeridas para este proyecto</span>
+      <button type="button" aria-pressed="true" style="display: flex; justify-content: space-between; align-items: center; height: 48px; padding: 0 12px; border: 1px solid {{accent}}; border-radius: 8px; background: #FDF6EE; text-align: left; font-weight: 700; cursor: pointer">Soporte de repisa 5 mm <span style="font-size: 12px; color: #4A5560; font-weight: 600">× 12</span></button>
+      <button type="button" style="display: flex; justify-content: space-between; align-items: center; height: 48px; padding: 0 12px; border: 1px solid #D9DDE1; border-radius: 8px; background: #FFFFFF; text-align: left; font-weight: 600; cursor: pointer">Tapa minifix blanca <span style="font-size: 12px; color: #4A5560">× 24</span></button>
+      <button type="button" style="display: flex; justify-content: space-between; align-items: center; height: 48px; padding: 0 12px; border: 1px solid #D9DDE1; border-radius: 8px; background: #FFFFFF; text-align: left; font-weight: 600; cursor: pointer">Pata niveladora 80 mm <span style="font-size: 12px; color: #4A5560">× 4</span></button>
+      <button type="button" style="display: flex; justify-content: space-between; align-items: center; height: 48px; padding: 0 12px; border: 1px solid #D9DDE1; border-radius: 8px; background: #FFFFFF; text-align: left; font-weight: 600; cursor: pointer">Plantilla sistema 32 <span style="font-size: 12px; color: #4A5560">× 1</span></button>
+      <span style="font-size: 11px; font-weight: 700; color: #4A5560; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 8px">Biblioteca</span>
+      <button type="button" style="height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; text-align: left; font-weight: 600; color: #4A5560; cursor: pointer">Tiradores</button>
+      <button type="button" style="height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; text-align: left; font-weight: 600; color: #4A5560; cursor: pointer">Clips y pasacables</button>
+      <button type="button" style="height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; text-align: left; font-weight: 600; color: #4A5560; cursor: pointer">Esquineros y escuadras</button>
+      <button type="button" style="height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; text-align: left; font-weight: 600; color: #4A5560; cursor: pointer">Cajas y separadores</button>
+      <button type="button" style="height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; text-align: left; font-weight: 600; color: #4A5560; cursor: pointer">Desde perfil SVG / DXF</button>
+    </aside>
+
+    <!-- Vista previa -->
+    <section aria-label="Vista previa de la pieza" style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+      <div style="position: relative; flex: 1 1 auto; min-height: 560px; background: #FFFFFF; border: 1px solid #D9DDE1; border-radius: 12px; overflow: hidden">
+        <div style="position: absolute; top: 12px; left: 12px; display: flex; gap: 4px; background: #FFFFFF; border: 1px solid #D9DDE1; border-radius: 8px; padding: 4px">
+          <button type="button" aria-pressed="true" style="height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: #EEF0F2; font-weight: 700; font-size: 13px; cursor: pointer">Sólido</button>
+          <button type="button" style="height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; font-size: 13px; color: #4A5560; cursor: pointer">Corte</button>
+          <button type="button" style="height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; font-size: 13px; color: #4A5560; cursor: pointer">Capas de impresión</button>
+        </div>
+        <figure style="margin: 0; width: 100%; height: 100%; min-height: 560px; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 80%, #F3F4F6 0%, #FFFFFF 60%)">
+          <svg viewBox="0 0 520 420" width="100%" height="100%" style="max-width: 520px" role="img" aria-label="Soporte de repisa en vista isométrica: pin cilíndrico de 5 milímetros que entra en el costado y una plataforma en L sobre la que apoya la repisa, con cotas">
+            <!-- costado del mueble (corte) -->
+            <polygon points="60,80 160,40 160,360 60,400" fill="#F3F1EC" stroke="#8C8C87" stroke-width="1.5"/>
+            <!-- pin -->
+            <polygon points="110,206 230,160 230,186 110,232" fill="#D9DDE1" stroke="#4A5560" stroke-width="1.5"/>
+            <ellipse cx="230" cy="173" rx="7" ry="13" fill="#B7BDC3" stroke="#4A5560" stroke-width="1.5"/>
+            <!-- plataforma L -->
+            <polygon points="230,150 330,110 330,220 230,260" fill="{{accent}}" stroke="#7A4B00" stroke-width="1.5"/>
+            <polygon points="230,150 330,110 400,140 300,180" fill="#D9A26F" stroke="#7A4B00" stroke-width="1.5"/>
+            <polygon points="300,180 400,140 400,250 300,290" fill="#A85E1A" stroke="#7A4B00" stroke-width="1.5"/>
+            <!-- repisa fantasma -->
+            <polygon points="240,120 340,80 480,130 380,170" fill="none" stroke="#B7BDC3" stroke-width="1.5" stroke-dasharray="5 4"/>
+            <!-- cotas -->
+            <g font-family="JetBrains Mono, monospace" font-size="12" font-weight="600" fill="#1B1F23">
+              <line x1="110" y1="250" x2="230" y2="250" stroke="#1B1F23" stroke-width="1"/>
+              <text x="170" y="268" text-anchor="middle">16</text>
+              <text x="244" y="196">Ø 5,0 + 0,2</text>
+              <line x1="420" y1="140" x2="420" y2="250" stroke="#1B1F23" stroke-width="1"/>
+              <text x="428" y="200">20</text>
+              <line x1="300" y1="310" x2="400" y2="270" stroke="#1B1F23" stroke-width="1"/>
+              <text x="356" y="310">18</text>
+            </g>
+            <!-- orientación de impresión -->
+            <g>
+              <path d="M60 330 l0 -40" stroke="#1E7F86" stroke-width="2" marker-end="none"/>
+              <path d="M55 296 l5 -8 5 8" fill="none" stroke="#1E7F86" stroke-width="2"/>
+              <text x="70" y="300" font-family="Manrope, sans-serif" font-size="11" font-weight="700" fill="#1E7F86">Z impresión</text>
+            </g>
+          </svg>
+        </figure>
+        <div style="position: absolute; left: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px">
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; background: #E6F4F5; color: #0F4F54; border: 1px solid #BFE2E4; border-radius: 99px; padding: 6px 10px">Imprimible sin soportes</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; background: #E6F4F5; color: #0F4F54; border: 1px solid #BFE2E4; border-radius: 99px; padding: 6px 10px">Carga 8 kg por soporte · PETG · OK</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; background: #FFF4E5; color: #7A4B00; border: 1px solid #F0D4A8; border-radius: 99px; padding: 6px 10px">Pared 1,6 mm: usa boquilla 0,4</span>
+        </div>
+      </div>
+
+      <form style="display: flex; gap: 8px; align-items: center; background: #FFFFFF; border: 1px solid #D9DDE1; border-radius: 12px; padding: 8px 8px 8px 14px">
+        <label for="cmd3" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Comando</label>
+        <input id="cmd3" type="text" placeholder="hazlo 2 mm más ancho · versión para tablero de 25 · tapa para los 24 minifix" style="flex: 1 1 auto; height: 40px; border: 0; outline: none; font-size: 14px; color: #1B1F23">
+        <button type="submit" style="height: 40px; padding: 0 14px; border: 0; border-radius: 8px; background: #1B1F23; color: #FFFFFF; font-weight: 700; cursor: pointer">Aplicar</button>
+      </form>
+    </section>
+
+    <!-- Parámetros y exportación -->
+    <aside aria-label="Parámetros de la pieza" style="flex: 0 1 340px; min-width: 300px; display: flex; flex-direction: column; gap: 12px">
+      <div style="background: #FFFFFF; border: 1px solid #D9DDE1; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 800">Parámetros (mm)</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4A5560">Ø pin
+            <input type="number" value="5" step="0.1" style="height: 40px; border: 1px solid #D9DDE1; border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: #1B1F23">
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4A5560">Largo pin
+            <input type="number" value="16" style="height: 40px; border: 1px solid #D9DDE1; border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: #1B1F23">
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4A5560">Apoyo
+            <input type="number" value="20" style="height: 40px; border: 1px solid #D9DDE1; border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: #1B1F23">
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4A5560">Tablero
+            <input type="number" value="18" style="height: 40px; border: 1px solid #D9DDE1; border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: #1B1F23">
+          </label>
+        </div>
+        <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4A5560">Tolerancia de ajuste · 0,2 mm
+          <input type="range" min="0" max="0.6" step="0.05" value="0.2" style="width: 100%">
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600"><input type="checkbox" checked style="width: 18px; height: 18px"> Tope anti-deslizamiento</label>
+        <span style="font-size: 12px; color: #4A5560">Tomado del mueble: 12 unidades, tablero 18, perforación 5 mm.</span>
+      </div>
+
+      <div style="background: #FFFFFF; border: 1px solid #D9DDE1; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 800">Impresión</h2>
+        <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px">
+          <li style="display: flex; justify-content: space-between"><span>Material sugerido</span><span style="font-weight: 700">PETG</span></li>
+          <li style="display: flex; justify-content: space-between"><span>Relleno</span><span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">40 %</span></li>
+          <li style="display: flex; justify-content: space-between"><span>Tiempo · 12 piezas</span><span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">1 h 40</span></li>
+          <li style="display: flex; justify-content: space-between"><span>Filamento</span><span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">38 g · $ 4.200</span></li>
+        </ul>
+        <div style="padding: 10px; background: #F6F7F8; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between">
+          <span>Comprarlos en Homecenter</span><span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">$ 9.600</span>
+        </div>
+        <div style="display: flex; gap: 8px">
+          <button type="button" style="flex: 1; height: 44px; border: 0; border-radius: 8px; background: {{accent}}; color: #FFFFFF; font-weight: 700; cursor: pointer">STL × 12</button>
+          <button type="button" style="flex: 1; height: 44px; border: 1px solid #D9DDE1; border-radius: 8px; background: #FFFFFF; font-weight: 700; cursor: pointer">3MF con placa</button>
+        </div>
+        <button type="button" style="height: 44px; border: 1px solid #D9DDE1; border-radius: 8px; background: #FFFFFF; font-weight: 700; cursor: pointer">glTF para Blender</button>
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#B9671E","options":["#B9671E","#1E7F86","#1B1F23"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#B9671E' };
+  }
+}
+</script>
+</body>
+</html>
