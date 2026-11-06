@@ -16,4 +16,5 @@ Cuatro pantallas estáticas en HTML (abrir en el navegador) que fijan la direcci
 - **Tiendas cercanas o conocidas** (Homecenter, Madecentro, Easy en Colombia) más el catálogo propio; la mezcla óptima reparte la compra entre tiendas.
 - **Milímetros en monoespaciada** (JetBrains Mono) para que las cifras se alineen; texto en Manrope. Acento ámbar (madera) y verde azulado para estados positivos, ámbar oscuro para avisos.
 - **Comandos en lenguaje natural** en las tres secciones, resueltos localmente o por la IA conectada vía MCP.
+- **Modo oscuro de serie**: todos los colores son variables (`--bg`, `--surface`, `--text`, `--ok-*`, `--warn-*`, `--wall`, ...). El tema sigue al sistema (`auto`) y se puede forzar a claro u oscuro; en el lienzo de Claude está en Tweaks. Las maderas y decorados conservan su color en ambos temas porque representan material real.
 - Los precios de los mocks son ilustrativos.

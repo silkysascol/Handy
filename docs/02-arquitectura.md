@@ -71,7 +71,7 @@
 └─────────────────────────────────────────────────────────────┘
 ```
 
-El navegador es la versión principal (PWA, funciona offline). El ejecutable agrega acceso a disco, API local para IAs y conversión de formatos pesados.
+El navegador es la versión principal (PWA, funciona offline). El ejecutable agrega acceso a disco, API local para IAs y conversión de formatos pesados. La interfaz tiene **modo claro y oscuro** desde el primer día: los tokens de color viven en variables CSS, el tema sigue la preferencia del sistema y se puede forzar; el visor 3D ajusta fondo e iluminación sin alterar los colores de los materiales.
 
 ## Flujo típico
 

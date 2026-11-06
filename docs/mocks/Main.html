@@ -10,33 +10,36 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
-body{margin:0;background:#EEF0F2;font-family:Manrope,system-ui,sans-serif;color:#1B1F23}
-a{color:#1E7F86}a:hover{color:#155B61}
+:root{--bg:#EEF0F2;--surface:#FFFFFF;--surface-2:#F6F7F8;--border:#D9DDE1;--text:#1B1F23;--text-2:#4A5560;--ink-btn:#1B1F23;--ink-btn-text:#FFFFFF;--teal:#1E7F86;--amber-text:#B9671E;--accent-bg:#FDF6EE;--ok-bg:#E6F4F5;--ok-text:#0F4F54;--ok-border:#BFE2E4;--warn-bg:#FFF4E5;--warn-text:#7A4B00;--warn-border:#F0D4A8;--wall:#2B3137;--ghost:#F3EBDD;--shadow:rgba(0,0,0,0.08)}
+[data-theme="dark"]{--bg:#15181B;--surface:#1F2327;--surface-2:#262B30;--border:#343A40;--text:#E8EAED;--text-2:#A6AEB6;--ink-btn:#E8EAED;--ink-btn-text:#15181B;--teal:#5CC3CA;--amber-text:#E0A060;--accent-bg:#3A2A12;--ok-bg:#123537;--ok-text:#8FD8DD;--ok-border:#1E5A5E;--warn-bg:#3A2A12;--warn-text:#F2C58A;--warn-border:#5A4020;--wall:#CDD3D9;--ghost:#3A2F1F;--shadow:rgba(0,0,0,0.5)}
+@media (prefers-color-scheme: dark){[data-theme="auto"]{--bg:#15181B;--surface:#1F2327;--surface-2:#262B30;--border:#343A40;--text:#E8EAED;--text-2:#A6AEB6;--ink-btn:#E8EAED;--ink-btn-text:#15181B;--teal:#5CC3CA;--amber-text:#E0A060;--accent-bg:#3A2A12;--ok-bg:#123537;--ok-text:#8FD8DD;--ok-border:#1E5A5E;--warn-bg:#3A2A12;--warn-text:#F2C58A;--warn-border:#5A4020;--wall:#CDD3D9;--ghost:#3A2F1F;--shadow:rgba(0,0,0,0.5)}}
+body{margin:0;background:var(--bg);font-family:Manrope,system-ui,sans-serif;color:var(--text)}
+a{color:var(--teal)}a:hover{color:var(--teal)}
 input,select,button{font-family:inherit}
 </style>
 </helmet>
-<div style="min-height: 1000px; display: flex; flex-direction: column; background: #EEF0F2; font-size: 14px; line-height: 1.4">
+<div data-theme="auto" style="min-height: 1000px; display: flex; flex-direction: column; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.4">
 
   <!-- Barra superior -->
-  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #D9DDE1">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 12px 24px; background: var(--surface); border-bottom: 1px solid var(--border)">
     <div style="display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; letter-spacing: -0.02em">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="3" y="6" width="22" height="18" rx="2" stroke="#1B1F23" stroke-width="2"/><path d="M3 12h22M14 12v12" stroke="#1B1F23" stroke-width="2"/><path d="M9 3v4M19 3v4" stroke="{{accent}}" stroke-width="2.5" stroke-linecap="round"/></svg>
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="3" y="6" width="22" height="18" rx="2" stroke="var(--text)" stroke-width="2"/><path d="M3 12h22M14 12v12" stroke="var(--text)" stroke-width="2"/><path d="M9 3v4M19 3v4" stroke="#B9671E" stroke-width="2.5" stroke-linecap="round"/></svg>
       Handy
     </div>
-    <nav aria-label="Secciones" style="display: flex; gap: 4px; background: #EEF0F2; padding: 4px; border-radius: 10px">
-      <a href="Espacios.html" style="padding: 8px 16px; border-radius: 8px; text-decoration: none; color: #4A5560; font-weight: 600">Espacios</a>
-      <a href="Main.html" aria-current="page" style="padding: 8px 16px; border-radius: 8px; text-decoration: none; color: #1B1F23; background: #FFFFFF; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.08)">Muebles</a>
-      <a href="Objetos.html" style="padding: 8px 16px; border-radius: 8px; text-decoration: none; color: #4A5560; font-weight: 600">Objetos</a>
+    <nav aria-label="Secciones" style="display: flex; gap: 4px; background: var(--bg); padding: 4px; border-radius: 10px">
+      <a href="Espacios.html" style="padding: 8px 16px; border-radius: 8px; text-decoration: none; color: var(--text-2); font-weight: 600">Espacios</a>
+      <a href="Main.html" aria-current="page" style="padding: 8px 16px; border-radius: 8px; text-decoration: none; color: var(--text); background: var(--surface); font-weight: 700; box-shadow: 0 1px 2px var(--shadow)">Muebles</a>
+      <a href="Objetos.html" style="padding: 8px 16px; border-radius: 8px; text-decoration: none; color: var(--text-2); font-weight: 600">Objetos</a>
     </nav>
-    <div style="display: flex; align-items: center; gap: 8px; color: #4A5560">
-      <span style="font-weight: 600; color: #1B1F23">Armario dormitorio principal</span>
-      <span style="font-size: 12px; background: #EEF0F2; padding: 2px 8px; border-radius: 99px">guardado hace 1 min</span>
+    <div style="display: flex; align-items: center; gap: 8px; color: var(--text-2)">
+      <span style="font-weight: 600; color: var(--text)">Armario dormitorio principal</span>
+      <span style="font-size: 12px; background: var(--bg); padding: 2px 8px; border-radius: 99px">guardado hace 1 min</span>
     </div>
     <div style="flex: 1 1 auto"></div>
     <div style="display: flex; gap: 8px">
-      <button type="button" style="height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid #D9DDE1; background: #FFFFFF; font-weight: 600; cursor: pointer">Simular esfuerzos</button>
-      <button type="button" style="height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid #D9DDE1; background: #FFFFFF; font-weight: 600; cursor: pointer">Exportar · glTF ▾</button>
-      <button type="button" style="height: 40px; padding: 0 16px; border-radius: 8px; border: 0; background: {{accent}}; color: #FFFFFF; font-weight: 700; cursor: pointer">Plano y lista de corte</button>
+      <button type="button" style="height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); font-weight: 600; cursor: pointer">Simular esfuerzos</button>
+      <button type="button" style="height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); font-weight: 600; cursor: pointer">Exportar · glTF ▾</button>
+      <button type="button" style="height: 40px; padding: 0 16px; border-radius: 8px; border: 0; background: #B9671E; color: #FFFFFF; font-weight: 700; cursor: pointer">Plano y lista de corte</button>
     </div>
   </header>
 
@@ -44,91 +47,91 @@ input,select,button{font-family:inherit}
   <div style="display: flex; flex-wrap: wrap; gap: 16px; padding: 16px 24px; flex: 1 1 auto">
 
     <!-- Parámetros -->
-    <aside aria-label="Parámetros del mueble" style="flex: 0 1 300px; min-width: 260px; display: flex; flex-direction: column; gap: 14px; background: #FFFFFF; border: 1px solid #D9DDE1; border-radius: 12px; padding: 16px">
+    <aside aria-label="Parámetros del mueble" style="flex: 0 1 300px; min-width: 260px; display: flex; flex-direction: column; gap: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px">
       <div style="display: flex; justify-content: space-between; align-items: center">
         <h2 style="margin: 0; font-size: 15px; font-weight: 800">Gabinete</h2>
-        <button type="button" style="height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid #D9DDE1; background: #FFFFFF; font-size: 12px; font-weight: 600; cursor: pointer">Cambiar tipo</button>
+        <button type="button" style="height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); font-size: 12px; font-weight: 600; cursor: pointer">Cambiar tipo</button>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 8px">
-        <span style="font-size: 11px; font-weight: 700; color: #4A5560; text-transform: uppercase; letter-spacing: 0.06em">Medidas exteriores (mm)</span>
+        <span style="font-size: 11px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em">Medidas exteriores (mm)</span>
         <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
-          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4A5560">Ancho
-            <input type="number" value="800" style="height: 40px; border: 1px solid #D9DDE1; border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: #1B1F23">
+          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-2)">Ancho
+            <input type="number" value="800" style="height: 40px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: var(--text)">
           </label>
-          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4A5560">Alto
-            <input type="number" value="2000" style="height: 40px; border: 1px solid #D9DDE1; border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: #1B1F23">
+          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-2)">Alto
+            <input type="number" value="2000" style="height: 40px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: var(--text)">
           </label>
-          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4A5560">Prof.
-            <input type="number" value="500" style="height: 40px; border: 1px solid #D9DDE1; border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: #1B1F23">
+          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-2)">Prof.
+            <input type="number" value="500" style="height: 40px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: var(--text)">
           </label>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
-        <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4A5560">Repisas
-          <input type="number" value="3" style="height: 40px; border: 1px solid #D9DDE1; border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: #1B1F23">
+        <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-2)">Repisas
+          <input type="number" value="3" style="height: 40px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: var(--text)">
         </label>
-        <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4A5560">Zócalo (mm)
-          <input type="number" value="80" style="height: 40px; border: 1px solid #D9DDE1; border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: #1B1F23">
+        <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-2)">Zócalo (mm)
+          <input type="number" value="80" style="height: 40px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: var(--text)">
         </label>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 6px">
-        <span style="font-size: 12px; color: #4A5560">Puertas</span>
-        <div role="group" aria-label="Puertas" style="display: flex; background: #EEF0F2; border-radius: 8px; padding: 3px; gap: 3px">
-          <button type="button" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; color: #4A5560; cursor: pointer">0</button>
-          <button type="button" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; color: #4A5560; cursor: pointer">1</button>
-          <button type="button" aria-pressed="true" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: #FFFFFF; font-weight: 700; color: #1B1F23; box-shadow: 0 1px 2px rgba(0,0,0,0.08); cursor: pointer">2</button>
+        <span style="font-size: 12px; color: var(--text-2)">Puertas</span>
+        <div role="group" aria-label="Puertas" style="display: flex; background: var(--bg); border-radius: 8px; padding: 3px; gap: 3px">
+          <button type="button" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; color: var(--text-2); cursor: pointer">0</button>
+          <button type="button" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; color: var(--text-2); cursor: pointer">1</button>
+          <button type="button" aria-pressed="true" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: var(--surface); font-weight: 700; color: var(--text); box-shadow: 0 1px 2px var(--shadow); cursor: pointer">2</button>
         </div>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 6px">
-        <span style="font-size: 12px; color: #4A5560">Unión</span>
-        <div role="group" aria-label="Sistema de unión" style="display: flex; background: #EEF0F2; border-radius: 8px; padding: 3px; gap: 3px">
-          <button type="button" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; color: #4A5560; cursor: pointer">Confirmat</button>
-          <button type="button" aria-pressed="true" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: #FFFFFF; font-weight: 700; color: #1B1F23; box-shadow: 0 1px 2px rgba(0,0,0,0.08); cursor: pointer">Minifix</button>
-          <button type="button" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; color: #4A5560; cursor: pointer">Tarugo</button>
+        <span style="font-size: 12px; color: var(--text-2)">Unión</span>
+        <div role="group" aria-label="Sistema de unión" style="display: flex; background: var(--bg); border-radius: 8px; padding: 3px; gap: 3px">
+          <button type="button" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; color: var(--text-2); cursor: pointer">Confirmat</button>
+          <button type="button" aria-pressed="true" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: var(--surface); font-weight: 700; color: var(--text); box-shadow: 0 1px 2px var(--shadow); cursor: pointer">Minifix</button>
+          <button type="button" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; color: var(--text-2); cursor: pointer">Tarugo</button>
         </div>
-        <span style="font-size: 12px; color: #1E7F86; font-weight: 600">Sin tornillos visibles</span>
+        <span style="font-size: 12px; color: var(--teal); font-weight: 600">Sin tornillos visibles</span>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 8px">
-        <span style="font-size: 11px; font-weight: 700; color: #4A5560; text-transform: uppercase; letter-spacing: 0.06em">Materiales</span>
-        <button type="button" style="display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 10px; border: 1px solid #D9DDE1; border-radius: 8px; background: #FFFFFF; text-align: left; cursor: pointer">
-          <span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 6px; background: #F3F1EC; border: 1px solid #D9DDE1"></span>
-          <span style="display: flex; flex-direction: column; line-height: 1.2"><span style="font-weight: 700">Cuerpo · Melamina 18 Blanco</span><span style="font-size: 12px; color: #4A5560">1830 × 2440 · Madecentro</span></span>
+        <span style="font-size: 11px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em">Materiales</span>
+        <button type="button" style="display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); text-align: left; cursor: pointer">
+          <span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 6px; background: #F3F1EC; border: 1px solid var(--border)"></span>
+          <span style="display: flex; flex-direction: column; line-height: 1.2"><span style="font-weight: 700">Cuerpo · Melamina 18 Blanco</span><span style="font-size: 12px; color: var(--text-2)">1830 × 2440 · Madecentro</span></span>
         </button>
-        <button type="button" style="display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 10px; border: 1px solid #D9DDE1; border-radius: 8px; background: #FFFFFF; text-align: left; cursor: pointer">
+        <button type="button" style="display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); text-align: left; cursor: pointer">
           <span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 6px; background: repeating-linear-gradient(90deg, #B98A5A 0 3px, #A8784A 3px 5px)"></span>
-          <span style="display: flex; flex-direction: column; line-height: 1.2"><span style="font-weight: 700">Frentes · Roble Americano</span><span style="font-size: 12px; color: #4A5560">1830 × 2440 · Homecenter</span></span>
+          <span style="display: flex; flex-direction: column; line-height: 1.2"><span style="font-weight: 700">Frentes · Roble Americano</span><span style="font-size: 12px; color: var(--text-2)">1830 × 2440 · Homecenter</span></span>
         </button>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; background: #F6F7F8; border-radius: 8px">
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--surface-2); border-radius: 8px">
         <span style="font-size: 12px; font-weight: 700">Asistente propone</span>
-        <button type="button" style="height: 36px; padding: 0 10px; border: 1px solid #D9DDE1; border-radius: 6px; background: #FFFFFF; text-align: left; font-size: 12px; font-weight: 600; cursor: pointer">Interior en gris claro para contraste con roble</button>
-        <button type="button" style="height: 36px; padding: 0 10px; border: 1px solid #D9DDE1; border-radius: 6px; background: #FFFFFF; text-align: left; font-size: 12px; font-weight: 600; cursor: pointer">Tiradores ocultos (gola) en vez de manillas</button>
+        <button type="button" style="height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); text-align: left; font-size: 12px; font-weight: 600; cursor: pointer">Interior en gris claro para contraste con roble</button>
+        <button type="button" style="height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); text-align: left; font-size: 12px; font-weight: 600; cursor: pointer">Tiradores ocultos (gola) en vez de manillas</button>
       </div>
     </aside>
 
     <!-- Visor 3D -->
     <section aria-label="Visor 3D" style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
-      <div style="position: relative; flex: 1 1 auto; min-height: 560px; background: #FFFFFF; border: 1px solid #D9DDE1; border-radius: 12px; overflow: hidden">
-        <div style="position: absolute; top: 12px; left: 12px; display: flex; gap: 4px; background: #FFFFFF; border: 1px solid #D9DDE1; border-radius: 8px; padding: 4px">
-          <button type="button" aria-pressed="true" style="height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: #EEF0F2; font-weight: 700; font-size: 13px; cursor: pointer">Arrastrar caras</button>
-          <button type="button" style="height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; font-size: 13px; color: #4A5560; cursor: pointer">Orbitar</button>
-          <button type="button" style="height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; font-size: 13px; color: #4A5560; cursor: pointer">Medir</button>
-          <button type="button" style="height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; font-size: 13px; color: #4A5560; cursor: pointer">Explotar</button>
+      <div style="position: relative; flex: 1 1 auto; min-height: 560px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden">
+        <div style="position: absolute; top: 12px; left: 12px; display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 4px">
+          <button type="button" aria-pressed="true" style="height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: var(--bg); font-weight: 700; font-size: 13px; cursor: pointer">Arrastrar caras</button>
+          <button type="button" style="height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; font-size: 13px; color: var(--text-2); cursor: pointer">Orbitar</button>
+          <button type="button" style="height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; font-size: 13px; color: var(--text-2); cursor: pointer">Medir</button>
+          <button type="button" style="height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; font-size: 13px; color: var(--text-2); cursor: pointer">Explotar</button>
         </div>
         <div style="position: absolute; top: 12px; right: 12px; display: flex; gap: 6px">
-          <span style="font-size: 12px; font-weight: 600; background: #FFFFFF; border: 1px solid #D9DDE1; border-radius: 99px; padding: 6px 10px">En el espacio: Dormitorio · muro este</span>
+          <span style="font-size: 12px; font-weight: 600; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 6px 10px">En el espacio: Dormitorio · muro este</span>
         </div>
 
-        <figure style="margin: 0; width: 100%; height: 100%; min-height: 560px; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 80%, #F3F4F6 0%, #FFFFFF 60%)">
+        <figure style="margin: 0; width: 100%; height: 100%; min-height: 560px; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 80%, var(--surface-2) 0%, var(--surface) 60%)">
           <svg viewBox="0 0 640 560" width="100%" height="100%" style="max-width: 640px" role="img" aria-label="Armario de 800 por 2000 por 500 milímetros en vista isométrica, con frentes de roble, cotas y manija de arrastre en el costado derecho">
             <!-- piso -->
-            <line x1="40" y1="500" x2="600" y2="500" stroke="#D9DDE1" stroke-width="1"/>
+            <line x1="40" y1="500" x2="600" y2="500" stroke="var(--border)" stroke-width="1"/>
             <!-- costado derecho (profundidad) -->
             <polygon points="330,120 470,60 470,420 330,480" fill="#E4E1DA" stroke="#8C8C87" stroke-width="1.5"/>
             <!-- techo -->
@@ -149,52 +152,52 @@ input,select,button{font-family:inherit}
             </g>
             <!-- manija de arrastre -->
             <g>
-              <rect x="458" y="226" width="24" height="24" rx="12" fill="{{accent}}"/>
+              <rect x="458" y="226" width="24" height="24" rx="12" fill="#B9671E"/>
               <path d="M466 238h8M470 234l4 4-4 4" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
             </g>
             <!-- cotas -->
-            <g font-family="JetBrains Mono, monospace" font-size="13" font-weight="600" fill="#1B1F23">
-              <line x1="130" y1="520" x2="330" y2="520" stroke="#1B1F23" stroke-width="1"/>
-              <line x1="130" y1="514" x2="130" y2="526" stroke="#1B1F23"/><line x1="330" y1="514" x2="330" y2="526" stroke="#1B1F23"/>
+            <g font-family="JetBrains Mono, monospace" font-size="13" font-weight="600" fill="var(--text)">
+              <line x1="130" y1="520" x2="330" y2="520" stroke="var(--text)" stroke-width="1"/>
+              <line x1="130" y1="514" x2="130" y2="526" stroke="var(--text)"/><line x1="330" y1="514" x2="330" y2="526" stroke="var(--text)"/>
               <text x="230" y="542" text-anchor="middle">800</text>
-              <line x1="100" y1="120" x2="100" y2="494" stroke="#1B1F23" stroke-width="1"/>
-              <line x1="94" y1="120" x2="106" y2="120" stroke="#1B1F23"/><line x1="94" y1="494" x2="106" y2="494" stroke="#1B1F23"/>
+              <line x1="100" y1="120" x2="100" y2="494" stroke="var(--text)" stroke-width="1"/>
+              <line x1="94" y1="120" x2="106" y2="120" stroke="var(--text)"/><line x1="94" y1="494" x2="106" y2="494" stroke="var(--text)"/>
               <text x="92" y="312" text-anchor="end">2000</text>
-              <line x1="350" y1="500" x2="490" y2="440" stroke="#1B1F23" stroke-width="1"/>
+              <line x1="350" y1="500" x2="490" y2="440" stroke="var(--text)" stroke-width="1"/>
               <text x="440" y="490">500</text>
             </g>
           </svg>
         </figure>
 
         <div style="position: absolute; left: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px">
-          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; background: #FFF4E5; color: #7A4B00; border: 1px solid #F0D4A8; border-radius: 99px; padding: 6px 10px">Repisa 762 mm en 18 mm: cerca del límite, agrega soporte central</span>
-          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; background: #E6F4F5; color: #0F4F54; border: 1px solid #BFE2E4; border-radius: 99px; padding: 6px 10px">Esfuerzos: flecha 2,1 mm con 60 kg/m² · OK</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); border-radius: 99px; padding: 6px 10px">Repisa 762 mm en 18 mm: cerca del límite, agrega soporte central</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; background: var(--ok-bg); color: var(--ok-text); border: 1px solid var(--ok-border); border-radius: 99px; padding: 6px 10px">Esfuerzos: flecha 2,1 mm con 60 kg/m² · OK</span>
         </div>
       </div>
 
-      <form style="display: flex; gap: 8px; align-items: center; background: #FFFFFF; border: 1px solid #D9DDE1; border-radius: 12px; padding: 8px 8px 8px 14px">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 10h9M8 5l5 5-5 5" stroke="#4A5560" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <form style="display: flex; gap: 8px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 8px 8px 8px 14px">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 10h9M8 5l5 5-5 5" stroke="var(--text-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <label for="cmd" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Comando</label>
-        <input id="cmd" type="text" placeholder="Escribe un comando: ensancha 10 cm · agrega una repisa · divide la puerta en dos" style="flex: 1 1 auto; height: 40px; border: 0; outline: none; font-size: 14px; color: #1B1F23">
-        <span style="font-size: 12px; color: #4A5560; white-space: nowrap">Claude conectado por MCP</span>
-        <button type="submit" style="height: 40px; padding: 0 14px; border: 0; border-radius: 8px; background: #1B1F23; color: #FFFFFF; font-weight: 700; cursor: pointer">Aplicar</button>
+        <input id="cmd" type="text" placeholder="Escribe un comando: ensancha 10 cm · agrega una repisa · divide la puerta en dos" style="flex: 1 1 auto; height: 40px; border: 0; outline: none; font-size: 14px; color: var(--text)">
+        <span style="font-size: 12px; color: var(--text-2); white-space: nowrap">Claude conectado por MCP</span>
+        <button type="submit" style="height: 40px; padding: 0 14px; border: 0; border-radius: 8px; background: var(--ink-btn); color: var(--ink-btn-text); font-weight: 700; cursor: pointer">Aplicar</button>
       </form>
 
-      <div style="background: #FFFFFF; border: 1px solid #D9DDE1; border-radius: 12px; padding: 12px 16px">
+      <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px">
           <h3 style="margin: 0; font-size: 14px; font-weight: 800">Lista de corte</h3>
-          <span style="font-size: 12px; color: #4A5560">8 filas · 2 tableros melamina · 1 HDF · 19 m tapacanto</span>
+          <span style="font-size: 12px; color: var(--text-2)">8 filas · 2 tableros melamina · 1 HDF · 19 m tapacanto</span>
         </div>
         <div style="overflow-x: auto">
           <table style="width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px">
-            <thead><tr style="color: #4A5560; text-align: left">
-              <th style="padding: 6px 8px; font-weight: 700; border-bottom: 1px solid #D9DDE1">Pieza</th><th style="padding: 6px 8px; font-weight: 700; border-bottom: 1px solid #D9DDE1">Cant</th><th style="padding: 6px 8px; font-weight: 700; border-bottom: 1px solid #D9DDE1">Largo</th><th style="padding: 6px 8px; font-weight: 700; border-bottom: 1px solid #D9DDE1">Ancho</th><th style="padding: 6px 8px; font-weight: 700; border-bottom: 1px solid #D9DDE1">Cantos</th>
+            <thead><tr style="color: var(--text-2); text-align: left">
+              <th style="padding: 6px 8px; font-weight: 700; border-bottom: 1px solid var(--border)">Pieza</th><th style="padding: 6px 8px; font-weight: 700; border-bottom: 1px solid var(--border)">Cant</th><th style="padding: 6px 8px; font-weight: 700; border-bottom: 1px solid var(--border)">Largo</th><th style="padding: 6px 8px; font-weight: 700; border-bottom: 1px solid var(--border)">Ancho</th><th style="padding: 6px 8px; font-weight: 700; border-bottom: 1px solid var(--border)">Cantos</th>
             </tr></thead>
             <tbody style="font-family: 'JetBrains Mono', monospace">
               <tr><td style="padding: 6px 8px; font-family: Manrope, sans-serif">Costado</td><td style="padding: 6px 8px">2</td><td style="padding: 6px 8px">2000</td><td style="padding: 6px 8px">500</td><td style="padding: 6px 8px">1L</td></tr>
-              <tr style="background: #F6F7F8"><td style="padding: 6px 8px; font-family: Manrope, sans-serif">Techo / piso</td><td style="padding: 6px 8px">2</td><td style="padding: 6px 8px">764</td><td style="padding: 6px 8px">500</td><td style="padding: 6px 8px">1L</td></tr>
+              <tr style="background: var(--surface-2)"><td style="padding: 6px 8px; font-family: Manrope, sans-serif">Techo / piso</td><td style="padding: 6px 8px">2</td><td style="padding: 6px 8px">764</td><td style="padding: 6px 8px">500</td><td style="padding: 6px 8px">1L</td></tr>
               <tr><td style="padding: 6px 8px; font-family: Manrope, sans-serif">Repisa</td><td style="padding: 6px 8px">3</td><td style="padding: 6px 8px">762</td><td style="padding: 6px 8px">477</td><td style="padding: 6px 8px">1L</td></tr>
-              <tr style="background: #F6F7F8"><td style="padding: 6px 8px; font-family: Manrope, sans-serif">Puerta (roble)</td><td style="padding: 6px 8px">2</td><td style="padding: 6px 8px">1916</td><td style="padding: 6px 8px">397</td><td style="padding: 6px 8px">2L 2A</td></tr>
+              <tr style="background: var(--surface-2)"><td style="padding: 6px 8px; font-family: Manrope, sans-serif">Puerta (roble)</td><td style="padding: 6px 8px">2</td><td style="padding: 6px 8px">1916</td><td style="padding: 6px 8px">397</td><td style="padding: 6px 8px">2L 2A</td></tr>
             </tbody>
           </table>
         </div>
@@ -202,68 +205,68 @@ input,select,button{font-family:inherit}
     </section>
 
     <!-- Cotización en vivo -->
-    <aside aria-label="Cotización en tiempo real" style="flex: 0 1 340px; min-width: 300px; display: flex; flex-direction: column; gap: 12px; background: #FFFFFF; border: 1px solid #D9DDE1; border-radius: 12px; padding: 16px">
+    <aside aria-label="Cotización en tiempo real" style="flex: 0 1 340px; min-width: 300px; display: flex; flex-direction: column; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px">
       <div style="display: flex; justify-content: space-between; align-items: center">
         <h2 style="margin: 0; font-size: 15px; font-weight: 800">Cotización en vivo</h2>
-        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #1E7F86"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 99px; background: #1E7F86"></span>actualizado hace 12 s</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--teal)"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 99px; background: var(--teal)"></span>actualizado hace 12 s</span>
       </div>
       <div style="display: flex; flex-direction: column; gap: 2px">
         <span style="font-family: 'JetBrains Mono', monospace; font-size: 34px; font-weight: 600; letter-spacing: -0.02em">$ 612.400</span>
-        <span style="font-size: 12px; color: #4A5560">COP aprox. · materiales y herrajes · sin corte de aserradero</span>
+        <span style="font-size: 12px; color: var(--text-2)">COP aprox. · materiales y herrajes · sin corte de aserradero</span>
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 6px">
-        <span style="font-size: 12px; font-weight: 700; background: #EEF0F2; border-radius: 99px; padding: 5px 10px">Homecenter Cali Norte · 3,2 km</span>
-        <span style="font-size: 12px; font-weight: 700; background: #EEF0F2; border-radius: 99px; padding: 5px 10px">Madecentro Cali · 5,1 km</span>
-        <button type="button" style="font-size: 12px; font-weight: 700; background: #FFFFFF; border: 1px dashed #B7BDC3; border-radius: 99px; padding: 5px 10px; cursor: pointer">+ tienda</button>
+        <span style="font-size: 12px; font-weight: 700; background: var(--bg); border-radius: 99px; padding: 5px 10px">Homecenter Cali Norte · 3,2 km</span>
+        <span style="font-size: 12px; font-weight: 700; background: var(--bg); border-radius: 99px; padding: 5px 10px">Madecentro Cali · 5,1 km</span>
+        <button type="button" style="font-size: 12px; font-weight: 700; background: var(--surface); border: 1px dashed var(--border); border-radius: 99px; padding: 5px 10px; cursor: pointer">+ tienda</button>
       </div>
 
-      <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid #D9DDE1">
-        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid #EEF0F2">
-          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">Melamina 18 Blanco × 2</span><span style="font-size: 12px; color: #4A5560">Madecentro · hace 2 h</span></span>
+      <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--border)">
+        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--bg)">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">Melamina 18 Blanco × 2</span><span style="font-size: 12px; color: var(--text-2)">Madecentro · hace 2 h</span></span>
           <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">$ 318.000</span>
         </li>
-        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid #EEF0F2">
-          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">Melamina 18 Roble × 1</span><span style="font-size: 12px; color: #4A5560">Homecenter · hace 2 h</span></span>
+        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--bg)">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">Melamina 18 Roble × 1</span><span style="font-size: 12px; color: var(--text-2)">Homecenter · hace 2 h</span></span>
           <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">$ 189.900</span>
         </li>
-        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid #EEF0F2">
-          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">HDF 3 mm × 1</span><span style="font-size: 12px; color: #4A5560">Madecentro · hace 2 h</span></span>
+        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--bg)">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">HDF 3 mm × 1</span><span style="font-size: 12px; color: var(--text-2)">Madecentro · hace 2 h</span></span>
           <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">$ 42.000</span>
         </li>
-        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid #EEF0F2">
-          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">Tapacanto PVC × 19 m</span><span style="font-size: 12px; color: #4A5560">Madecentro · hace 2 h</span></span>
+        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--bg)">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">Tapacanto PVC × 19 m</span><span style="font-size: 12px; color: var(--text-2)">Madecentro · hace 2 h</span></span>
           <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">$ 15.200</span>
         </li>
-        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid #EEF0F2">
-          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">Bisagras 35 mm × 8</span><span style="font-size: 12px; color: #4A5560">Homecenter · hace 2 h</span></span>
+        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--bg)">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">Bisagras 35 mm × 8</span><span style="font-size: 12px; color: var(--text-2)">Homecenter · hace 2 h</span></span>
           <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">$ 36.000</span>
         </li>
-        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid #EEF0F2">
-          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">Minifix + tarugos (24)</span><span style="font-size: 12px; color: #4A5560">Madecentro · hace 2 h</span></span>
+        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--bg)">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">Minifix + tarugos (24)</span><span style="font-size: 12px; color: var(--text-2)">Madecentro · hace 2 h</span></span>
           <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">$ 11.300</span>
         </li>
         <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0">
-          <span style="display: flex; flex-direction: column"><span style="font-weight: 700; color: #7A4B00">Patas niveladoras × 4</span><span style="font-size: 12px; color: #7A4B00">sin precio en tiendas cercanas</span></span>
-          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #7A4B00">—</span>
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 700; color: var(--warn-text)">Patas niveladoras × 4</span><span style="font-size: 12px; color: var(--warn-text)">sin precio en tiendas cercanas</span></span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--warn-text)">—</span>
         </li>
       </ul>
 
-      <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; background: #F6F7F8; border-radius: 8px; font-size: 13px">
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; background: var(--surface-2); border-radius: 8px; font-size: 13px">
         <span style="font-weight: 700">Qué pasa si…</span>
-        <span style="display: flex; justify-content: space-between"><span>Todo en blanco</span><span style="font-family: 'JetBrains Mono', monospace; color: #1E7F86; font-weight: 600">− $ 48.900</span></span>
-        <span style="display: flex; justify-content: space-between"><span>Confirmat en vez de minifix</span><span style="font-family: 'JetBrains Mono', monospace; color: #1E7F86; font-weight: 600">− $ 6.800</span></span>
-        <span style="display: flex; justify-content: space-between"><span>Corte y enchapado en Madecentro</span><span style="font-family: 'JetBrains Mono', monospace; color: #B9671E; font-weight: 600">+ $ 58.000</span></span>
+        <span style="display: flex; justify-content: space-between"><span>Todo en blanco</span><span style="font-family: 'JetBrains Mono', monospace; color: var(--teal); font-weight: 600">− $ 48.900</span></span>
+        <span style="display: flex; justify-content: space-between"><span>Confirmat en vez de minifix</span><span style="font-family: 'JetBrains Mono', monospace; color: var(--teal); font-weight: 600">− $ 6.800</span></span>
+        <span style="display: flex; justify-content: space-between"><span>Corte y enchapado en Madecentro</span><span style="font-family: 'JetBrains Mono', monospace; color: var(--amber-text); font-weight: 600">+ $ 58.000</span></span>
       </div>
 
-      <a href="Comparativa.html" style="display: flex; align-items: center; justify-content: center; height: 44px; border-radius: 8px; border: 1px solid #D9DDE1; background: #FFFFFF; font-weight: 700; text-decoration: none; color: #1B1F23">Comparar tiendas y mezcla óptima</a>
+      <a href="Comparativa.html" style="display: flex; align-items: center; justify-content: center; height: 44px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); font-weight: 700; text-decoration: none; color: var(--text)">Comparar tiendas y mezcla óptima</a>
     </aside>
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#B9671E","options":["#B9671E","#1E7F86","#1B1F23"]},"$preview":{"width":1440,"height":1000}}'>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#B9671E","options":["#B9671E","var(--teal)","var(--text)"]},"$preview":{"width":1440,"height":1000}}'>
 class Component extends DCLogic {
   renderVals() {
-    return { accent: this.props.accent ?? '#B9671E' };
+    return { theme: this.props.theme ?? 'auto', accent: this.props.accent ?? '#B9671E' };
   }
 }
 </script>

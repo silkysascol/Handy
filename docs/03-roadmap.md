@@ -22,6 +22,7 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 ## M2 · App web (versión principal)
 
 - [ ] Menú de tres secciones: Espacios, Muebles, Objetos.
+- [ ] Tema claro y oscuro con tokens CSS; sigue al sistema y se puede forzar.
 - [ ] Espacios: editor de mapa 2D con muros de grosor configurable, puertas, ventanas, recintos; vista 3D.
 
 - [ ] Visor 3D (react-three-fiber), piezas desde `placement`.
