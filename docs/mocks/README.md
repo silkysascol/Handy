@@ -1,6 +1,6 @@
 # Mocks de UI/UX
 
-Tres pantallas en HTML (abrir en el navegador) que fijan la dirección de la interfaz. El lienzo editable, con los paneles desplegables funcionando, vive en el artefacto de Claude "Handy UI Mocks".
+Cuatro pantallas en HTML (abrir en el navegador) que fijan la dirección de la interfaz. El lienzo editable, con los paneles desplegables funcionando, vive en el artefacto de Claude "Handy UI Mocks".
 
 ## Principios (estilo Blender)
 
@@ -14,7 +14,8 @@ Tres pantallas en HTML (abrir en el navegador) que fijan la dirección de la int
 
 | Archivo | Qué muestra |
 | --- | --- |
-| `Main.html` | Muebles. Cocina de 4 módulos. Cajón 2 seleccionado y abierto al 70 % según la corredera elegida (ficha de Madecentro); lavavajillas Electrolux sugerido en el hueco del cajón; alturas de desagüe, agua y gas marcadas en el muro; tira LED con el recorrido del cable; ensamble sin tornillos a la vista; esfuerzos. Comando de ejemplo: "poner un lavavajillas Electrolux donde está este cajón". |
+| `Main.html` | Muebles. Cocina de 4 módulos. Cajón 2 seleccionado y abierto al 70 % según la corredera elegida (ficha de Madecentro); lavavajillas Electrolux sugerido en el hueco del cajón; alturas de desagüe, agua y gas marcadas en el muro; tira LED con el recorrido del cable; ensamble sin tornillos a la vista; esfuerzos. Selección por pieza: el comando queda acotado al cajón ("Cajón 2 ›"), con botones Aislar y Sección. |
+| `Armado.html` | Instrucciones de armado generadas desde el modelo: lista de pasos por módulo, lámina del paso en isométrica de líneas (siempre blanca, como papel) con flechas, llamadas de herrajes, ampliación de la excéntrica y pictograma de prohibición; detalle del paso y opciones de generación y exportación. |
 | `Espacios.html` | Planta con muros de distinto grosor, aberturas, puntos eléctricos y canalización probable por confianza; muro seleccionado; eléctrica con norma y tipo de canalización; sanitaria y gas; sol; muebles del proyecto ubicados. |
 | `Objetos.html` | Soporte de repisa paramétrico tomado del mueble; parámetros, impresión, esfuerzos y exportación en secciones; precio de imprimir frente a comprar. |
 

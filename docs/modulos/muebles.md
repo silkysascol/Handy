@@ -52,6 +52,10 @@ Perforaciones de 5 mm cada 32 mm en los costados (hilera a 37 mm del canto front
 - Reglas: dintel sobre la boca con apoyo ≥ 150 mm por lado, cámara de fuego con refractario, separación a muros medianeros, altura mínima de chimenea.
 - También: mesones de obra para cocina exterior, jardineras y muretes bajos.
 
+## Trabajo por pieza: seleccionar, aislar, ordenar
+
+Al seleccionar una pieza (un cajón, una puerta, un costado) el panel de propiedades cambia a esa pieza y la **línea de comandos queda acotada a ella**: "poner un lavavajillas aquí", "cambia la corredera por una de 450", "hazlo 20 mm más bajo". Con `/` se **aísla** la pieza en el visor (como la vista local de Blender) para ver el detalle de un herraje o una junta; "Sección" corta el módulo por un plano para ver el interior. Las piezas también se agrupan por módulo, así que un comando puede ir a un módulo completo.
+
 ## Movimiento por pieza según el herraje
 
 Cada pieza móvil (puerta, cajón, frente abatible, puerta corrediza) lleva una **especificación de movimiento** derivada del herraje elegido, y el visor la anima en tiempo real:
@@ -64,7 +68,7 @@ Cada pieza móvil (puerta, cajón, frente abatible, puerta corrediza) lleva una 
 | Corredera de puerta | traslación lateral | solape, cantidad de hojas, carga |
 | Pata plegable, mesa extensible | giro o traslación compuesta | rango |
 
-El panel de la pieza muestra el herraje, los parámetros, un control de apertura (0–100 %) y un botón de animar. Las fichas vienen del catálogo de la tienda (Madecentro, Homecenter) a través del proveedor de precios: cuando Claude está conectado puede buscar herrajes compatibles con la medida y la carga, proponerlos y fijar el movimiento al elegido. Handy detecta colisiones durante el movimiento (cajón contra lavavajillas abierto, puerta contra muro) y avisa con la corrección.
+El panel de la pieza muestra el herraje, los parámetros, un control de apertura (0–100 %) y un botón de animar. Los modelos 3D de los herrajes son **genéricos paramétricos de Handy** (bisagra 35, corredera, abatible) con su ficha de movimiento; opcionalmente se importa el STEP del fabricante (Hettich, Häfele, Blum) cuando el usuario quiere el modelo exacto. Las referencias de la tienda (Madecentro, Homecenter) se mapean a un genérico: cuando Claude está conectado puede buscar herrajes compatibles con la medida y la carga, proponerlos y fijar el movimiento al elegido. Detalle en [../investigacion/herrajes-3d-y-armado.md](../investigacion/herrajes-3d-y-armado.md). Handy detecta colisiones durante el movimiento (cajón contra lavavajillas abierto, puerta contra muro) y avisa con la corrección.
 
 ## Electrodomésticos y comandos de reemplazo
 
@@ -92,6 +96,10 @@ Cada mueble puede evaluarse con cargas típicas (libros 60 kg/m², ropa, TV, per
 - **Texturas**: textura del decorado en el visor con la veta correcta según `grain`.
 - **Proporciones**: frentes balanceados, alturas de cajones progresivas, módulos estándar (cocina 150/300/450/600/900).
 - **Armado**: orden de montaje, posición de herrajes y plano de armado paso a paso.
+
+## Instrucciones de armado
+
+Al terminar, Handy genera instrucciones visuales paso a paso desde el modelo (PDF sin texto, HTML animado). Ver [armado.md](armado.md).
 
 ## Exportaciones
 

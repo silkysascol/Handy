@@ -87,7 +87,10 @@ input,select,button{font-family:inherit;font-size:12px;color:var(--text)}
     <section aria-label="Visor 3D" style="position: relative; flex: 999 1 560px; min-width: 0; min-height: 600px; background: var(--bg)">
       <div style="position: absolute; top: 12px; left: 12px; z-index: 2; display: flex; gap: 6px; color: var(--text-2)">
         <span class="chip" style="background: var(--panel)">Frente · perspectiva</span>
-        <span class="chip" style="background: var(--panel)">Cajón 2 seleccionado</span>
+        <span class="chip" style="background: var(--panel); border: 1px solid var(--sel)">Cajón 2 · módulo 1</span>
+        <button type="button" class="btn" style="height: 26px">Aislar pieza <span style="color: var(--text-2); font-family: 'JetBrains Mono', monospace">/</span></button>
+        <button type="button" class="btn" style="height: 26px">Sección</button>
+        <a href="Armado.html" class="btn" style="height: 26px; display: inline-flex; align-items: center; text-decoration: none">Instrucciones de armado</a>
       </div>
 
       <!-- Precio total: grande, en la esquina; el resumen aparece al pasar el mouse -->
@@ -192,8 +195,8 @@ input,select,button{font-family:inherit;font-size:12px;color:var(--text)}
 
       <!-- Línea de comandos -->
       <form style="position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 2; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 6px 0 12px; border-radius: 6px; background: var(--panel); border: 1px solid var(--border)">
-        <span aria-hidden="true" style="color: var(--text-2); font-family: 'JetBrains Mono', monospace">›</span>
-        <label for="cmd" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Comando</label>
+        <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 4px; background: var(--sel); color: var(--accent-text); font-weight: 600; white-space: nowrap">Cajón 2 ›</span>
+        <label for="cmd" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Comando para la pieza seleccionada</label>
         <input id="cmd" type="text" value="poner un lavavajillas Electrolux donde está este cajón" style="flex: 1 1 auto; height: 28px; border: 0; outline: none; background: transparent; font-size: 13px">
         <button type="submit" class="btn primary" style="height: 26px">Aplicar</button>
       </form>
@@ -231,7 +234,8 @@ input,select,button{font-family:inherit;font-size:12px;color:var(--text)}
             <div class="row"><label for="soft">Soft-close</label><input id="soft" class="sw" type="checkbox" checked></div>
             <div class="row"><label for="carga">Carga</label><span style="font-family: 'JetBrains Mono', monospace">30 kg · usa 12 kg</span></div>
             <div class="note">Claude encontró <strong>3 correderas compatibles en Madecentro</strong> para 500 mm de profundidad. El movimiento del visor sigue la ficha del herraje elegido.</div>
-            <div class="row"><button type="button" class="btn" style="flex: 1">Animar</button><button type="button" class="btn" style="flex: 1">Ver ficha</button></div>
+            <div class="row"><button type="button" class="btn" style="flex: 1">Animar</button><button type="button" class="btn" style="flex: 1">Aislar</button><button type="button" class="btn" style="flex: 1">Ficha</button></div>
+            <div class="note">Modelo 3D del herraje: <strong>genérico de Handy</strong> (corredera oculta 500). Al comprar, reemplaza por el STEP del fabricante si lo publica.</div>
           </div>
         
       </div>

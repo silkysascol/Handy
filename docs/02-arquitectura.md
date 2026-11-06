@@ -36,6 +36,8 @@
 | `packages/objects` | Piezas paramétricas imprimibles (CSG con manifold-3d). | Planificado |
 | `packages/structure` | Simulación de esfuerzos: analítico y método de rigidez; propiedades de materiales. | Planificado |
 | `packages/export` | glTF/GLB, OBJ, STL/3MF, DXF/SVG, PDF, CSV; más adelante IFC y USDZ. | Planificado |
+| `packages/hardware` | Herrajes genéricos paramétricos (geometría simple + `MotionSpec`), mapeo tienda → genérico, importación STEP opcional. | Planificado |
+| `packages/assembly` | Plan de ensamblaje automático y render de instrucciones (líneas, PDF, HTML). | Planificado |
 | `packages/masonry` | Muebles de ladrillo (asador, mesón): aparejos, conteo de ladrillos y mortero. | Planificado |
 | `packages/providers-*` | Adaptadores de tiendas por país (`providers-cl`, `providers-co`, ...). | Planificado |
 | `apps/web` | Editor en navegador con las tres secciones (Espacios, Muebles, Objetos). Es la interfaz principal; el ejecutable la empaqueta. | Diseño |

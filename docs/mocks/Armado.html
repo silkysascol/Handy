@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Handy · Instrucciones de armado</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1A1C1E;--header:#232527;--panel:#2B2E31;--panel-2:#343739;--border:#3E4245;--text:#E6E8EA;--text-2:#A3A9AF;--accent:#E8933A;--accent-text:#1A1C1E;--sel:#F2A95C;--teal:#5CC3CA;--ok-bg:#163A3C;--ok-text:#9FE0E4;--warn-bg:#3F2C12;--warn-text:#F4C98B;--paper:#F6F5F1;--ink:#1B1F23;--shadow:rgba(0,0,0,0.55)}
+[data-theme="light"]{--bg:#E9EBED;--header:#F7F8F9;--panel:#FFFFFF;--panel-2:#F1F2F4;--border:#D5D9DD;--text:#1B1F23;--text-2:#56606A;--accent:#C96F1E;--accent-text:#FFFFFF;--sel:#C96F1E;--teal:#1E7F86;--ok-bg:#E3F3F4;--ok-text:#0F4F54;--warn-bg:#FFF1DE;--warn-text:#7A4B00;--paper:#FFFFFF;--ink:#1B1F23;--shadow:rgba(0,0,0,0.12)}
+@media (prefers-color-scheme: light){[data-theme="auto"]{--bg:#E9EBED;--header:#F7F8F9;--panel:#FFFFFF;--panel-2:#F1F2F4;--border:#D5D9DD;--text:#1B1F23;--text-2:#56606A;--accent:#C96F1E;--accent-text:#FFFFFF;--sel:#C96F1E;--teal:#1E7F86;--ok-bg:#E3F3F4;--ok-text:#0F4F54;--warn-bg:#FFF1DE;--warn-text:#7A4B00;--paper:#FFFFFF;--ink:#1B1F23;--shadow:rgba(0,0,0,0.12)}}
+body{margin:0;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--text);font-size:12px;line-height:1.35}
+a{color:var(--teal)}a:hover{color:var(--sel)}
+input,select,button{font-family:inherit;font-size:12px;color:var(--text)}
+.tab{height:28px;padding:0 12px;border:0;border-radius:4px 4px 0 0;background:transparent;color:var(--text-2);font-weight:500;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+.tab[aria-current="page"]{background:var(--panel);color:var(--text);font-weight:600}
+.sec{border-bottom:1px solid var(--border)}
+.sec-h{width:100%;display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;border:0;background:var(--panel-2);color:var(--text);font-weight:600;text-align:left;cursor:pointer}
+.sec-h .sum{margin-left:auto;font-weight:400;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.sec-b{display:flex;flex-direction:column;gap:8px;padding:10px}
+.row{display:flex;align-items:center;gap:8px}
+.row .k{flex:0 0 92px;color:var(--text-2)}
+.seg{display:flex;flex:1;background:var(--bg);border-radius:4px;padding:2px;gap:2px}
+.seg button{flex:1;height:22px;border:0;border-radius:3px;background:transparent;color:var(--text-2);cursor:pointer;font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--panel-2);color:var(--text);font-weight:600}
+.btn{height:28px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--panel-2);font-weight:600;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-text);border-color:transparent}
+.sw{appearance:none;width:30px;height:16px;border-radius:99px;background:var(--border);position:relative;cursor:pointer;margin:0}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:99px;background:var(--text)}
+.sw:checked{background:var(--accent)}.sw:checked::after{left:16px;background:var(--accent-text)}
+.note{padding:8px;border-radius:4px;background:var(--bg);color:var(--text-2)}
+.note strong{color:var(--text)}
+.step{display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;border:0;border-radius:4px;background:transparent;color:var(--text-2);text-align:left;cursor:pointer;font-weight:500}
+.step[aria-current="step"]{background:var(--panel-2);color:var(--text);font-weight:600}
+.step .n{width:20px;height:20px;border-radius:99px;background:var(--border);color:var(--text);display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;flex:0 0 auto}
+.step[aria-current="step"] .n{background:var(--accent);color:var(--accent-text)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:4px;font-weight:500}
+</style>
+</helmet>
+<div data-theme="dark" style="min-height: 900px; display: flex; flex-direction: column; background: var(--bg); color: var(--text)">
+
+  <header style="display: flex; align-items: flex-end; gap: 16px; height: 36px; padding: 0 12px; background: var(--header); border-bottom: 1px solid var(--border)">
+    <div style="display: flex; align-items: center; gap: 8px; height: 36px; font-weight: 700; font-size: 14px">
+      <svg width="18" height="18" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="3" y="6" width="22" height="18" rx="2" stroke="currentColor" stroke-width="2.5"/><path d="M3 12h22M14 12v12" stroke="currentColor" stroke-width="2.5"/><path d="M9 3v4M19 3v4" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/></svg>
+      Handy
+    </div>
+    <nav aria-label="Secciones" style="display: flex; gap: 2px; height: 36px; align-items: flex-end">
+      <a class="tab" href="Espacios.html">Espacios</a>
+      <a class="tab" href="Main.html" aria-current="page">Muebles</a>
+      <a class="tab" href="Objetos.html">Objetos</a>
+    </nav>
+    <span style="height: 36px; display: flex; align-items: center; gap: 8px; color: var(--text-2)"><a href="Main.html">Cocina · Apartamento 302</a><span>›</span><span style="color: var(--text)">Instrucciones de armado</span></span>
+    <div style="flex: 1 1 auto"></div>
+    <div style="display: flex; align-items: center; gap: 6px; height: 36px">
+      <button type="button" class="btn" style="height: 26px">Narrar</button>
+      <button type="button" class="btn" style="height: 26px">Animar paso</button>
+      <button type="button" class="btn primary" style="height: 26px">PDF sin texto</button>
+    </div>
+  </header>
+
+  <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto; min-height: 0">
+
+    <!-- Lista de pasos -->
+    <aside aria-label="Pasos" style="flex: 0 0 220px; display: flex; flex-direction: column; gap: 2px; padding: 8px 6px; background: var(--header); border-right: 1px solid var(--border)">
+      <span style="padding: 4px 10px 6px; color: var(--text-2); font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em">Módulo 1 · cajonera</span>
+      <button type="button" class="step"><span class="n">1</span>Inventario de piezas</button>
+      <button type="button" class="step"><span class="n">2</span>Herrajes y tornillería</button>
+      <button type="button" class="step"><span class="n">3</span>Pernos minifix en costados</button>
+      <button type="button" class="step" aria-current="step"><span class="n">4</span>Piso y techo a los costados</button>
+      <button type="button" class="step"><span class="n">5</span>Fondo en la ranura</button>
+      <button type="button" class="step"><span class="n">6</span>Correderas en costados</button>
+      <button type="button" class="step"><span class="n">7</span>Armar cajones</button>
+      <button type="button" class="step"><span class="n">8</span>Frentes y ajuste</button>
+      <span style="padding: 10px 10px 6px; color: var(--text-2); font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em">Módulos 2 a 4</span>
+      <button type="button" class="step"><span class="n">9</span>Hueco lavavajillas</button>
+      <button type="button" class="step"><span class="n">10</span>Módulo fregadero</button>
+      <button type="button" class="step"><span class="n">11</span>Módulo estufa</button>
+      <button type="button" class="step"><span class="n">12</span>Unir módulos y zócalo</button>
+      <button type="button" class="step"><span class="n">13</span>Cubierta y servicios</button>
+      <button type="button" class="step"><span class="n">14</span>LED y cableado</button>
+    </aside>
+
+    <!-- Lámina del paso -->
+    <section aria-label="Paso 4" style="position: relative; flex: 999 1 560px; min-width: 0; min-height: 600px; background: var(--bg); display: flex; flex-direction: column">
+      <div style="position: absolute; top: 12px; left: 12px; z-index: 2; display: flex; gap: 6px; color: var(--text-2)">
+        <span class="chip" style="background: var(--panel)">Paso 4 de 14</span>
+        <span class="chip" style="background: var(--panel)">Isométrica · línea</span>
+        <span class="chip" style="background: var(--ok-bg); color: var(--ok-text)">Sin tornillos a la vista</span>
+      </div>
+
+      <figure style="margin: 0; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 56px 24px 64px">
+        <!-- Lámina estilo manual: siempre blanca, línea negra, como en papel -->
+        <svg viewBox="0 0 900 560" width="100%" height="100%" style="max-width: 920px; background: var(--paper); border-radius: 4px; box-shadow: 0 8px 24px var(--shadow)" role="img" aria-label="Paso 4: el piso y el techo se encajan en los costados sobre los pernos minifix; cuatro excéntricas se giran un cuarto de vuelta con destornillador. Llamadas con la cantidad de cada herraje y una ampliación de la excéntrica">
+          <!-- número de paso -->
+          <circle cx="60" cy="60" r="26" fill="none" stroke="#1B1F23" stroke-width="3"/>
+          <text x="60" y="69" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="26" font-weight="600" fill="#1B1F23">4</text>
+          <!-- costado izquierdo -->
+          <polygon points="200,150 260,120 260,440 200,470" fill="#FFFFFF" stroke="#1B1F23" stroke-width="2.5" stroke-linejoin="round"/>
+          <!-- costado derecho -->
+          <polygon points="560,150 620,120 620,440 560,470" fill="#FFFFFF" stroke="#1B1F23" stroke-width="2.5" stroke-linejoin="round"/>
+          <!-- piso (flotando, bajando) -->
+          <polygon points="262,392 562,392 622,362 322,362" fill="#FFFFFF" stroke="#1B1F23" stroke-width="2.5" stroke-linejoin="round"/>
+          <polygon points="262,392 562,392 562,404 262,404" fill="#FFFFFF" stroke="#1B1F23" stroke-width="2.5" stroke-linejoin="round"/>
+          <!-- techo (flotando, bajando) -->
+          <polygon points="262,160 562,160 622,130 322,130" fill="#FFFFFF" stroke="#1B1F23" stroke-width="2.5" stroke-linejoin="round"/>
+          <polygon points="262,160 562,160 562,172 262,172" fill="#FFFFFF" stroke="#1B1F23" stroke-width="2.5" stroke-linejoin="round"/>
+          <!-- flechas de movimiento -->
+          <g stroke="#1B1F23" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M412 100 v40"/><path d="M404 132 l8 10 8-10"/>
+            <path d="M412 440 v-28"/><path d="M404 420 l8-10 8 10"/>
+          </g>
+          <!-- pernos en costados -->
+          <g fill="#1B1F23">
+            <circle cx="230" cy="190" r="4"/><circle cx="230" cy="420" r="4"/>
+            <circle cx="590" cy="175" r="4"/><circle cx="590" cy="405" r="4"/>
+          </g>
+          <!-- líneas guía punteadas -->
+          <g stroke="#1B1F23" stroke-width="1.2" stroke-dasharray="4 4">
+            <line x1="230" y1="190" x2="262" y2="172"/><line x1="230" y1="420" x2="262" y2="404"/>
+            <line x1="590" y1="175" x2="562" y2="172"/><line x1="590" y1="405" x2="562" y2="404"/>
+          </g>
+          <!-- ampliación: excéntrica -->
+          <circle cx="760" cy="300" r="78" fill="#FFFFFF" stroke="#1B1F23" stroke-width="2.5"/>
+          <line x1="562" y1="398" x2="690" y2="330" stroke="#1B1F23" stroke-width="1.5"/>
+          <circle cx="760" cy="300" r="26" fill="none" stroke="#1B1F23" stroke-width="2.5"/>
+          <path d="M748 300 h24 M760 288 v24" stroke="#1B1F23" stroke-width="2.5"/>
+          <path d="M795 268 a40 40 0 0 1 0 64" fill="none" stroke="#1B1F23" stroke-width="3" stroke-linecap="round"/>
+          <path d="M788 326 l9 8 3-12" fill="none" stroke="#1B1F23" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <text x="760" y="355" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="600" fill="#1B1F23">¼</text>
+          <!-- llamadas de herrajes -->
+          <g font-family="JetBrains Mono, monospace" font-size="14" font-weight="600" fill="#1B1F23">
+            <rect x="60" y="470" width="150" height="54" rx="6" fill="#FFFFFF" stroke="#1B1F23" stroke-width="2"/>
+            <circle cx="88" cy="497" r="10" fill="none" stroke="#1B1F23" stroke-width="2.5"/><path d="M82 497h12M88 491v12" stroke="#1B1F23" stroke-width="2"/>
+            <text x="110" y="492">Excéntrica</text><text x="110" y="512">× 8 · 15 mm</text>
+            <rect x="230" y="470" width="150" height="54" rx="6" fill="#FFFFFF" stroke="#1B1F23" stroke-width="2"/>
+            <rect x="256" y="487" width="16" height="20" rx="2" fill="none" stroke="#1B1F23" stroke-width="2.5"/>
+            <text x="280" y="492">Tarugo</text><text x="280" y="512">× 8 · 8 × 30</text>
+            <rect x="400" y="470" width="150" height="54" rx="6" fill="#FFFFFF" stroke="#1B1F23" stroke-width="2"/>
+            <path d="M420 507 l16 -24 M432 483 l6 6" stroke="#1B1F23" stroke-width="2.5" stroke-linecap="round"/>
+            <text x="450" y="492">Destornillador</text><text x="450" y="512">plano</text>
+          </g>
+          <!-- prohibido: no martillo -->
+          <g>
+            <circle cx="820" cy="80" r="26" fill="none" stroke="#1B1F23" stroke-width="3"/>
+            <path d="M808 88 l12 -16 M818 66 l10 6" stroke="#1B1F23" stroke-width="3" stroke-linecap="round"/>
+            <line x1="802" y1="62" x2="838" y2="98" stroke="#1B1F23" stroke-width="3"/>
+          </g>
+        </svg>
+      </figure>
+
+      <div style="position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 2; display: flex; align-items: center; gap: 8px">
+        <button type="button" class="btn">‹ Paso 3</button>
+        <div style="flex: 1; height: 6px; border-radius: 3px; background: var(--panel-2); overflow: hidden"><div style="width: 28%; height: 100%; background: var(--accent)"></div></div>
+        <button type="button" class="btn primary">Paso 5 ›</button>
+      </div>
+    </section>
+
+    <!-- Detalle del paso -->
+    <aside aria-label="Detalle del paso" style="flex: 0 1 300px; min-width: 260px; display: flex; flex-direction: column; background: var(--panel); border-left: 1px solid var(--border); overflow: auto">
+      <div class="sec">
+        <button type="button" class="sec-h" aria-expanded="true">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="transform: rotate(0deg); transition: transform .15s"><path d="M2 3l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          Paso 4 <span class="sum">piso y techo</span>
+        </button>
+        
+          <div class="sec-b">
+            <div class="row"><span class="k">Piezas</span><span>Costado izq., costado der., piso, techo</span></div>
+            <div class="row"><span class="k">Herrajes</span><span style="font-family: 'JetBrains Mono', monospace">8 excéntricas · 8 tarugos</span></div>
+            <div class="row"><span class="k">Herramienta</span><span>destornillador plano · sin martillo</span></div>
+            <div class="row"><span class="k">Tiempo</span><span style="font-family: 'JetBrains Mono', monospace">~ 6 min</span></div>
+            <div class="note">Los tarugos van con cola. Gira cada excéntrica <strong>un cuarto de vuelta</strong> en sentido horario hasta sentir el tope. Verifica escuadra con la diagonal antes del fondo.</div>
+          </div>
+        
+      </div>
+
+      <div class="sec">
+        <button type="button" class="sec-h" aria-expanded="true">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="transform: rotate(0deg); transition: transform .15s"><path d="M2 3l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          Generación <span class="sum">automática · 14 pasos</span>
+        </button>
+        
+          <div class="sec-b">
+            <div class="row"><span class="k">Orden</span><div class="seg"><button type="button" aria-pressed="true">Auto</button><button type="button">Manual</button></div></div>
+            <div class="row"><span class="k">Estilo</span><div class="seg"><button type="button" aria-pressed="true">Línea</button><button type="button">Sombreado</button></div></div>
+            <div class="row"><label for="txt" class="k">Sin texto</label><input id="txt" class="sw" type="checkbox" checked></div>
+            <div class="row"><label for="amp" class="k">Ampliaciones</label><input id="amp" class="sw" type="checkbox" checked></div>
+            <div class="note">Los pasos salen del modelo: uniones, herrajes y orden de dependencia (costados → piso/techo → fondo → correderas → cajones → frentes). Puedes reordenar arrastrando.</div>
+          </div>
+        
+      </div>
+
+      <div class="sec">
+        <button type="button" class="sec-h" aria-expanded="true">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="transform: rotate(0deg); transition: transform .15s"><path d="M2 3l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          Exportar <span class="sum">PDF · HTML · vídeo</span>
+        </button>
+        
+          <div class="sec-b">
+            <div class="row"><button type="button" class="btn" style="flex: 1">PDF A4</button><button type="button" class="btn" style="flex: 1">HTML interactivo</button></div>
+            <div class="row"><button type="button" class="btn" style="flex: 1">Vídeo por paso</button><button type="button" class="btn" style="flex: 1">Enviar al taller</button></div>
+          </div>
+        
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

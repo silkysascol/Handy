@@ -15,6 +15,8 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 - [ ] Sistema 32 mm: perforaciones para repisas y bisagras calculadas y exportadas.
 - [ ] Cinemática por herraje: `MotionSpec` en cada pieza móvil (giro, traslación, abatible), catálogo de herrajes con ficha de movimiento y detección de colisiones.
 - [ ] Modo "sin tornillos a la vista" como opción del mueble.
+- [ ] `packages/hardware`: herrajes genéricos paramétricos con ficha de movimiento; importación opcional de STEP (Hettich, Häfele).
+- [ ] `packages/assembly`: plan de ensamblaje automático desde juntas y herrajes.
 - [ ] Optimizador de corte (nesting) con veta y sierra de 3–4 mm; plano de corte por tablero.
 - [ ] Exportación: CSV y PDF de lista de corte, JSON del proyecto.
 - [ ] Esfuerzos nivel 1: flecha y tensión de repisas y cubiertas, pandeo de costados, con cargas típicas.
@@ -29,6 +31,8 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 
 - [ ] Visor 3D (react-three-fiber), piezas desde `placement`, animación de apertura por pieza.
 - [ ] Precio total en la esquina del visor con resumen al pasar el mouse; paneles plegables estilo Blender.
+- [ ] Selección por pieza y módulo, comandos acotados a la selección, vista aislada (`/`) y sección.
+- [ ] Instrucciones de armado: render de líneas, PDF sin texto y HTML animado.
 - [ ] Edición por arrastre de medidas (gizmos en caras) y panel de parámetros.
 - [ ] Cotización en vivo en el lateral, con tienda, fecha y faltantes.
 - [ ] Comandos en lenguaje natural ("ensancha 10 cm", "agrega una repisa") resueltos localmente o vía IA.
