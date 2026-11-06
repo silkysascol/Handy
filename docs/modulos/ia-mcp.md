@@ -21,6 +21,12 @@ Variable `HANDY_CATALOG` para apuntar a un catálogo propio.
 - `create_project`, `open_project`, `save_project`: trabajar sobre `.handy.json`.
 - `add_furniture`, `modify_furniture` (comandos tipo "ensancha 100 mm"), `place_in_space`.
 - `draw_space` (muros con grosor, aberturas), `import_space` (RoomPlan/glTF), `sun_study`, `electrical_points`, `infer_wiring`, `plumbing_route`.
+- `search_hardware`: herrajes compatibles con una pieza (medida, carga, tipo) en las tiendas configuradas, con la ficha de movimiento.
+- `set_motion`: fija el herraje y el movimiento de una pieza; `simulate_motion` anima y devuelve colisiones.
+- `place_appliance`: reemplaza un módulo por un electrodoméstico (modelo o sugerido) y recalcula hueco, servicios y precio.
+- `services`: alturas de desagüe, agua, gas y tomas para un módulo según reglas del país.
+- `route_cable`: recorrido de cable para iluminación integrada.
+- `set_hidden_fasteners`: activa el ensamble sin tornillos a la vista.
 - `analyze_structure`: flecha, tensión y pandeo con cargas típicas.
 - `export` a glTF/OBJ/STL/3MF/DXF/PDF.
 - `suggest_improvements`: devuelve propuestas estéticas y constructivas con justificación.

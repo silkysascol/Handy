@@ -52,6 +52,36 @@ Perforaciones de 5 mm cada 32 mm en los costados (hilera a 37 mm del canto front
 - Reglas: dintel sobre la boca con apoyo ≥ 150 mm por lado, cámara de fuego con refractario, separación a muros medianeros, altura mínima de chimenea.
 - También: mesones de obra para cocina exterior, jardineras y muretes bajos.
 
+## Movimiento por pieza según el herraje
+
+Cada pieza móvil (puerta, cajón, frente abatible, puerta corrediza) lleva una **especificación de movimiento** derivada del herraje elegido, y el visor la anima en tiempo real:
+
+| Herraje | Movimiento | Parámetros que se leen de la ficha |
+| --- | --- | --- |
+| Bisagra cazoleta 35 mm | giro sobre eje vertical | ángulo máximo (95°, 110°, 155°), overlay, soft-close, clip |
+| Corredera telescópica / oculta | traslación hacia el frente | extensión (¾, total, sobreextensión), carga (25/30/40 kg), soft-close o push-open, holgura lateral |
+| Sistema abatible (Aventos y similares) | giro sobre eje horizontal, pliegue o elevación paralela | alto del frente admitido, peso, ángulo |
+| Corredera de puerta | traslación lateral | solape, cantidad de hojas, carga |
+| Pata plegable, mesa extensible | giro o traslación compuesta | rango |
+
+El panel de la pieza muestra el herraje, los parámetros, un control de apertura (0–100 %) y un botón de animar. Las fichas vienen del catálogo de la tienda (Madecentro, Homecenter) a través del proveedor de precios: cuando Claude está conectado puede buscar herrajes compatibles con la medida y la carga, proponerlos y fijar el movimiento al elegido. Handy detecta colisiones durante el movimiento (cajón contra lavavajillas abierto, puerta contra muro) y avisa con la corrección.
+
+## Electrodomésticos y comandos de reemplazo
+
+"Poner un lavavajillas Electrolux donde está este cajón" se resuelve así: se identifica la pieza, se busca el modelo en el catálogo (o la IA sugiere uno similar con medidas estándar: 598 × 820 × 575 para lavavajillas de 60 cm), se reemplaza el módulo por un hueco con el volumen fantasma del aparato, se recalculan precio, servicios y colisiones. Biblioteca inicial: lavavajillas, horno, estufa, cubierta de inducción, campana, refrigerador, lavadora, microondas; cada uno con medidas, holguras de instalación, conexiones (agua, desagüe, gas, eléctrica) y potencia.
+
+## Servicios del mueble: desagüe, agua, gas, eléctrica
+
+Cuando un módulo lleva fregadero, estufa o electrodoméstico, Handy calcula y dibuja en el muro los puntos de conexión con reglas por país (`packages/arch/data/<cc>/plumbing.json`, `electrical.json`): altura del desagüe del fregadero (típico 450–500 mm, bajo el sifón), salidas de agua (550–600 mm), entrada de gas para la estufa (500–600 mm, desplazada del eje del aparato), toma del lavavajillas (300 mm, en el módulo vecino) y de la campana (1 800–2 000 mm). Las reglas citan norma (NTC 1500 y RETIE en Colombia) y se muestran como rango, no como valor único.
+
+## Iluminación integrada y cableado
+
+Si el mueble lleva luces (tiras LED bajo alacena, luz interior con sensor de puerta, perfil en repisa), Handy añade driver, metros de tira y cable a la lista, propone el **recorrido del cable** (por el fondo de 3 mm, por ranura en costados o por zócalo) con las perforaciones necesarias y lo dibuja en el visor y en el plano de armado.
+
+## Ensamble sin tornillos a la vista
+
+Es una opción de todo el mueble. Al activarla, el generador cambia confirmat por minifix + tarugo o tarugo encolado en todas las juntas visibles, usa bisagras clip y correderas ocultas, deja confirmat solo donde no se ve (zócalo, trasera) y actualiza la lista de herrajes, el precio y el plano de armado. El visor resalta las juntas afectadas y el asistente explica el cambio.
+
 ## Simulación de esfuerzos
 
 Cada mueble puede evaluarse con cargas típicas (libros 60 kg/m², ropa, TV, persona sentada) para ver deformación y zonas críticas. Ver [estructura.md](estructura.md).

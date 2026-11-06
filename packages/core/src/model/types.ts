@@ -49,6 +49,8 @@ export interface Panel {
   edgeBanding: EdgeBanding;
   edgeMaterialId?: string;
   placement?: Placement;
+  /** Presente solo en piezas móviles (puertas, cajones, frentes abatibles). */
+  motion?: MotionSpec;
   notes?: string;
 }
 
@@ -75,3 +77,9 @@ export interface FurnitureModel {
   materials: Material[];
   meta?: Record<string, unknown>;
 }
+
+/** Cómo se mueve una pieza según su herraje. Lo anima el visor y lo usa la detección de colisiones. */
+export type MotionSpec =
+  | { kind: "hinge"; axis: "left" | "right" | "top" | "bottom"; maxAngleDeg: number; softClose?: boolean }
+  | { kind: "slide"; direction: "front" | "left" | "right"; travel: Millimeters; loadKg?: number; softClose?: boolean }
+  | { kind: "lift"; maxAngleDeg: number; loadKg?: number };

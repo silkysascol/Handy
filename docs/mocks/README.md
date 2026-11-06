@@ -1,20 +1,21 @@
 # Mocks de UI/UX
 
-Cuatro pantallas estáticas en HTML (abrir en el navegador) que fijan la dirección de la interfaz. El lienzo editable vive en el artefacto de Claude "Handy UI Mocks".
+Tres pantallas en HTML (abrir en el navegador) que fijan la dirección de la interfaz. El lienzo editable, con los paneles desplegables funcionando, vive en el artefacto de Claude "Handy UI Mocks".
 
-| Archivo | Pantalla | Qué muestra |
-| --- | --- | --- |
-| `Main.html` | Muebles | Parámetros a la izquierda, visor 3D con arrastre de caras al centro, **cotización en vivo** a la derecha con tienda y antigüedad por ítem, "qué pasa si…", avisos de diseño y esfuerzos, barra de comandos (MCP). |
-| `Espacios.html` | Espacios | Mapa 2D con muros de distinto grosor, puertas con barrido, ventanas, recintos con área, puntos eléctricos y **canalización probable** por nivel de confianza, inspector del muro, eléctrica (RETIE) y estudio solar. |
-| `Objetos.html` | Objetos | Biblioteca de piezas sugeridas desde el proyecto, vista previa del soporte de repisa con cotas y tolerancias, imprimibilidad, costo de filamento vs. comprarlo, export STL/3MF/glTF. |
-| `Comparativa.html` | Cotización | Mezcla óptima entre tiendas, todo en una tienda, catálogo propio; tabla ítem por ítem (Homecenter, Madecentro, Easy, mi catálogo), servicios opcionales y qué cambia el total. |
+## Principios (estilo Blender)
 
-## Decisiones de diseño
+1. **Pocas cosas a la vista, todo desplegable.** Cabecera de 36 px con las tres secciones, barra de herramientas de iconos a la izquierda, visor a pantalla completa y un panel de propiedades a la derecha hecho solo de secciones plegables. Cada sección cerrada muestra un resumen de una línea en su cabecera.
+2. **El precio total vive en una esquina del visor**, grande y siempre actualizado. Al pasar el mouse (o enfocar con teclado) aparece el resumen: tableros, herrajes, extras, qué cuesta todo en una sola tienda y la mezcla óptima. No hay pantalla de desglose aparte.
+3. **Oscuro por defecto**, claro y automático disponibles. Tokens: `--bg`, `--header`, `--panel`, `--panel-2`, `--border`, `--text`, `--text-2`, `--accent` (selección, como el naranja de Blender), `--teal` (estados OK), `--ok-*`, `--warn-*`, `--ghost` (sugerencias). Los materiales reales (maderas, tableros) conservan su color.
+4. **Una línea de comandos** en la base del visor, siempre visible, para órdenes en lenguaje natural que resuelve Handy o Claude por MCP.
+5. Texto en Inter a 12 px, cifras en JetBrains Mono.
 
-- **Tres secciones siempre visibles** en la barra superior: Espacios, Muebles, Objetos. El proyecto es el mismo en las tres.
-- **La cotización es un panel permanente**, no una pantalla aparte: cambia con cada arrastre o comando. Cada línea muestra tienda, distancia y hace cuánto se tomó el precio; lo que no tiene precio se marca, nunca se inventa.
-- **Tiendas cercanas o conocidas** (Homecenter, Madecentro, Easy en Colombia) más el catálogo propio; la mezcla óptima reparte la compra entre tiendas.
-- **Milímetros en monoespaciada** (JetBrains Mono) para que las cifras se alineen; texto en Manrope. Acento ámbar (madera) y verde azulado para estados positivos, ámbar oscuro para avisos.
-- **Comandos en lenguaje natural** en las tres secciones, resueltos localmente o por la IA conectada vía MCP.
-- **Modo oscuro de serie**: todos los colores son variables (`--bg`, `--surface`, `--text`, `--ok-*`, `--warn-*`, `--wall`, ...). El tema sigue al sistema (`auto`) y se puede forzar a claro u oscuro; en el lienzo de Claude está en Tweaks. Las maderas y decorados conservan su color en ambos temas porque representan material real.
-- Los precios de los mocks son ilustrativos.
+## Pantallas
+
+| Archivo | Qué muestra |
+| --- | --- |
+| `Main.html` | Muebles. Cocina de 4 módulos. Cajón 2 seleccionado y abierto al 70 % según la corredera elegida (ficha de Madecentro); lavavajillas Electrolux sugerido en el hueco del cajón; alturas de desagüe, agua y gas marcadas en el muro; tira LED con el recorrido del cable; ensamble sin tornillos a la vista; esfuerzos. Comando de ejemplo: "poner un lavavajillas Electrolux donde está este cajón". |
+| `Espacios.html` | Planta con muros de distinto grosor, aberturas, puntos eléctricos y canalización probable por confianza; muro seleccionado; eléctrica con norma y tipo de canalización; sanitaria y gas; sol; muebles del proyecto ubicados. |
+| `Objetos.html` | Soporte de repisa paramétrico tomado del mueble; parámetros, impresión, esfuerzos y exportación en secciones; precio de imprimir frente a comprar. |
+
+Los precios son ilustrativos.

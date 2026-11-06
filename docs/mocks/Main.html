@@ -8,267 +8,322 @@
 <x-dc>
 <helmet>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#EEF0F2;--surface:#FFFFFF;--surface-2:#F6F7F8;--border:#D9DDE1;--text:#1B1F23;--text-2:#4A5560;--ink-btn:#1B1F23;--ink-btn-text:#FFFFFF;--teal:#1E7F86;--amber-text:#B9671E;--accent-bg:#FDF6EE;--ok-bg:#E6F4F5;--ok-text:#0F4F54;--ok-border:#BFE2E4;--warn-bg:#FFF4E5;--warn-text:#7A4B00;--warn-border:#F0D4A8;--wall:#2B3137;--ghost:#F3EBDD;--shadow:rgba(0,0,0,0.08)}
-[data-theme="dark"]{--bg:#15181B;--surface:#1F2327;--surface-2:#262B30;--border:#343A40;--text:#E8EAED;--text-2:#A6AEB6;--ink-btn:#E8EAED;--ink-btn-text:#15181B;--teal:#5CC3CA;--amber-text:#E0A060;--accent-bg:#3A2A12;--ok-bg:#123537;--ok-text:#8FD8DD;--ok-border:#1E5A5E;--warn-bg:#3A2A12;--warn-text:#F2C58A;--warn-border:#5A4020;--wall:#CDD3D9;--ghost:#3A2F1F;--shadow:rgba(0,0,0,0.5)}
-@media (prefers-color-scheme: dark){[data-theme="auto"]{--bg:#15181B;--surface:#1F2327;--surface-2:#262B30;--border:#343A40;--text:#E8EAED;--text-2:#A6AEB6;--ink-btn:#E8EAED;--ink-btn-text:#15181B;--teal:#5CC3CA;--amber-text:#E0A060;--accent-bg:#3A2A12;--ok-bg:#123537;--ok-text:#8FD8DD;--ok-border:#1E5A5E;--warn-bg:#3A2A12;--warn-text:#F2C58A;--warn-border:#5A4020;--wall:#CDD3D9;--ghost:#3A2F1F;--shadow:rgba(0,0,0,0.5)}}
-body{margin:0;background:var(--bg);font-family:Manrope,system-ui,sans-serif;color:var(--text)}
-a{color:var(--teal)}a:hover{color:var(--teal)}
-input,select,button{font-family:inherit}
+:root{--bg:#1A1C1E;--header:#232527;--panel:#2B2E31;--panel-2:#343739;--border:#3E4245;--text:#E6E8EA;--text-2:#A3A9AF;--accent:#E8933A;--accent-text:#1A1C1E;--sel:#F2A95C;--teal:#5CC3CA;--ok-bg:#163A3C;--ok-text:#9FE0E4;--warn-bg:#3F2C12;--warn-text:#F4C98B;--ghost:#3B3324;--wood:#B98A5A;--wood-2:#9C7244;--white-board:#D9D5CC;--line:#8A9096;--shadow:rgba(0,0,0,0.55)}
+[data-theme="light"]{--bg:#E9EBED;--header:#F7F8F9;--panel:#FFFFFF;--panel-2:#F1F2F4;--border:#D5D9DD;--text:#1B1F23;--text-2:#56606A;--accent:#C96F1E;--accent-text:#FFFFFF;--sel:#C96F1E;--teal:#1E7F86;--ok-bg:#E3F3F4;--ok-text:#0F4F54;--warn-bg:#FFF1DE;--warn-text:#7A4B00;--ghost:#F3EBDD;--wood:#B98A5A;--wood-2:#9C7244;--white-board:#F3F1EC;--line:#4A5560;--shadow:rgba(0,0,0,0.12)}
+@media (prefers-color-scheme: light){[data-theme="auto"]{--bg:#E9EBED;--header:#F7F8F9;--panel:#FFFFFF;--panel-2:#F1F2F4;--border:#D5D9DD;--text:#1B1F23;--text-2:#56606A;--accent:#C96F1E;--accent-text:#FFFFFF;--sel:#C96F1E;--teal:#1E7F86;--ok-bg:#E3F3F4;--ok-text:#0F4F54;--warn-bg:#FFF1DE;--warn-text:#7A4B00;--ghost:#F3EBDD;--wood:#B98A5A;--wood-2:#9C7244;--white-board:#F3F1EC;--line:#4A5560;--shadow:rgba(0,0,0,0.12)}}
+body{margin:0;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--text);font-size:12px;line-height:1.35}
+a{color:var(--teal)}a:hover{color:var(--sel)}
+input,select,button{font-family:inherit;font-size:12px;color:var(--text)}
+.tab{height:28px;padding:0 12px;border:0;border-radius:4px 4px 0 0;background:transparent;color:var(--text-2);font-weight:500;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+.tab[aria-current="page"]{background:var(--panel);color:var(--text);font-weight:600}
+.tool{width:36px;height:36px;border:0;border-radius:4px;background:transparent;color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.tool[aria-pressed="true"]{background:var(--accent);color:var(--accent-text)}
+.sec{border-bottom:1px solid var(--border)}
+.sec-h{width:100%;display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;border:0;background:var(--panel-2);color:var(--text);font-weight:600;text-align:left;cursor:pointer}
+.sec-h .sum{margin-left:auto;font-weight:400;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.sec-b{display:flex;flex-direction:column;gap:8px;padding:10px}
+.row{display:flex;align-items:center;gap:8px}
+.row label,.row .k{flex:0 0 92px;color:var(--text-2)}
+.num{width:100%;height:26px;box-sizing:border-box;border:1px solid var(--border);border-radius:4px;background:var(--bg);padding:0 8px;font-family:'JetBrains Mono',monospace;font-weight:500}
+.sel{width:100%;height:26px;box-sizing:border-box;border:1px solid var(--border);border-radius:4px;background:var(--bg);padding:0 6px;font-weight:500}
+.seg{display:flex;flex:1;background:var(--bg);border-radius:4px;padding:2px;gap:2px}
+.seg button{flex:1;height:22px;border:0;border-radius:3px;background:transparent;color:var(--text-2);cursor:pointer;font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--panel-2);color:var(--text);font-weight:600}
+.btn{height:28px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--panel-2);font-weight:600;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-text);border-color:transparent}
+.sw{appearance:none;width:30px;height:16px;border-radius:99px;background:var(--border);position:relative;cursor:pointer;margin:0}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:99px;background:var(--text)}
+.sw:checked{background:var(--accent)}.sw:checked::after{left:16px;background:var(--accent-text)}
+.note{padding:8px;border-radius:4px;background:var(--bg);color:var(--text-2)}
+.note strong{color:var(--text)}
+.price{position:absolute;top:12px;right:12px;z-index:3}
+.price-badge{display:flex;flex-direction:column;align-items:flex-end;padding:8px 12px;border-radius:6px;background:var(--panel);border:1px solid var(--border);box-shadow:0 4px 16px var(--shadow);cursor:default}
+.price-pop{display:none;position:absolute;right:0;top:100%;margin-top:6px;width:320px;flex-direction:column;gap:6px;padding:12px;border-radius:6px;background:var(--panel);border:1px solid var(--border);box-shadow:0 8px 24px var(--shadow)}
+.price:hover .price-pop,.price:focus-within .price-pop{display:flex}
+.pl{display:flex;justify-content:space-between;gap:8px}
+.pl .m{font-family:'JetBrains Mono',monospace;font-weight:500}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:4px;font-weight:500}
 </style>
 </helmet>
-<div data-theme="auto" style="min-height: 1000px; display: flex; flex-direction: column; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.4">
+<div data-theme="dark" style="min-height: 900px; display: flex; flex-direction: column; background: var(--bg); color: var(--text)">
 
-  <!-- Barra superior -->
-  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 12px 24px; background: var(--surface); border-bottom: 1px solid var(--border)">
-    <div style="display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; letter-spacing: -0.02em">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="3" y="6" width="22" height="18" rx="2" stroke="var(--text)" stroke-width="2"/><path d="M3 12h22M14 12v12" stroke="var(--text)" stroke-width="2"/><path d="M9 3v4M19 3v4" stroke="#B9671E" stroke-width="2.5" stroke-linecap="round"/></svg>
+  <!-- Cabecera compacta -->
+  <header style="display: flex; align-items: flex-end; gap: 16px; height: 36px; padding: 0 12px; background: var(--header); border-bottom: 1px solid var(--border)">
+    <div style="display: flex; align-items: center; gap: 8px; height: 36px; font-weight: 700; font-size: 14px">
+      <svg width="18" height="18" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="3" y="6" width="22" height="18" rx="2" stroke="currentColor" stroke-width="2.5"/><path d="M3 12h22M14 12v12" stroke="currentColor" stroke-width="2.5"/><path d="M9 3v4M19 3v4" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/></svg>
       Handy
     </div>
-    <nav aria-label="Secciones" style="display: flex; gap: 4px; background: var(--bg); padding: 4px; border-radius: 10px">
-      <a href="Espacios.html" style="padding: 8px 16px; border-radius: 8px; text-decoration: none; color: var(--text-2); font-weight: 600">Espacios</a>
-      <a href="Main.html" aria-current="page" style="padding: 8px 16px; border-radius: 8px; text-decoration: none; color: var(--text); background: var(--surface); font-weight: 700; box-shadow: 0 1px 2px var(--shadow)">Muebles</a>
-      <a href="Objetos.html" style="padding: 8px 16px; border-radius: 8px; text-decoration: none; color: var(--text-2); font-weight: 600">Objetos</a>
+    <nav aria-label="Secciones" style="display: flex; gap: 2px; height: 36px; align-items: flex-end">
+      <a class="tab" href="Espacios.html">Espacios</a>
+      <a class="tab" href="Main.html" aria-current="page">Muebles</a>
+      <a class="tab" href="Objetos.html">Objetos</a>
     </nav>
-    <div style="display: flex; align-items: center; gap: 8px; color: var(--text-2)">
-      <span style="font-weight: 600; color: var(--text)">Armario dormitorio principal</span>
-      <span style="font-size: 12px; background: var(--bg); padding: 2px 8px; border-radius: 99px">guardado hace 1 min</span>
-    </div>
+    <span style="height: 36px; display: flex; align-items: center; color: var(--text-2)">Cocina · Apartamento 302</span>
     <div style="flex: 1 1 auto"></div>
-    <div style="display: flex; gap: 8px">
-      <button type="button" style="height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); font-weight: 600; cursor: pointer">Simular esfuerzos</button>
-      <button type="button" style="height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); font-weight: 600; cursor: pointer">Exportar · glTF ▾</button>
-      <button type="button" style="height: 40px; padding: 0 16px; border-radius: 8px; border: 0; background: #B9671E; color: #FFFFFF; font-weight: 700; cursor: pointer">Plano y lista de corte</button>
+    <div style="display: flex; align-items: center; gap: 6px; height: 36px">
+      <span style="color: var(--text-2)">Claude · MCP</span>
+      <span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 99px; background: var(--teal)"></span>
+      <button type="button" class="btn" style="height: 26px">Exportar ▾</button>
     </div>
   </header>
 
-  <!-- Cuerpo: parámetros · visor · cotización -->
-  <div style="display: flex; flex-wrap: wrap; gap: 16px; padding: 16px 24px; flex: 1 1 auto">
+  <div style="display: flex; flex-wrap: wrap; flex: 1 1 auto; min-height: 0">
 
-    <!-- Parámetros -->
-    <aside aria-label="Parámetros del mueble" style="flex: 0 1 300px; min-width: 260px; display: flex; flex-direction: column; gap: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px">
-      <div style="display: flex; justify-content: space-between; align-items: center">
-        <h2 style="margin: 0; font-size: 15px; font-weight: 800">Gabinete</h2>
-        <button type="button" style="height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); font-size: 12px; font-weight: 600; cursor: pointer">Cambiar tipo</button>
+    <!-- Barra de herramientas -->
+    <div role="toolbar" aria-label="Herramientas" style="display: flex; flex-direction: column; gap: 2px; padding: 6px 4px; background: var(--header); border-right: 1px solid var(--border)">
+      <button type="button" class="tool" aria-pressed="true" aria-label="Seleccionar"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M4 2l10 7-4 1 3 5-2 1-3-5-3 3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>
+      <button type="button" class="tool" aria-label="Mover y estirar"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 2v14M2 9h14M9 2l-2 2M9 2l2 2M9 16l-2-2M9 16l2-2M2 9l2-2M2 9l2 2M16 9l-2-2M16 9l-2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+      <button type="button" class="tool" aria-label="Medir"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M2 12l10-10 4 4-10 10zM6 8l1.5 1.5M8.5 5.5L10 7M11 3l1.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></button>
+      <button type="button" class="tool" aria-label="Animar movimiento"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M5 3l10 6-10 6z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>
+      <button type="button" class="tool" aria-label="Vista explotada"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><rect x="2" y="2" width="6" height="6" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="10" width="6" height="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 8l2 2" stroke="currentColor" stroke-width="1.5"/></svg></button>
+      <div style="height: 1px; background: var(--border); margin: 4px 2px"></div>
+      <button type="button" class="tool" aria-label="Capa servicios: agua, desagüe, gas"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 2s5 5 5 9a5 5 0 01-10 0c0-4 5-9 5-9z" stroke="currentColor" stroke-width="1.5"/></svg></button>
+      <button type="button" class="tool" aria-label="Capa eléctrica e iluminación"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M10 2L4 10h5l-1 6 6-8h-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></button>
+    </div>
+
+    <!-- Visor -->
+    <section aria-label="Visor 3D" style="position: relative; flex: 999 1 560px; min-width: 0; min-height: 600px; background: var(--bg)">
+      <div style="position: absolute; top: 12px; left: 12px; z-index: 2; display: flex; gap: 6px; color: var(--text-2)">
+        <span class="chip" style="background: var(--panel)">Frente · perspectiva</span>
+        <span class="chip" style="background: var(--panel)">Cajón 2 seleccionado</span>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 8px">
-        <span style="font-size: 11px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em">Medidas exteriores (mm)</span>
-        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
-          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-2)">Ancho
-            <input type="number" value="800" style="height: 40px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: var(--text)">
-          </label>
-          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-2)">Alto
-            <input type="number" value="2000" style="height: 40px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: var(--text)">
-          </label>
-          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-2)">Prof.
-            <input type="number" value="500" style="height: 40px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: var(--text)">
-          </label>
+      <!-- Precio total: grande, en la esquina; el resumen aparece al pasar el mouse -->
+      <div class="price">
+        <div class="price-badge" tabindex="0" aria-describedby="price-sum">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 600; letter-spacing: -0.02em; line-height: 1">$ 2.184.000</span>
+          <span style="color: var(--text-2)">COP · Madecentro + Homecenter · hace 4 min</span>
+        </div>
+        <div class="price-pop" id="price-sum" role="tooltip">
+          <span class="pl"><span>Tableros · 5 melamina 18 + 2 HDF</span><span class="m">$ 896.000</span></span>
+          <span class="pl"><span>Herrajes · 8 correderas, 6 bisagras, minifix</span><span class="m">$ 612.400</span></span>
+          <span class="pl"><span>Cubierta cuarzo 2,4 m</span><span class="m">$ 540.000</span></span>
+          <span class="pl"><span>Tira LED + driver + cable</span><span class="m">$ 98.000</span></span>
+          <span class="pl"><span>Tapacanto y tornillería</span><span class="m">$ 37.600</span></span>
+          <span class="pl" style="color: var(--text-2)"><span>Lavavajillas Electrolux (no incluido)</span><span class="m">$ 1.899.900</span></span>
+          <span style="height: 1px; background: var(--border)"></span>
+          <span class="pl"><span>Todo en Homecenter</span><span class="m">$ 2.310.500</span></span>
+          <span class="pl"><span>Todo en Madecentro</span><span class="m">$ 2.241.000</span></span>
+          <span class="pl" style="font-weight: 600"><span>Mezcla óptima (actual)</span><span class="m">$ 2.184.000</span></span>
+          <span style="color: var(--text-2)">2 ítems sin precio en tiendas cercanas · <a href="Objetos.html">imprimir en 3D</a></span>
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
-        <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-2)">Repisas
-          <input type="number" value="3" style="height: 40px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: var(--text)">
-        </label>
-        <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-2)">Zócalo (mm)
-          <input type="number" value="80" style="height: 40px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: var(--text)">
-        </label>
+      <figure style="margin: 0; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 56px 24px 64px">
+        <svg viewBox="0 0 960 520" width="100%" height="100%" style="max-width: 980px" role="img" aria-label="Alzado de una cocina de cuatro módulos: cajonera con el segundo cajón abierto sobre correderas, hueco con lavavajillas sugerido, módulo de fregadero con la altura del desagüe marcada, módulo de estufa con la entrada de gas marcada, alacena superior con tira LED y el recorrido del cable hasta el enchufe">
+          <!-- muro y piso -->
+          <rect x="0" y="0" width="960" height="520" fill="var(--bg)"/>
+          <line x1="40" y1="470" x2="920" y2="470" stroke="var(--border)" stroke-width="2"/>
+          <!-- servicios en el muro (detrás) -->
+          <g stroke-dasharray="5 4" stroke-width="2" fill="none">
+            <path d="M540 470 V320 H556" stroke="var(--teal)"/>
+            <path d="M588 470 V290 H572" stroke="var(--teal)"/>
+            <path d="M760 470 V260 H736" stroke="#E8C14A"/>
+          </g>
+          <g font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">
+            <rect x="500" y="306" width="118" height="18" rx="3" fill="var(--ok-bg)"/><text x="506" y="319" fill="var(--ok-text)">desagüe 450 mm</text>
+            <rect x="500" y="276" width="100" height="18" rx="3" fill="var(--ok-bg)"/><text x="506" y="289" fill="var(--ok-text)">agua 550 mm</text>
+            <rect x="760" y="246" width="118" height="18" rx="3" fill="var(--warn-bg)"/><text x="766" y="259" fill="var(--warn-text)">gas 600 mm · izq</text>
+          </g>
+          <!-- cubierta -->
+          <rect x="60" y="130" width="860" height="12" fill="var(--white-board)" stroke="var(--line)" stroke-width="1"/>
+          <!-- zócalo -->
+          <rect x="68" y="440" width="844" height="30" fill="var(--panel-2)" stroke="var(--line)" stroke-width="1"/>
+          <!-- módulo 1: cajonera 600 -->
+          <rect x="60" y="142" width="200" height="298" fill="var(--panel)" stroke="var(--line)" stroke-width="1.2"/>
+          <rect x="64" y="146" width="192" height="90" fill="var(--wood)" stroke="var(--wood-2)" stroke-width="1"/>
+          <!-- cajón 2 abierto (seleccionado) -->
+          <polygon points="64,240 256,240 288,262 96,262" fill="var(--wood-2)" opacity="0.8"/>
+          <rect x="96" y="262" width="192" height="90" fill="var(--wood)" stroke="var(--sel)" stroke-width="2.5"/>
+          <line x1="64" y1="240" x2="96" y2="262" stroke="var(--sel)" stroke-width="1.5"/>
+          <line x1="256" y1="240" x2="288" y2="262" stroke="var(--sel)" stroke-width="1.5"/>
+          <rect x="64" y="346" width="192" height="90" fill="var(--wood)" stroke="var(--wood-2)" stroke-width="1"/>
+          <!-- indicador de movimiento -->
+          <g>
+            <path d="M300 300 h60" stroke="var(--sel)" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M352 293l8 7-8 7" fill="none" stroke="var(--sel)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="296" y="268" width="150" height="18" rx="3" fill="var(--panel)" stroke="var(--border)"/>
+            <text x="302" y="281" font-family="JetBrains Mono, monospace" font-size="11" font-weight="600" fill="var(--text)">extensión 500 · 70 %</text>
+          </g>
+          <!-- módulo 2: lavavajillas (sugerido) -->
+          <rect x="262" y="142" width="200" height="298" fill="var(--ghost)" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <rect x="280" y="170" width="164" height="22" rx="3" fill="var(--panel)"/>
+          <text x="362" y="185" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="var(--text)">Lavavajillas Electrolux 600</text>
+          <text x="362" y="206" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="var(--text-2)">sugerido · 598 × 820 × 575 · $ 1.899.900</text>
+          <rect x="280" y="400" width="164" height="6" rx="3" fill="var(--line)"/>
+          <!-- módulo 3: fregadero -->
+          <rect x="464" y="142" width="200" height="298" fill="var(--panel)" stroke="var(--line)" stroke-width="1.2"/>
+          <rect x="468" y="146" width="192" height="290" fill="var(--wood)" stroke="var(--wood-2)" stroke-width="1"/>
+          <path d="M520 120 h90 a6 6 0 0 1 0 12 h-90z" fill="var(--panel-2)" stroke="var(--line)"/>
+          <!-- módulo 4: estufa -->
+          <rect x="666" y="142" width="254" height="298" fill="var(--panel)" stroke="var(--line)" stroke-width="1.2"/>
+          <rect x="670" y="146" width="246" height="140" fill="var(--panel-2)" stroke="var(--line)" stroke-width="1"/>
+          <rect x="670" y="290" width="246" height="146" fill="var(--wood)" stroke="var(--wood-2)" stroke-width="1"/>
+          <circle cx="720" cy="124" r="10" fill="none" stroke="var(--line)" stroke-width="2"/><circle cx="790" cy="124" r="10" fill="none" stroke="var(--line)" stroke-width="2"/><circle cx="860" cy="124" r="10" fill="none" stroke="var(--line)" stroke-width="2"/>
+          <!-- alacena superior con LED -->
+          <rect x="60" y="20" width="400" height="70" fill="var(--panel)" stroke="var(--line)" stroke-width="1.2"/>
+          <rect x="64" y="24" width="392" height="62" fill="var(--wood)" stroke="var(--wood-2)" stroke-width="1"/>
+          <rect x="70" y="90" width="380" height="4" fill="#F4D77A"/>
+          <g stroke="#E8C14A" stroke-width="2" fill="none" stroke-dasharray="4 3">
+            <path d="M450 92 H470 V60 H900 V40"/>
+          </g>
+          <g font-family="JetBrains Mono, monospace" font-size="11" font-weight="600">
+            <rect x="600" y="44" width="200" height="18" rx="3" fill="var(--panel)" stroke="var(--border)"/>
+            <text x="606" y="57" fill="var(--text)">cable LED 3,2 m · por fondo 3 mm</text>
+            <rect x="892" y="30" width="14" height="14" rx="2" fill="var(--panel)" stroke="#E8C14A" stroke-width="2"/>
+          </g>
+          <!-- cotas -->
+          <g font-family="JetBrains Mono, monospace" font-size="12" font-weight="600" fill="var(--text)">
+            <line x1="60" y1="496" x2="920" y2="496" stroke="var(--text-2)" stroke-width="1"/>
+            <text x="490" y="512" text-anchor="middle">2 400</text>
+            <line x1="940" y1="130" x2="940" y2="470" stroke="var(--text-2)" stroke-width="1"/>
+            <text x="947" y="305">900</text>
+          </g>
+        </svg>
+      </figure>
+
+      <!-- Avisos mínimos -->
+      <div style="position: absolute; left: 12px; bottom: 56px; z-index: 2; display: flex; gap: 6px">
+        <span class="chip" style="background: var(--ok-bg); color: var(--ok-text)">Sin tornillos a la vista · 18 juntas minifix</span>
+        <span class="chip" style="background: var(--warn-bg); color: var(--warn-text)">Cajón 2 choca con el lavavajillas abierto · desplaza 20 mm</span>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 6px">
-        <span style="font-size: 12px; color: var(--text-2)">Puertas</span>
-        <div role="group" aria-label="Puertas" style="display: flex; background: var(--bg); border-radius: 8px; padding: 3px; gap: 3px">
-          <button type="button" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; color: var(--text-2); cursor: pointer">0</button>
-          <button type="button" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; color: var(--text-2); cursor: pointer">1</button>
-          <button type="button" aria-pressed="true" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: var(--surface); font-weight: 700; color: var(--text); box-shadow: 0 1px 2px var(--shadow); cursor: pointer">2</button>
-        </div>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 6px">
-        <span style="font-size: 12px; color: var(--text-2)">Unión</span>
-        <div role="group" aria-label="Sistema de unión" style="display: flex; background: var(--bg); border-radius: 8px; padding: 3px; gap: 3px">
-          <button type="button" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; color: var(--text-2); cursor: pointer">Confirmat</button>
-          <button type="button" aria-pressed="true" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: var(--surface); font-weight: 700; color: var(--text); box-shadow: 0 1px 2px var(--shadow); cursor: pointer">Minifix</button>
-          <button type="button" style="flex: 1; height: 34px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; color: var(--text-2); cursor: pointer">Tarugo</button>
-        </div>
-        <span style="font-size: 12px; color: var(--teal); font-weight: 600">Sin tornillos visibles</span>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 8px">
-        <span style="font-size: 11px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em">Materiales</span>
-        <button type="button" style="display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); text-align: left; cursor: pointer">
-          <span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 6px; background: #F3F1EC; border: 1px solid var(--border)"></span>
-          <span style="display: flex; flex-direction: column; line-height: 1.2"><span style="font-weight: 700">Cuerpo · Melamina 18 Blanco</span><span style="font-size: 12px; color: var(--text-2)">1830 × 2440 · Madecentro</span></span>
-        </button>
-        <button type="button" style="display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); text-align: left; cursor: pointer">
-          <span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 6px; background: repeating-linear-gradient(90deg, #B98A5A 0 3px, #A8784A 3px 5px)"></span>
-          <span style="display: flex; flex-direction: column; line-height: 1.2"><span style="font-weight: 700">Frentes · Roble Americano</span><span style="font-size: 12px; color: var(--text-2)">1830 × 2440 · Homecenter</span></span>
-        </button>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--surface-2); border-radius: 8px">
-        <span style="font-size: 12px; font-weight: 700">Asistente propone</span>
-        <button type="button" style="height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); text-align: left; font-size: 12px; font-weight: 600; cursor: pointer">Interior en gris claro para contraste con roble</button>
-        <button type="button" style="height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); text-align: left; font-size: 12px; font-weight: 600; cursor: pointer">Tiradores ocultos (gola) en vez de manillas</button>
-      </div>
-    </aside>
-
-    <!-- Visor 3D -->
-    <section aria-label="Visor 3D" style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
-      <div style="position: relative; flex: 1 1 auto; min-height: 560px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden">
-        <div style="position: absolute; top: 12px; left: 12px; display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 4px">
-          <button type="button" aria-pressed="true" style="height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: var(--bg); font-weight: 700; font-size: 13px; cursor: pointer">Arrastrar caras</button>
-          <button type="button" style="height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; font-size: 13px; color: var(--text-2); cursor: pointer">Orbitar</button>
-          <button type="button" style="height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; font-size: 13px; color: var(--text-2); cursor: pointer">Medir</button>
-          <button type="button" style="height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; font-weight: 600; font-size: 13px; color: var(--text-2); cursor: pointer">Explotar</button>
-        </div>
-        <div style="position: absolute; top: 12px; right: 12px; display: flex; gap: 6px">
-          <span style="font-size: 12px; font-weight: 600; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 6px 10px">En el espacio: Dormitorio · muro este</span>
-        </div>
-
-        <figure style="margin: 0; width: 100%; height: 100%; min-height: 560px; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 80%, var(--surface-2) 0%, var(--surface) 60%)">
-          <svg viewBox="0 0 640 560" width="100%" height="100%" style="max-width: 640px" role="img" aria-label="Armario de 800 por 2000 por 500 milímetros en vista isométrica, con frentes de roble, cotas y manija de arrastre en el costado derecho">
-            <!-- piso -->
-            <line x1="40" y1="500" x2="600" y2="500" stroke="var(--border)" stroke-width="1"/>
-            <!-- costado derecho (profundidad) -->
-            <polygon points="330,120 470,60 470,420 330,480" fill="#E4E1DA" stroke="#8C8C87" stroke-width="1.5"/>
-            <!-- techo -->
-            <polygon points="130,120 330,120 470,60 270,60" fill="#F3F1EC" stroke="#8C8C87" stroke-width="1.5"/>
-            <!-- frente izquierdo -->
-            <rect x="130" y="120" width="99" height="360" fill="#B98A5A" stroke="#7A5A33" stroke-width="1.5"/>
-            <rect x="231" y="120" width="99" height="360" fill="#B5865A" stroke="#7A5A33" stroke-width="1.5"/>
-            <!-- veta -->
-            <g stroke="#A8784A" stroke-width="1" opacity="0.6">
-              <line x1="150" y1="130" x2="150" y2="470"/><line x1="175" y1="130" x2="175" y2="470"/><line x1="205" y1="130" x2="205" y2="470"/>
-              <line x1="255" y1="130" x2="255" y2="470"/><line x1="280" y1="130" x2="280" y2="470"/><line x1="310" y1="130" x2="310" y2="470"/>
-            </g>
-            <!-- zócalo -->
-            <rect x="130" y="480" width="200" height="14" fill="#DAD7D0" stroke="#8C8C87" stroke-width="1"/>
-            <!-- repisas insinuadas en el costado -->
-            <g stroke="#B7B4AD" stroke-width="1.2" stroke-dasharray="4 3">
-              <line x1="330" y1="210" x2="470" y2="150"/><line x1="330" y1="300" x2="470" y2="240"/><line x1="330" y1="390" x2="470" y2="330"/>
-            </g>
-            <!-- manija de arrastre -->
-            <g>
-              <rect x="458" y="226" width="24" height="24" rx="12" fill="#B9671E"/>
-              <path d="M466 238h8M470 234l4 4-4 4" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            </g>
-            <!-- cotas -->
-            <g font-family="JetBrains Mono, monospace" font-size="13" font-weight="600" fill="var(--text)">
-              <line x1="130" y1="520" x2="330" y2="520" stroke="var(--text)" stroke-width="1"/>
-              <line x1="130" y1="514" x2="130" y2="526" stroke="var(--text)"/><line x1="330" y1="514" x2="330" y2="526" stroke="var(--text)"/>
-              <text x="230" y="542" text-anchor="middle">800</text>
-              <line x1="100" y1="120" x2="100" y2="494" stroke="var(--text)" stroke-width="1"/>
-              <line x1="94" y1="120" x2="106" y2="120" stroke="var(--text)"/><line x1="94" y1="494" x2="106" y2="494" stroke="var(--text)"/>
-              <text x="92" y="312" text-anchor="end">2000</text>
-              <line x1="350" y1="500" x2="490" y2="440" stroke="var(--text)" stroke-width="1"/>
-              <text x="440" y="490">500</text>
-            </g>
-          </svg>
-        </figure>
-
-        <div style="position: absolute; left: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px">
-          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); border-radius: 99px; padding: 6px 10px">Repisa 762 mm en 18 mm: cerca del límite, agrega soporte central</span>
-          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; background: var(--ok-bg); color: var(--ok-text); border: 1px solid var(--ok-border); border-radius: 99px; padding: 6px 10px">Esfuerzos: flecha 2,1 mm con 60 kg/m² · OK</span>
-        </div>
-      </div>
-
-      <form style="display: flex; gap: 8px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 8px 8px 8px 14px">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 10h9M8 5l5 5-5 5" stroke="var(--text-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <!-- Línea de comandos -->
+      <form style="position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 2; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 6px 0 12px; border-radius: 6px; background: var(--panel); border: 1px solid var(--border)">
+        <span aria-hidden="true" style="color: var(--text-2); font-family: 'JetBrains Mono', monospace">›</span>
         <label for="cmd" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Comando</label>
-        <input id="cmd" type="text" placeholder="Escribe un comando: ensancha 10 cm · agrega una repisa · divide la puerta en dos" style="flex: 1 1 auto; height: 40px; border: 0; outline: none; font-size: 14px; color: var(--text)">
-        <span style="font-size: 12px; color: var(--text-2); white-space: nowrap">Claude conectado por MCP</span>
-        <button type="submit" style="height: 40px; padding: 0 14px; border: 0; border-radius: 8px; background: var(--ink-btn); color: var(--ink-btn-text); font-weight: 700; cursor: pointer">Aplicar</button>
+        <input id="cmd" type="text" value="poner un lavavajillas Electrolux donde está este cajón" style="flex: 1 1 auto; height: 28px; border: 0; outline: none; background: transparent; font-size: 13px">
+        <button type="submit" class="btn primary" style="height: 26px">Aplicar</button>
       </form>
-
-      <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px">
-          <h3 style="margin: 0; font-size: 14px; font-weight: 800">Lista de corte</h3>
-          <span style="font-size: 12px; color: var(--text-2)">8 filas · 2 tableros melamina · 1 HDF · 19 m tapacanto</span>
-        </div>
-        <div style="overflow-x: auto">
-          <table style="width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px">
-            <thead><tr style="color: var(--text-2); text-align: left">
-              <th style="padding: 6px 8px; font-weight: 700; border-bottom: 1px solid var(--border)">Pieza</th><th style="padding: 6px 8px; font-weight: 700; border-bottom: 1px solid var(--border)">Cant</th><th style="padding: 6px 8px; font-weight: 700; border-bottom: 1px solid var(--border)">Largo</th><th style="padding: 6px 8px; font-weight: 700; border-bottom: 1px solid var(--border)">Ancho</th><th style="padding: 6px 8px; font-weight: 700; border-bottom: 1px solid var(--border)">Cantos</th>
-            </tr></thead>
-            <tbody style="font-family: 'JetBrains Mono', monospace">
-              <tr><td style="padding: 6px 8px; font-family: Manrope, sans-serif">Costado</td><td style="padding: 6px 8px">2</td><td style="padding: 6px 8px">2000</td><td style="padding: 6px 8px">500</td><td style="padding: 6px 8px">1L</td></tr>
-              <tr style="background: var(--surface-2)"><td style="padding: 6px 8px; font-family: Manrope, sans-serif">Techo / piso</td><td style="padding: 6px 8px">2</td><td style="padding: 6px 8px">764</td><td style="padding: 6px 8px">500</td><td style="padding: 6px 8px">1L</td></tr>
-              <tr><td style="padding: 6px 8px; font-family: Manrope, sans-serif">Repisa</td><td style="padding: 6px 8px">3</td><td style="padding: 6px 8px">762</td><td style="padding: 6px 8px">477</td><td style="padding: 6px 8px">1L</td></tr>
-              <tr style="background: var(--surface-2)"><td style="padding: 6px 8px; font-family: Manrope, sans-serif">Puerta (roble)</td><td style="padding: 6px 8px">2</td><td style="padding: 6px 8px">1916</td><td style="padding: 6px 8px">397</td><td style="padding: 6px 8px">2L 2A</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
     </section>
 
-    <!-- Cotización en vivo -->
-    <aside aria-label="Cotización en tiempo real" style="flex: 0 1 340px; min-width: 300px; display: flex; flex-direction: column; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px">
-      <div style="display: flex; justify-content: space-between; align-items: center">
-        <h2 style="margin: 0; font-size: 15px; font-weight: 800">Cotización en vivo</h2>
-        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--teal)"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 99px; background: var(--teal)"></span>actualizado hace 12 s</span>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 2px">
-        <span style="font-family: 'JetBrains Mono', monospace; font-size: 34px; font-weight: 600; letter-spacing: -0.02em">$ 612.400</span>
-        <span style="font-size: 12px; color: var(--text-2)">COP aprox. · materiales y herrajes · sin corte de aserradero</span>
-      </div>
-      <div style="display: flex; flex-wrap: wrap; gap: 6px">
-        <span style="font-size: 12px; font-weight: 700; background: var(--bg); border-radius: 99px; padding: 5px 10px">Homecenter Cali Norte · 3,2 km</span>
-        <span style="font-size: 12px; font-weight: 700; background: var(--bg); border-radius: 99px; padding: 5px 10px">Madecentro Cali · 5,1 km</span>
-        <button type="button" style="font-size: 12px; font-weight: 700; background: var(--surface); border: 1px dashed var(--border); border-radius: 99px; padding: 5px 10px; cursor: pointer">+ tienda</button>
+    <!-- Propiedades: pocas cosas visibles, todo desplegable -->
+    <aside aria-label="Propiedades" style="flex: 0 1 300px; min-width: 260px; display: flex; flex-direction: column; background: var(--panel); border-left: 1px solid var(--border); overflow: auto">
+
+      <div class="sec">
+        <button type="button" class="sec-h" aria-expanded="true">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="transform: rotate(0deg); transition: transform .15s"><path d="M2 3l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          Mueble <span class="sum">Cocina baja · 4 módulos</span>
+        </button>
+        
+          <div class="sec-b">
+            <div class="row"><label for="tipo">Tipo</label><select id="tipo" class="sel"><option>Cocina baja en línea</option><option>Cocina en L</option><option>Gabinete</option><option>Cajonera</option><option>Closet</option><option>Asador de ladrillo</option></select></div>
+            <div class="row"><label for="largo">Largo</label><input id="largo" class="num" type="number" value="2400"></div>
+            <div class="row"><label for="alto">Alto</label><input id="alto" class="num" type="number" value="900"></div>
+            <div class="row"><label for="prof">Prof.</label><input id="prof" class="num" type="number" value="600"></div>
+            <div class="row"><span class="k">Módulos</span><div class="seg"><button type="button">3</button><button type="button" aria-pressed="true">4</button><button type="button">5</button></div></div>
+          </div>
+        
       </div>
 
-      <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--border)">
-        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--bg)">
-          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">Melamina 18 Blanco × 2</span><span style="font-size: 12px; color: var(--text-2)">Madecentro · hace 2 h</span></span>
-          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">$ 318.000</span>
-        </li>
-        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--bg)">
-          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">Melamina 18 Roble × 1</span><span style="font-size: 12px; color: var(--text-2)">Homecenter · hace 2 h</span></span>
-          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">$ 189.900</span>
-        </li>
-        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--bg)">
-          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">HDF 3 mm × 1</span><span style="font-size: 12px; color: var(--text-2)">Madecentro · hace 2 h</span></span>
-          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">$ 42.000</span>
-        </li>
-        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--bg)">
-          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">Tapacanto PVC × 19 m</span><span style="font-size: 12px; color: var(--text-2)">Madecentro · hace 2 h</span></span>
-          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">$ 15.200</span>
-        </li>
-        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--bg)">
-          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">Bisagras 35 mm × 8</span><span style="font-size: 12px; color: var(--text-2)">Homecenter · hace 2 h</span></span>
-          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">$ 36.000</span>
-        </li>
-        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--bg)">
-          <span style="display: flex; flex-direction: column"><span style="font-weight: 700">Minifix + tarugos (24)</span><span style="font-size: 12px; color: var(--text-2)">Madecentro · hace 2 h</span></span>
-          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">$ 11.300</span>
-        </li>
-        <li style="display: flex; justify-content: space-between; gap: 8px; padding: 10px 0">
-          <span style="display: flex; flex-direction: column"><span style="font-weight: 700; color: var(--warn-text)">Patas niveladoras × 4</span><span style="font-size: 12px; color: var(--warn-text)">sin precio en tiendas cercanas</span></span>
-          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--warn-text)">—</span>
-        </li>
-      </ul>
-
-      <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; background: var(--surface-2); border-radius: 8px; font-size: 13px">
-        <span style="font-weight: 700">Qué pasa si…</span>
-        <span style="display: flex; justify-content: space-between"><span>Todo en blanco</span><span style="font-family: 'JetBrains Mono', monospace; color: var(--teal); font-weight: 600">− $ 48.900</span></span>
-        <span style="display: flex; justify-content: space-between"><span>Confirmat en vez de minifix</span><span style="font-family: 'JetBrains Mono', monospace; color: var(--teal); font-weight: 600">− $ 6.800</span></span>
-        <span style="display: flex; justify-content: space-between"><span>Corte y enchapado en Madecentro</span><span style="font-family: 'JetBrains Mono', monospace; color: var(--amber-text); font-weight: 600">+ $ 58.000</span></span>
+      <div class="sec">
+        <button type="button" class="sec-h" aria-expanded="true">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="transform: rotate(0deg); transition: transform .15s"><path d="M2 3l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          Pieza · Cajón 2 <span class="sum">corredera 500 · soft-close</span>
+        </button>
+        
+          <div class="sec-b">
+            <div class="row"><label for="herraje">Herraje</label><select id="herraje" class="sel"><option>Corredera oculta 500 soft-close · Madecentro $ 68.900</option><option>Corredera telescópica 500 · Homecenter $ 24.900</option><option>Corredera oculta 450 push-open · Madecentro $ 74.500</option></select></div>
+            <div class="row"><span class="k">Extensión</span><div class="seg"><button type="button">¾</button><button type="button" aria-pressed="true">Total</button><button type="button">Sobre</button></div></div>
+            <div class="row"><label for="apertura">Apertura</label><input id="apertura" type="range" min="0" max="100" value="70" style="flex: 1"><span style="font-family: 'JetBrains Mono', monospace; width: 36px; text-align: right">70 %</span></div>
+            <div class="row"><label for="soft">Soft-close</label><input id="soft" class="sw" type="checkbox" checked></div>
+            <div class="row"><label for="carga">Carga</label><span style="font-family: 'JetBrains Mono', monospace">30 kg · usa 12 kg</span></div>
+            <div class="note">Claude encontró <strong>3 correderas compatibles en Madecentro</strong> para 500 mm de profundidad. El movimiento del visor sigue la ficha del herraje elegido.</div>
+            <div class="row"><button type="button" class="btn" style="flex: 1">Animar</button><button type="button" class="btn" style="flex: 1">Ver ficha</button></div>
+          </div>
+        
       </div>
 
-      <a href="Comparativa.html" style="display: flex; align-items: center; justify-content: center; height: 44px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); font-weight: 700; text-decoration: none; color: var(--text)">Comparar tiendas y mezcla óptima</a>
+      <div class="sec">
+        <button type="button" class="sec-h" aria-expanded="true">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="transform: rotate(0deg); transition: transform .15s"><path d="M2 3l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          Electrodomésticos <span class="sum">lavavajillas · estufa</span>
+        </button>
+        
+          <div class="sec-b">
+            <div class="row"><span class="k">Módulo 2</span><select class="sel" aria-label="Electrodoméstico módulo 2"><option>Electrolux 600 · sugerido</option><option>Whirlpool 600</option><option>Genérico 600 × 820 × 575</option></select></div>
+            <div class="row"><span class="k">Módulo 4</span><select class="sel" aria-label="Electrodoméstico módulo 4"><option>Estufa a gas 4 puestos 760</option><option>Cubierta de inducción 600</option></select></div>
+            <div class="note">Al poner un modelo, Handy ajusta el hueco, quita el cajón que estaba ahí y recalcula precio y servicios.</div>
+          </div>
+        
+      </div>
+
+      <div class="sec">
+        <button type="button" class="sec-h" aria-expanded="true">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="transform: rotate(0deg); transition: transform .15s"><path d="M2 3l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          Servicios <span class="sum">desagüe 450 · gas 600</span>
+        </button>
+        
+          <div class="sec-b">
+            <div class="row"><span class="k">Desagüe</span><span style="font-family: 'JetBrains Mono', monospace">450 mm · Ø 50 · bajo el sifón</span></div>
+            <div class="row"><span class="k">Agua</span><span style="font-family: 'JetBrains Mono', monospace">550 mm · fría y caliente</span></div>
+            <div class="row"><span class="k">Gas</span><span style="font-family: 'JetBrains Mono', monospace">600 mm · 200 mm a la izq.</span></div>
+            <div class="row"><span class="k">Enchufes</span><span style="font-family: 'JetBrains Mono', monospace">lavavajillas 300 · LED 2 100</span></div>
+            <div class="note">Reglas Colombia (NTC 1500 y RETIE). Se recalculan si cambias el módulo o el electrodoméstico.</div>
+          </div>
+        
+      </div>
+
+      <div class="sec">
+        <button type="button" class="sec-h" aria-expanded="true">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="transform: rotate(0deg); transition: transform .15s"><path d="M2 3l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          Iluminación <span class="sum">LED bajo alacena · 3,2 m</span>
+        </button>
+        
+          <div class="sec-b">
+            <div class="row"><span class="k">Tira LED</span><span style="font-family: 'JetBrains Mono', monospace">12 V · 1,9 m · 3000 K</span></div>
+            <div class="row"><span class="k">Cable</span><span>por el fondo de 3 mm hasta el enchufe alto</span></div>
+            <div class="row"><label for="perf">Perforaciones</label><span style="font-family: 'JetBrains Mono', monospace">2 · Ø 8 mm</span></div>
+          </div>
+        
+      </div>
+
+      <div class="sec">
+        <button type="button" class="sec-h" aria-expanded="true">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="transform: rotate(0deg); transition: transform .15s"><path d="M2 3l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          Ensamble <span class="sum">sin tornillos a la vista</span>
+        </button>
+        
+          <div class="sec-b">
+            <div class="row"><label for="oculto">Sin tornillos a la vista</label><input id="oculto" class="sw" type="checkbox" checked></div>
+            <div class="row"><span class="k">Uniones</span><span>minifix + tarugo en 18 juntas; confirmat solo en el zócalo (oculto)</span></div>
+            <div class="row"><span class="k">Frentes</span><span>bisagra cazoleta clip, corredera oculta bajo el cajón</span></div>
+            <div class="row"><button type="button" class="btn" style="flex: 1">Plano de armado</button><button type="button" class="btn" style="flex: 1">Vista explotada</button></div>
+          </div>
+        
+      </div>
+
+      <div class="sec">
+        <button type="button" class="sec-h" aria-expanded="true">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="transform: rotate(0deg); transition: transform .15s"><path d="M2 3l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          Materiales <span class="sum">Blanco · Roble</span>
+        </button>
+        
+          <div class="sec-b">
+            <div class="row"><span class="k">Cuerpo</span><select class="sel" aria-label="Material del cuerpo"><option>Melamina 18 Blanco · Madecentro</option><option>Melamina 18 Gris · Madecentro</option></select></div>
+            <div class="row"><span class="k">Frentes</span><select class="sel" aria-label="Material de los frentes"><option>Melamina 18 Roble Americano · Homecenter</option><option>Melamina 18 Blanco</option></select></div>
+            <div class="row"><span class="k">Cubierta</span><select class="sel" aria-label="Material de la cubierta"><option>Cuarzo 20 mm</option><option>Postformado 38 mm</option></select></div>
+          </div>
+        
+      </div>
+
+      <div class="sec">
+        <button type="button" class="sec-h" aria-expanded="true">
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="transform: rotate(0deg); transition: transform .15s"><path d="M2 3l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          Esfuerzos <span class="sum" style="color: var(--teal)">OK · flecha 1,4 mm</span>
+        </button>
+        
+          <div class="sec-b">
+            <div class="row"><span class="k">Cubierta</span><span style="font-family: 'JetBrains Mono', monospace">50 kg/m² · flecha 1,4 mm · L/300 OK</span></div>
+            <div class="row"><span class="k">Cajón 2</span><span style="font-family: 'JetBrains Mono', monospace">12 kg · corredera 30 kg · OK</span></div>
+          </div>
+        
+      </div>
     </aside>
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#B9671E","options":["#B9671E","var(--teal)","var(--text)"]},"$preview":{"width":1440,"height":1000}}'>
-class Component extends DCLogic {
-  renderVals() {
-    return { theme: this.props.theme ?? 'auto', accent: this.props.accent ?? '#B9671E' };
-  }
-}
-</script>
 </body>
 </html>

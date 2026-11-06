@@ -13,6 +13,8 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 
 - [ ] Generadores: cajonera (correderas, frentes), escritorio, módulo de cocina bajo y alto, closet con divisiones, biblioteca.
 - [ ] Sistema 32 mm: perforaciones para repisas y bisagras calculadas y exportadas.
+- [ ] Cinemática por herraje: `MotionSpec` en cada pieza móvil (giro, traslación, abatible), catálogo de herrajes con ficha de movimiento y detección de colisiones.
+- [ ] Modo "sin tornillos a la vista" como opción del mueble.
 - [ ] Optimizador de corte (nesting) con veta y sierra de 3–4 mm; plano de corte por tablero.
 - [ ] Exportación: CSV y PDF de lista de corte, JSON del proyecto.
 - [ ] Esfuerzos nivel 1: flecha y tensión de repisas y cubiertas, pandeo de costados, con cargas típicas.
@@ -25,7 +27,8 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 - [ ] Tema claro y oscuro con tokens CSS; sigue al sistema y se puede forzar.
 - [ ] Espacios: editor de mapa 2D con muros de grosor configurable, puertas, ventanas, recintos; vista 3D.
 
-- [ ] Visor 3D (react-three-fiber), piezas desde `placement`.
+- [ ] Visor 3D (react-three-fiber), piezas desde `placement`, animación de apertura por pieza.
+- [ ] Precio total en la esquina del visor con resumen al pasar el mouse; paneles plegables estilo Blender.
 - [ ] Edición por arrastre de medidas (gizmos en caras) y panel de parámetros.
 - [ ] Cotización en vivo en el lateral, con tienda, fecha y faltantes.
 - [ ] Comandos en lenguaje natural ("ensancha 10 cm", "agrega una repisa") resueltos localmente o vía IA.
@@ -47,6 +50,7 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 
 ## M5 · Arquitectura y estructura
 
+- [ ] Electrodomésticos: biblioteca con medidas y conexiones, comando de reemplazo, servicios del mueble (desagüe, agua, gas, tomas) e iluminación integrada con recorrido de cable.
 - [ ] Esfuerzos nivel 2: método de rigidez para muebles completos, mapa de color; nivel 3 preliminar para luces y aberturas en espacios.
 - [ ] Muebles de ladrillo: generador de asador, aparejos, conteo de ladrillos y mortero, cotización.
 

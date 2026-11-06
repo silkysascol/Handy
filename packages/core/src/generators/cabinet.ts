@@ -214,6 +214,8 @@ export function generateCabinet(params: CabinetParams): FurnitureModel {
       edgeBanding: { top: true, bottom: true, left: true, right: true },
       edgeMaterialId,
       placement: place(R.doorGap, plinth + R.doorGap, D, "z"),
+      motion: { kind: "hinge", axis: doors === 1 ? "left" : "left", maxAngleDeg: 110, softClose: false },
+      notes: doors === 2 ? "Puerta izquierda con eje izquierdo; la derecha, espejo con eje derecho." : undefined,
     });
     const hinges = hingesPerDoor(doorH) * doors;
     hardware.push({

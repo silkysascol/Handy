@@ -19,6 +19,13 @@ describe("generateCabinet", () => {
     expect(hinges.qty).toBe(8); // 4 por puerta hasta 2000 mm
   });
 
+  it("asigna movimiento de bisagra a las puertas", () => {
+    const m = generateCabinet({ width: 800, height: 2000, depth: 500, doors: 2 });
+    const door = m.panels.find((p) => p.id === "door")!;
+    expect(door.motion).toEqual({ kind: "hinge", axis: "left", maxAngleDeg: 110, softClose: false });
+    expect(m.panels.find((p) => p.id === "shelf")?.motion).toBeUndefined();
+  });
+
   it("usa minifix cuando se pide unión oculta", () => {
     const m = generateCabinet({ width: 600, height: 700, depth: 350, joinery: "minifix" });
     expect(m.hardware.some((h) => h.category === "cam-lock")).toBe(true);
