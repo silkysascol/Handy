@@ -6,14 +6,15 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 
 - [x] Monorepo pnpm, CI, licencia MIT.
 - [x] `@handy/core`: modelo en mm, generador de gabinete, lista de corte, reglas básicas, cotización con catálogo JSON.
-- [x] CLI y servidor MCP con `design_cabinet`, `cutlist`, `search_prices`.
+- [x] CLI y servidor MCP con `design_cabinet`, `cutlist`, `search_prices`, `check_collisions`.
+- [x] `MotionSpec` en piezas móviles y comprobador de colisiones nivel 1 (cajas envolventes, obstáculos externos).
 - [x] Documentos de visión, arquitectura y módulos.
 
 ## M1 · Motor de muebles completo
 
 - [ ] Generadores: cajonera (correderas, frentes), escritorio, módulo de cocina bajo y alto, closet con divisiones, biblioteca.
 - [ ] Sistema 32 mm: perforaciones para repisas y bisagras calculadas y exportadas.
-- [ ] Cinemática por herraje: `MotionSpec` en cada pieza móvil (giro, traslación, abatible), catálogo de herrajes con ficha de movimiento y detección de colisiones.
+- [ ] Cinemática por herraje: `MotionSpec` en cada pieza móvil (giro, traslación, abatible), catálogo de herrajes con ficha de movimiento; colisiones nivel 2 (OBB, obstáculos desde Espacios y electrodomésticos).
 - [ ] Modo "sin tornillos a la vista" como opción del mueble.
 - [ ] `packages/hardware`: herrajes genéricos paramétricos con ficha de movimiento; importación opcional de STEP (Hettich, Häfele).
 - [ ] `packages/assembly`: plan de ensamblaje automático desde juntas y herrajes.

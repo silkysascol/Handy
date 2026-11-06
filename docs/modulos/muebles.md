@@ -68,7 +68,13 @@ Cada pieza móvil (puerta, cajón, frente abatible, puerta corrediza) lleva una 
 | Corredera de puerta | traslación lateral | solape, cantidad de hojas, carga |
 | Pata plegable, mesa extensible | giro o traslación compuesta | rango |
 
-El panel de la pieza muestra el herraje, los parámetros, un control de apertura (0–100 %) y un botón de animar. Los modelos 3D de los herrajes son **genéricos paramétricos de Handy** (bisagra 35, corredera, abatible) con su ficha de movimiento; opcionalmente se importa el STEP del fabricante (Hettich, Häfele, Blum) cuando el usuario quiere el modelo exacto. Las referencias de la tienda (Madecentro, Homecenter) se mapean a un genérico: cuando Claude está conectado puede buscar herrajes compatibles con la medida y la carga, proponerlos y fijar el movimiento al elegido. Detalle en [../investigacion/herrajes-3d-y-armado.md](../investigacion/herrajes-3d-y-armado.md). Handy detecta colisiones durante el movimiento (cajón contra lavavajillas abierto, puerta contra muro) y avisa con la corrección.
+El panel de la pieza muestra el herraje, los parámetros, un control de apertura (0–100 %) y un botón de animar. Los modelos 3D de los herrajes son **genéricos paramétricos de Handy** (bisagra 35, corredera, abatible) con su ficha de movimiento; opcionalmente se importa el STEP del fabricante (Hettich, Häfele, Blum) cuando el usuario quiere el modelo exacto. Las referencias de la tienda (Madecentro, Homecenter) se mapean a un genérico: cuando Claude está conectado puede buscar herrajes compatibles con la medida y la carga, proponerlos y fijar el movimiento al elegido. Detalle en [../investigacion/herrajes-3d-y-armado.md](../investigacion/herrajes-3d-y-armado.md). Handy detecta colisiones durante el movimiento y avisa con la corrección.
+
+### Comprobador de colisiones (hecho, nivel 1)
+
+`checkMotionCollisions(model, obstacles)` en `@handy/core` recorre la apertura de cada pieza móvil (giro de bisagra sobre la cara frontal, traslación de corredera, abatible) en 24 pasos, calcula su caja envolvente en cada instante y la compara con las piezas fijas del mueble y con **obstáculos** externos: muros, la puerta abierta de un lavavajillas, otro mueble. Reporta el primer instante del choque con el ángulo o el recorrido y una sugerencia (bisagra de menor ángulo, tope, separar el mueble). Los solapes que ya existen en reposo se ignoran. Disponible en la CLI (`--wall-left`, `--wall-right`) y en el MCP (`check_collisions` y `obstacles` en `design_cabinet`).
+
+Siguientes niveles: cajas orientadas (OBB) en vez de envolventes para menos falsos positivos, obstáculos tomados automáticamente del espacio (muros, aberturas y muebles vecinos de la sección Espacios) y de los electrodomésticos con su barrido de puerta, y colisión entre dos piezas móviles a la vez (dos puertas en esquina).
 
 ## Electrodomésticos y comandos de reemplazo
 

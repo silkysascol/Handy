@@ -4,3 +4,4 @@ export * from "./cutlist.js";
 export * from "./validate.js";
 export * from "./quote.js";
 export * from "./providers/index.js";
+export * from "./collision.js";

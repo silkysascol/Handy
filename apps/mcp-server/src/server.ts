@@ -5,6 +5,7 @@ import { z } from "zod";
 import {
   buildCutlist,
   buildQuote,
+  checkMotionCollisions,
   generateCabinet,
   validateFurniture,
   StaticCatalogProvider,
@@ -33,6 +34,14 @@ const cabinetInput = {
   name: z.string().optional(),
 };
 
+const obstacleSchema = z.object({
+  id: z.string(),
+  name: z.string().describe("Qué es: muro, lavavajillas abierto, otro mueble"),
+  min: z.tuple([z.number(), z.number(), z.number()]).describe("Esquina mínima [x, y, z] en mm, en el sistema del mueble (origen: esquina inferior izquierda trasera; z crece hacia el frente)"),
+  max: z.tuple([z.number(), z.number(), z.number()]),
+});
+const obstaclesInput = z.array(obstacleSchema).default([]).describe("Obstáculos alrededor del mueble para comprobar colisiones al abrir puertas y cajones");
+
 export function createHandyServer(providers: PriceProvider[] = loadProviders()): McpServer {
   const server = new McpServer({ name: "handy", version: "0.0.1" });
 
@@ -42,21 +51,23 @@ export function createHandyServer(providers: PriceProvider[] = loadProviders()):
       title: "Diseñar gabinete",
       description:
         "Genera un gabinete de melamina (costados, techo, piso, fondo, repisas, puertas). Devuelve el modelo con posiciones 3D, la lista de corte, avisos de diseño y una cotización aproximada con el catálogo configurado. Todas las medidas en milímetros.",
-      inputSchema: cabinetInput,
+      inputSchema: { ...cabinetInput, obstacles: obstaclesInput },
     },
-    async (params) => {
+    async ({ obstacles, ...params }) => {
       const model = generateCabinet(params);
       const issues = validateFurniture(model);
+      const collisions = checkMotionCollisions(model, obstacles.map((o) => ({ id: o.id, name: o.name, box: { min: o.min, max: o.max } })));
       const quote = await buildQuote(model, providers);
       const summary = [
         `${model.name} (unión: ${model.joinery})`,
         `Piezas: ${model.panels.reduce((n, p) => n + p.qty, 0)} · Tableros: ${quote.cutlist.materials.map((m) => `${m.sheetsEstimate}x ${m.materialId}`).join(", ")}`,
         `Cotización aprox.: ${quote.subtotal} ${quote.currency}${quote.missingCount ? ` (${quote.missingCount} ítems sin precio)` : ""}`,
         ...issues.map((i) => `[${i.level}] ${i.message}`),
+        ...collisions.map((c) => `[colisión] ${c.message}`),
       ].join("\n");
       return {
         content: [{ type: "text", text: summary }],
-        structuredContent: { model, issues, cutlist: quote.cutlist, quote: { currency: quote.currency, subtotal: quote.subtotal, lines: quote.lines } },
+        structuredContent: { model, issues, collisions, cutlist: quote.cutlist, quote: { currency: quote.currency, subtotal: quote.subtotal, lines: quote.lines } },
       };
     },
   );
@@ -71,6 +82,21 @@ export function createHandyServer(providers: PriceProvider[] = loadProviders()):
     async (params) => {
       const cutlist = buildCutlist(generateCabinet(params));
       return { content: [{ type: "text", text: JSON.stringify(cutlist, null, 2) }], structuredContent: cutlist as unknown as Record<string, unknown> };
+    },
+  );
+
+  server.registerTool(
+    "check_collisions",
+    {
+      title: "Comprobar colisiones",
+      description: "Simula la apertura de puertas y cajones de un gabinete y reporta choques con el propio mueble o con obstáculos (muros, electrodomésticos abiertos, otros muebles). Devuelve el ángulo o recorrido donde empieza cada choque.",
+      inputSchema: { ...cabinetInput, obstacles: obstaclesInput },
+    },
+    async ({ obstacles, ...params }) => {
+      const model = generateCabinet(params);
+      const collisions = checkMotionCollisions(model, obstacles.map((o) => ({ id: o.id, name: o.name, box: { min: o.min, max: o.max } })));
+      const text = collisions.length ? collisions.map((c) => c.message).join("\n") : "Sin colisiones en todo el recorrido.";
+      return { content: [{ type: "text", text }], structuredContent: { collisions } };
     },
   );
 

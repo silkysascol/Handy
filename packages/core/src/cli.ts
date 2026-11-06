@@ -7,7 +7,7 @@ import { parseArgs } from "node:util";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { generateCabinet, buildQuote, validateFurniture, StaticCatalogProvider, type StaticCatalog, type Joinery } from "./index.js";
+import { generateCabinet, buildQuote, validateFurniture, checkMotionCollisions, StaticCatalogProvider, type StaticCatalog, type Joinery, type Obstacle } from "./index.js";
 
 const { positionals, values } = parseArgs({
   allowPositionals: true,
@@ -21,6 +21,8 @@ const { positionals, values } = parseArgs({
     joinery: { type: "string", default: "confirmat" },
     catalog: { type: "string" },
     json: { type: "boolean", default: false },
+    "wall-left": { type: "boolean", default: false },
+    "wall-right": { type: "boolean", default: false },
   },
 });
 
@@ -44,10 +46,14 @@ const model = generateCabinet({
   joinery: values.joinery as Joinery,
 });
 const issues = validateFurniture(model);
+const obstacles: Obstacle[] = [];
+if (values["wall-left"]) obstacles.push({ id: "wall-left", name: "muro a la izquierda", box: { min: [-300, 0, -2000], max: [0, 3000, 3000] } });
+if (values["wall-right"]) obstacles.push({ id: "wall-right", name: "muro a la derecha", box: { min: [model.dims.width, 0, -2000], max: [model.dims.width + 300, 3000, 3000] } });
+const collisions = checkMotionCollisions(model, obstacles);
 const quote = await buildQuote(model, [new StaticCatalogProvider(catalog)]);
 
 if (values.json) {
-  console.log(JSON.stringify({ model, issues, quote }, null, 2));
+  console.log(JSON.stringify({ model, issues, collisions, quote }, null, 2));
   process.exit(0);
 }
 
@@ -56,9 +62,10 @@ console.log("LISTA DE CORTE (mm)");
 console.table(quote.cutlist.rows.map((r) => ({ Pieza: r.name, Cant: r.qty, Largo: r.height, Ancho: r.width, Esp: r.thickness, Cantos: r.edges, "Tapacanto m": r.edgeBandMeters })));
 console.log("MATERIALES");
 console.table(quote.cutlist.materials.map((m) => ({ Material: m.materialId, "m²": m.areaM2, Tableros: m.sheetsEstimate })));
-if (issues.length) {
+if (issues.length || collisions.length) {
   console.log("AVISOS");
   for (const i of issues) console.log(`  [${i.level}] ${i.message}`);
+  for (const c of collisions) console.log(`  [colisión] ${c.message}`);
 }
 console.log(`\nCOTIZACIÓN (${quote.currency}, catálogo: ${catalog.name})`);
 console.table(quote.lines.map((l) => ({ Ítem: l.description, Cant: l.qty, Unidad: l.unit, "P. unit": l.unitPrice, Total: Number(l.total.toFixed(2)), Falta: l.missing ? "sí" : "" })));

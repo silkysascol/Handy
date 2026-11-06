@@ -10,9 +10,10 @@ Que cualquier IA (Claude Desktop, Claude Code, Cursor, agentes locales con Ollam
 
 | Herramienta | Entrada | Salida |
 | --- | --- | --- |
-| `design_cabinet` | medidas, repisas, puertas, zócalo, unión, espesor | modelo con posiciones 3D, avisos, lista de corte, cotización |
+| `design_cabinet` | medidas, repisas, puertas, zócalo, unión, espesor, obstáculos opcionales | modelo con posiciones 3D, avisos, colisiones, lista de corte, cotización |
 | `cutlist` | igual | lista de corte |
 | `search_prices` | categoría, texto, espesor, acabado | ofertas de los proveedores configurados |
+| `check_collisions` | gabinete + obstáculos (cajas con nombre) | choques al abrir puertas y cajones, con ángulo o recorrido |
 
 Variable `HANDY_CATALOG` para apuntar a un catálogo propio.
 
