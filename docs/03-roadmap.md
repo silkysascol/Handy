@@ -10,27 +10,25 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 - [x] `MotionSpec` en piezas móviles y comprobador de colisiones nivel 1 (cajas envolventes, obstáculos externos).
 - [x] Documentos de visión, arquitectura y módulos.
 
-> Reordenado el 2026-11-07 tras el council (ver `docs/investigacion/council-presupuesto-y-monetizacion.md`): el paquete para talleres va antes que el editor web completo y la IA de presupuesto espera a tener talleres pagando.
+> Reordenado el 2026-11-07 tras el council con la visión correcta (ver `docs/investigacion/council-presupuesto-y-monetizacion.md`): Handy es para quien lo hace él mismo. El primer producto es un solo flujo completo, "mi primer closet", validado con personas reales antes de ampliar a cocina, pisos e IA de presupuesto.
 
-## M1 · Motor de muebles completo y paquete para talleres
+## M1 · "Mi primer closet": un flujo completo para quien lo hace él mismo
 
-- [ ] Generadores: cajonera (correderas, frentes), escritorio, módulo de cocina bajo y alto, closet con divisiones, biblioteca.
-- [ ] Sistema 32 mm: perforaciones para repisas y bisagras calculadas y exportadas.
-- [ ] Cinemática por herraje: `MotionSpec` en cada pieza móvil (giro, traslación, abatible), catálogo de herrajes con ficha de movimiento; colisiones nivel 2 (OBB, obstáculos desde Espacios y electrodomésticos).
-- [ ] Modo "sin tornillos a la vista" como opción del mueble.
-- [ ] `packages/hardware`: herrajes genéricos paramétricos con ficha de movimiento; importación opcional de STEP (Hettich, Häfele).
-- [ ] `packages/assembly`: plan de ensamblaje automático desde juntas y herrajes.
-- [ ] Optimizador de corte (nesting) con veta y sierra de 3–4 mm; plano de corte por tablero.
-- [ ] Exportación: CSV y PDF de lista de corte, JSON del proyecto.
-- [ ] Cotización por proyecto (varios muebles, desperdicio consolidado) con **precios propios del taller** ingresados a mano, fecha de cada precio y tolerancia visibles.
-- [ ] PDF de cotización con marca del taller, renglones editables de mano de obra, mesón, instalación e imprevistos; historial de versiones.
-- [ ] `fit_to_budget` determinista: degradaciones ordenadas y deltas explicables.
-- [ ] Todo lo anterior disponible por MCP y CLI antes que en la web; vender en persona a 10 talleres y conseguir 5 compromisos de pago.
-- [ ] Esfuerzos nivel 1: flecha y tensión de repisas y cubiertas, pandeo de costados, con cargas típicas.
-- [ ] Exportación glTF/OBJ del mueble para Blender.
-- [ ] Catálogos reales de al menos 2 países (comunidad).
+- [ ] Generadores: closet con divisiones y barra, estantería/biblioteca; cajonera después.
+- [ ] Sistema de unión según herramientas del usuario: minifix con perforación en la tienda (exportar archivo de perforado), minifix o tarugos con plantilla imprimible (Objetos), encaje sin perforar. "Sin tornillos a la vista" predeterminado.
+- [ ] Despiece en el **formato exacto** que reciben Madecentro y Homecenter (veta, cantos por lado, tolerancias): ir a la tienda y validarlo con el operario de la sierra antes de más 3D.
+- [ ] Presupuesto completo: tableros enteros por formato, cantos, herrajes, reserva, con tienda y fecha visibles; renglones editables para lo que el motor no cotiza.
+- [ ] Instrucciones de armado en PDF sin texto (plan de ensamblaje automático, render de líneas).
+- [ ] Web mínima que conecta lo anterior: medidas → diseño → despiece → presupuesto → PDF. Tema claro y oscuro con tokens.
+- [ ] Validación dura: sin validación verde del motor no hay lista de corte; la IA (del usuario, por MCP) elige entre opciones válidas y nunca inventa medidas.
+- [ ] Prueba con 5 personas sin experiencia, taladro de mano y plantilla impresa, en una ciudad; meta: 50 muebles terminados antes de M2.
+- [ ] Sostenimiento: donaciones y patrocinio; primer producto pago, la plantilla física de perforado (jig de 15 mm y guía de tarugos).
+- [ ] Sistema 32 mm, exportación CSV, `MotionSpec` por herraje (parte hecha), catálogos reales de 2 países.
 
-## M2 · App web (versión principal)
+## M2 · Editor completo y cocina
+
+- [ ] Generador de cocina por módulos estándar con mesón, servicios (desagüe, agua, gas, tomas) y electrodomésticos.
+- [ ] Asistente de decisiones: cajón vs tapa con pistón, 15 vs 18 mm, telescópica vs oculta, con precio y movimiento de cada opción.
 
 - [ ] Menú de tres secciones: Espacios, Muebles, Objetos.
 - [ ] Tema claro y oscuro con tokens CSS; sigue al sistema y se puede forzar.
@@ -59,7 +57,9 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 - [ ] Colocar muebles en el espacio con snapping a paredes y detección de colisión con puertas/ventanas.
 - [ ] Vista "proyección": medidas del mueble se adaptan al hueco disponible.
 
-## M5 · Arquitectura y estructura
+## M5 · Arquitectura, pisos y estructura
+
+- [ ] Pisos y enchapes: despiece de cerámica y porcelanato con reutilización de recortes, cajas, pega y boquilla por formato, comparación cerámica vs porcelanato (ver `docs/modulos/pisos.md`).
 
 - [ ] Electrodomésticos: biblioteca con medidas y conexiones, comando de reemplazo, servicios del mueble (desagüe, agua, gas, tomas) e iluminación integrada con recorrido de cable.
 - [ ] Esfuerzos nivel 2: método de rigidez para muebles completos, mapa de color; nivel 3 preliminar para luces y aberturas en espacios.
@@ -77,9 +77,9 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 - [ ] Generación de repuestos desde el modelo del mueble (p.ej. tapa a medida para un herraje).
 - [ ] Add-on de Blender para importar `.handy.json`; exportación IFC.
 
-## M7 · "Diseña con mi presupuesto" (cuando haya talleres pagando)
+## M7 · "Diseña con mi presupuesto" (cuando 50 personas hayan terminado un mueble)
 
-Con el espacio creado, el usuario fija un presupuesto y la IA propone tres variantes coherentes, cotizadas y verificadas. Diseño completo en `docs/investigacion/council-presupuesto-y-monetizacion.md`. Depende de que la cotización por proyecto y `fit_to_budget` de M1 ya estén en uso real.
+Con el espacio creado, el usuario fija un presupuesto y la IA propone tres variantes coherentes, cotizadas y verificadas. Diseño completo en `docs/investigacion/council-presupuesto-y-monetizacion.md`. Depende de que la cotización por proyecto y el flujo de closet de M1 ya estén en uso real.
 
 - [ ] Caché de precios de 24 h y búsqueda por texto en `quote_project`; nesting por formato de tablero.
 - [ ] Generador de cocina por módulos estándar y `layout_kitchen` sobre tramos libres del espacio.
@@ -87,7 +87,7 @@ Con el espacio creado, el usuario fija un presupuesto y la IA propone tres varia
 - [ ] Lista negra en el motor (muros, bajantes, gas, tablero) y supuestos declarados por propuesta.
 - [ ] Contrato anti-alucinación en el MCP (cifras citadas por SKU) y conjunto de evaluación con 20–30 proyectos.
 - [ ] Trazabilidad en `.handy.json`: qué calculó el motor y qué dijo la IA; historial de versiones de cotización.
-- [ ] Modo taller: precios propios, tarifa por módulo, margen; el cliente final no ve el costo desnudo.
+- [ ] Modo taller (mercado secundario): precios propios, tarifa por módulo, margen; el cliente final no ve el costo desnudo.
 
 ## Más adelante
 

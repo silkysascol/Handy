@@ -1,6 +1,6 @@
 # Handy
 
-**Handy** es una herramienta open source para diseñar muebles, piezas imprimibles en 3D y resolver detalles de arquitectura doméstica, con **cotización aproximada en tiempo real** usando precios de tiendas locales y una interfaz pensada para que **Claude y otras IAs** puedan usarla como copiloto.
+**Handy** es una herramienta open source para la persona que hace las cosas por sí misma: diseña tu cocina, tu closet o tu piso, manda a cortar en la tienda y ármalo en casa como un mueble de IKEA, sin tornillos a la vista ni perforaciones milimétricas. Calcula cuánto te va a costar con **precios de tiendas cercanas en tiempo real** y conecta **tu propia IA** (Claude, ChatGPT o un modelo local) para que te ayude a diseñar y decidir.
 
 > Estado: **pre-alpha / planificación**. El motor (`@handy/core`) y el servidor MCP ya funcionan por línea de comandos. La app web y el ejecutable de escritorio están en diseño. Ver [docs/03-roadmap.md](docs/03-roadmap.md).
 
@@ -10,9 +10,9 @@ Prototipos **rápidos y fieles** a lo que quieres, hechos en el navegador o en e
 
 | Sección | Enfoque | Qué resuelve |
 | --- | --- | --- |
-| **Espacios** | interfaz y medidas de apartamentos, cuartos y casas | Dibujar el mapa del lugar con grosor de muros, puertas y ventanas; importar escaneos LiDAR del iPhone; puntos eléctricos con inferencia de por dónde va la canalización; reglas de tuberías; estudio de luz solar por orientación y ubicación. |
-| **Muebles** | interfaz y medidas de muebles de madera, tablero y ladrillo | Gabinetes, closets, cocinas, escritorios en melamina; asadores y mesones de ladrillo. Lista de corte o de ladrillos, herrajes, cotización en tiempo real con tiendas locales, asistente estético (colorimetría, texturas) y constructivo (sin tornillos visibles). |
-| **Objetos** | cosas pequeñas | Repuestos y accesorios paramétricos (soportes, tapas, patas, clips, tiradores) listos para imprimir en 3D en STL/3MF. |
+| **Espacios** | interfaz y medidas de apartamentos, cuartos y casas | Dibujar el mapa del lugar con grosor de muros, puertas y ventanas; importar escaneos LiDAR del iPhone; **pisos**: despiece de cerámica o porcelanato, cajas, pega y boquilla; puntos eléctricos con inferencia de canalización; reglas de tuberías; estudio de luz solar. |
+| **Muebles** | interfaz y medidas de muebles de madera, tablero y ladrillo | Gabinetes, closets, cocinas, escritorios en melamina; asadores y mesones de ladrillo. Sistema de unión según tus herramientas (perforación en la tienda o plantilla impresa), lista de corte, herrajes con su movimiento, cotización en tiempo real, decisiones como cajón o tapa con pistón, e instrucciones de armado. |
+| **Objetos** | cosas pequeñas | Repuestos, accesorios y **plantillas de perforado** paramétricos, listos para imprimir en 3D en STL/3MF. |
 
 Transversal a las tres: **simulación de esfuerzos** para saber si una repisa, un asador o un espacio aguanta la carga, **cotización** con precios locales, **exportación** a glTF/OBJ/STL/DXF/PDF, y un servidor [MCP](https://modelcontextprotocol.io) para que Claude, Claude Code, Cursor, Ollama u otras IAs del PC diseñen y coticen contigo.
 

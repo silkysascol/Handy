@@ -52,6 +52,28 @@ Perforaciones de 5 mm cada 32 mm en los costados (hilera a 37 mm del canto front
 - Reglas: dintel sobre la boca con apoyo ≥ 150 mm por lado, cámara de fuego con refractario, separación a muros medianeros, altura mínima de chimenea.
 - También: mesones de obra para cocina exterior, jardineras y muretes bajos.
 
+## Ensamble para quien lo hace él mismo: sin tornillos a la vista y sin perforaciones milimétricas
+
+El usuario de Handy manda a cortar y arma en casa. El generador elige el **sistema de unión según la habilidad y las herramientas** que el usuario declara y lo que ofrece la tienda:
+
+| Lo que el usuario tiene | Sistema propuesto | Cómo se logra la precisión |
+| --- | --- | --- |
+| Solo destornillador y taladro básico | Minifix (excéntrica) + tarugo, perforado por la tienda | La tienda hace la **perforación CNC** con el archivo que exporta Handy (donde el servicio exista; se verifica por ciudad). El usuario solo encaja y gira un cuarto de vuelta. |
+| Taladro y paciencia | Minifix o tarugos con **plantilla imprimible en 3D** (sección Objetos) | La plantilla fija las posiciones de las brocas de 8 y 15 mm; sin medir. |
+| Taladro, sin impresora 3D | Tarugos con **guía de tarugos** comercial y topes de profundidad | Handy entrega las cotas de la guía. |
+| Nada de perforar | Uniones por **ranura y encaje** (fondo ranurado, repisas en ranura) y herrajes atornillados desde el interior (escuadras ocultas, clips de bisagra) | Diseño que evita la perforación precisa. |
+| Fresadora o acceso a Clamex | Clamex/Lamello desmontable | Opción avanzada, no por defecto. |
+
+Handy siempre muestra lo que ese sistema le exige al usuario (herramientas, tiempo, dificultad de 1 a 5) y la alternativa si no lo tiene. El modo "sin tornillos a la vista" es el **predeterminado** para este usuario.
+
+## Asistente de decisiones
+
+Para cada elección habitual Handy compara costo, dificultad de armado, uso y resultado, y recomienda con la razón:
+
+- **Cajón vs tapa abatible con pistón y bisagra**: un cajón cuesta más (corredera + 5 piezas) y exige precisión, pero es más cómodo para ollas; una tapa con pistón a gas es más barata y fácil de armar, mejor en muebles altos. Handy muestra ambos precios y el movimiento de cada uno en el visor.
+- Melamina de 15 vs 18 mm, HDF de 3 vs 5,5 mm de fondo, bisagra recta vs codo según el solape, corredera telescópica vs oculta, tirador vs gola, zócalo fijo vs patas con zócalo clip.
+- Comprar el repuesto vs imprimirlo (sección Objetos).
+
 ## Trabajo por pieza: seleccionar, aislar, ordenar
 
 Al seleccionar una pieza (un cajón, una puerta, un costado) el panel de propiedades cambia a esa pieza y la **línea de comandos queda acotada a ella**: "poner un lavavajillas aquí", "cambia la corredera por una de 450", "hazlo 20 mm más bajo". Con `/` se **aísla** la pieza en el visor (como la vista local de Blender) para ver el detalle de un herraje o una junta; "Sección" corta el módulo por un plano para ver el interior. Las piezas también se agrupan por módulo, así que un comando puede ir a un módulo completo.
