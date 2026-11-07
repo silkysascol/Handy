@@ -10,7 +10,9 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 - [x] `MotionSpec` en piezas móviles y comprobador de colisiones nivel 1 (cajas envolventes, obstáculos externos).
 - [x] Documentos de visión, arquitectura y módulos.
 
-## M1 · Motor de muebles completo
+> Reordenado el 2026-11-07 tras el council (ver `docs/investigacion/council-presupuesto-y-monetizacion.md`): el paquete para talleres va antes que el editor web completo y la IA de presupuesto espera a tener talleres pagando.
+
+## M1 · Motor de muebles completo y paquete para talleres
 
 - [ ] Generadores: cajonera (correderas, frentes), escritorio, módulo de cocina bajo y alto, closet con divisiones, biblioteca.
 - [ ] Sistema 32 mm: perforaciones para repisas y bisagras calculadas y exportadas.
@@ -20,6 +22,10 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 - [ ] `packages/assembly`: plan de ensamblaje automático desde juntas y herrajes.
 - [ ] Optimizador de corte (nesting) con veta y sierra de 3–4 mm; plano de corte por tablero.
 - [ ] Exportación: CSV y PDF de lista de corte, JSON del proyecto.
+- [ ] Cotización por proyecto (varios muebles, desperdicio consolidado) con **precios propios del taller** ingresados a mano, fecha de cada precio y tolerancia visibles.
+- [ ] PDF de cotización con marca del taller, renglones editables de mano de obra, mesón, instalación e imprevistos; historial de versiones.
+- [ ] `fit_to_budget` determinista: degradaciones ordenadas y deltas explicables.
+- [ ] Todo lo anterior disponible por MCP y CLI antes que en la web; vender en persona a 10 talleres y conseguir 5 compromisos de pago.
 - [ ] Esfuerzos nivel 1: flecha y tensión de repisas y cubiertas, pandeo de costados, con cargas típicas.
 - [ ] Exportación glTF/OBJ del mueble para Blender.
 - [ ] Catálogos reales de al menos 2 países (comunidad).
@@ -71,13 +77,12 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 - [ ] Generación de repuestos desde el modelo del mueble (p.ej. tapa a medida para un herraje).
 - [ ] Add-on de Blender para importar `.handy.json`; exportación IFC.
 
-## M7 · "Diseña con mi presupuesto"
+## M7 · "Diseña con mi presupuesto" (cuando haya talleres pagando)
 
-Con el espacio creado, el usuario fija un presupuesto y la IA propone tres variantes coherentes, cotizadas y verificadas. Diseño completo en `docs/investigacion/council-presupuesto-y-monetizacion.md`.
+Con el espacio creado, el usuario fija un presupuesto y la IA propone tres variantes coherentes, cotizadas y verificadas. Diseño completo en `docs/investigacion/council-presupuesto-y-monetizacion.md`. Depende de que la cotización por proyecto y `fit_to_budget` de M1 ya estén en uso real.
 
-- [ ] Cotización por proyecto (`quote_project`) con caché de precios de 24 h y búsqueda por texto; nesting por formato de tablero.
+- [ ] Caché de precios de 24 h y búsqueda por texto en `quote_project`; nesting por formato de tablero.
 - [ ] Generador de cocina por módulos estándar y `layout_kitchen` sobre tramos libres del espacio.
-- [ ] `fit_to_budget` en el motor: degradaciones ordenadas y deltas explicables; renglones editables de mano de obra, obra gris, mesón e imprevistos.
 - [ ] `get_space_context` desde `packages/spaces`; obstáculos automáticos para colisiones.
 - [ ] Lista negra en el motor (muros, bajantes, gas, tablero) y supuestos declarados por propuesta.
 - [ ] Contrato anti-alucinación en el MCP (cifras citadas por SKU) y conjunto de evaluación con 20–30 proyectos.
