@@ -71,6 +71,19 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 - [ ] Generación de repuestos desde el modelo del mueble (p.ej. tapa a medida para un herraje).
 - [ ] Add-on de Blender para importar `.handy.json`; exportación IFC.
 
+## M7 · "Diseña con mi presupuesto"
+
+Con el espacio creado, el usuario fija un presupuesto y la IA propone tres variantes coherentes, cotizadas y verificadas. Diseño completo en `docs/investigacion/council-presupuesto-y-monetizacion.md`.
+
+- [ ] Cotización por proyecto (`quote_project`) con caché de precios de 24 h y búsqueda por texto; nesting por formato de tablero.
+- [ ] Generador de cocina por módulos estándar y `layout_kitchen` sobre tramos libres del espacio.
+- [ ] `fit_to_budget` en el motor: degradaciones ordenadas y deltas explicables; renglones editables de mano de obra, obra gris, mesón e imprevistos.
+- [ ] `get_space_context` desde `packages/spaces`; obstáculos automáticos para colisiones.
+- [ ] Lista negra en el motor (muros, bajantes, gas, tablero) y supuestos declarados por propuesta.
+- [ ] Contrato anti-alucinación en el MCP (cifras citadas por SKU) y conjunto de evaluación con 20–30 proyectos.
+- [ ] Trazabilidad en `.handy.json`: qué calculó el motor y qué dijo la IA; historial de versiones de cotización.
+- [ ] Modo taller: precios propios, tarifa por módulo, margen; el cliente final no ve el costo desnudo.
+
 ## Más adelante
 
 - Realidad aumentada en el teléfono para ver el mueble en el espacio.

@@ -32,10 +32,10 @@ Prototipos rápidos y fieles. Fieles en medidas (milímetros reales, muros con s
 3. **Región-agnóstico.** Precios, formatos de tablero, normativas eléctricas y sanitarias se cargan desde datos por país; la comunidad los mantiene.
 4. **Reglas explicables.** Cada aviso o sugerencia cita la regla ("luz > 800 mm en 18 mm pandea") o el criterio estético que la motiva.
 5. **Una sola fuente de verdad.** Web, ejecutable, CLI y MCP usan el mismo `@handy/core`.
-6. **Cotización honesta.** Cada precio muestra tienda, fecha y si es estimado. Handy nunca inventa un precio.
+6. **Cotización honesta.** Cada precio muestra tienda, fecha y si es estimado. Handy nunca inventa un precio. Si una tienda paga comisión a Handy, se declara, y el orden de las ofertas nunca depende de ella (ADR-0004).
 
 ## Lo que Handy no es
 
 - No es un CAD general ni un reemplazo de Blender. Modela espacios, muebles de tablero o ladrillo y piezas paramétricas, y exporta a los programas profesionales para lo demás.
 - No reemplaza al profesional en instalaciones eléctricas, sanitarias ni en estructura: entrega medidas de referencia, inferencias con nivel de confianza y cálculos preliminares, no certifica.
-- No es un marketplace. Muestra precios, no vende.
+- No es un marketplace. Muestra precios y puede referirte a tiendas o talleres con comisión declarada, pero no vende ni almacena materiales.
