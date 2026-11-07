@@ -1,0 +1,3 @@
+Skill "council" copiada verbatim de Everything Claude Code (ECC), https://github.com/affaan-m/ECC, ruta `skills/council/SKILL.md`, licencia MIT. En Handy se invoca con "council: <decisión>" y los veredictos que cambian algo real se guardan en `docs/decisiones/` o `docs/investigacion/`.
+
+Alternativa evaluada: la skill Council de LifeOS (antes PAI) de Daniel Miessler, https://github.com/danielmiessler/LifeOS (MIT), con debate de 3 rondas entre miembros con brief por tema y reparto entre proveedores de modelos. Se prefirió ECC por ser más simple, de una ronda y con mecanismo explícito contra el anclaje.
