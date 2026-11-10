@@ -5,3 +5,5 @@ export * from "./validate.js";
 export * from "./quote.js";
 export * from "./providers/index.js";
 export * from "./collision.js";
+export * from "./world.js";
+export * from "./gltf.js";

@@ -1,6 +1,6 @@
 # Handy
 
-**Handy** es una herramienta open source para la persona que hace las cosas por sí misma: diseña tu cocina, tu closet o tu piso, manda a cortar en la tienda y ármalo en casa como un mueble de IKEA, sin tornillos a la vista ni perforaciones milimétricas. Calcula cuánto te va a costar con **precios de tiendas cercanas en tiempo real** y conecta **tu propia IA** (Claude, ChatGPT o un modelo local) para que te ayude a diseñar y decidir.
+**Handy** es tu taller virtual: un duplicado de tu casa donde tú y tu IA planifican muebles, pisos y estructuras sobre el espacio real. Es una herramienta open source para la persona que hace las cosas por sí misma: diseña tu cocina, tu closet o tu piso, manda a cortar en la tienda y ármalo en casa como un mueble de IKEA, sin tornillos a la vista ni perforaciones milimétricas. Calcula cuánto te va a costar con **precios de tiendas cercanas en tiempo real** y conecta **tu propia IA** (Claude, ChatGPT o un modelo local) para que te ayude a diseñar y decidir.
 
 > Estado: **pre-alpha / planificación**. El motor (`@handy/core`) y el servidor MCP ya funcionan por línea de comandos. La app web y el ejecutable de escritorio están en diseño. Ver [docs/03-roadmap.md](docs/03-roadmap.md).
 
@@ -36,6 +36,18 @@ pnpm cli cabinet --width 800 --height 2000 --depth 500 --shelves 3 --doors 2 --p
 
 Obtienes la lista de corte, los m² y tableros necesarios, avisos de diseño (pandeo de repisas, puertas demasiado anchas, uniones visibles) y una cotización con el catálogo de ejemplo. Añade `--wall-left` para simular un muro pegado al mueble y ver si la puerta choca al abrir. Agrega `--json` para obtener el modelo completo con posiciones 3D de cada pieza.
 
+### Tu casa como mundo
+
+Genera el mundo de ejemplo (dos habitaciones con muebles) y su modelo para Blender:
+
+```bash
+pnpm --filter @handy/core demo:world
+```
+
+Quedan `docs/ejemplos/apartamento-demo.world.json` y `docs/ejemplos/apartamento-demo.gltf`. Abre el segundo en Blender con File › Import › glTF 2.0.
+
+![Mundo de ejemplo exportado a glTF](docs/ejemplos/apartamento-demo.png)
+
 ### Conectar Handy a Claude (MCP)
 
 ```bash
@@ -50,13 +62,13 @@ Configuración para Claude Desktop o Claude Code (`claude mcp add handy -- pnpm 
     "handy": {
       "command": "pnpm",
       "args": ["--dir", "/ruta/a/Handy", "mcp"],
-      "env": { "HANDY_CATALOG": "/ruta/a/mi-catalogo.json" }
+      "env": { "HANDY_WORLD": "/ruta/a/mi-casa.world.json", "HANDY_CATALOG": "/ruta/a/mi-catalogo.json" }
     }
   }
 }
 ```
 
-Herramientas expuestas hoy: `design_cabinet`, `cutlist`, `search_prices`, `check_collisions`. Ver [docs/modulos/ia-mcp.md](docs/modulos/ia-mcp.md).
+Herramientas expuestas hoy: las del mundo (`world_create`, `world_describe`, `world_add_room`, `world_add_opening`, `world_free_runs`, `world_place_cabinet`, `world_remove_item`, `world_check`, `world_quote`, `world_export_gltf`) y las de mueble suelto (`design_cabinet`, `cutlist`, `search_prices`, `check_collisions`). Con `HANDY_WORLD` eliges el archivo de tu mundo. Ver [docs/modulos/ia-mcp.md](docs/modulos/ia-mcp.md).
 
 ### Usar tus precios locales
 

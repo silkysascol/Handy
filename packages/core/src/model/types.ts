@@ -51,6 +51,8 @@ export interface Panel {
   placement?: Placement;
   /** Presente solo en piezas móviles (puertas, cajones, frentes abatibles). */
   motion?: MotionSpec;
+  /** Cuando qty > 1: posición (y movimiento) de cada unidad. Si falta, todas comparten `placement`. */
+  instances?: PanelInstance[];
   notes?: string;
 }
 
@@ -83,3 +85,8 @@ export type MotionSpec =
   | { kind: "hinge"; axis: "left" | "right" | "top" | "bottom"; maxAngleDeg: number; softClose?: boolean }
   | { kind: "slide"; direction: "front" | "left" | "right"; travel: Millimeters; loadKg?: number; softClose?: boolean }
   | { kind: "lift"; maxAngleDeg: number; loadKg?: number };
+
+export interface PanelInstance {
+  placement: Placement;
+  motion?: MotionSpec;
+}

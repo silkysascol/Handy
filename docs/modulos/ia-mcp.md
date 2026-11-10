@@ -17,6 +17,23 @@ Que cualquier IA (Claude Desktop, Claude Code, Cursor, agentes locales con Ollam
 
 Variable `HANDY_CATALOG` para apuntar a un catálogo propio.
 
+### Herramientas del mundo
+
+El mundo vive en `~/.handy/mundo.world.json` o donde indique `HANDY_WORLD`. La IA debe llamar a `world_describe` antes de proponer algo.
+
+| Herramienta | Qué hace |
+| --- | --- |
+| `world_create` | Crea el mundo. No sobrescribe uno existente sin `overwrite: true`. |
+| `world_describe` | Estado completo en texto: habitaciones, muros, aberturas, muebles y tramos libres. |
+| `world_add_room` | Habitación rectangular con medidas, altura, grosor de muros y posición en el plano. |
+| `world_add_opening` | Puerta, ventana o paso en un muro. |
+| `world_free_runs` | Tramos de muro donde cabe un mueble de cierta altura. |
+| `world_place_cabinet` | Coloca un gabinete contra un muro y devuelve los avisos que provoca. |
+| `world_remove_item` | Quita un mueble. |
+| `world_check` | Revisa todo: solapes, aberturas tapadas, colisiones al abrir, reglas constructivas. |
+| `world_quote` | Cotización consolidada de los muebles del mundo. |
+| `world_export_gltf` | Escribe el `.gltf` para Blender. |
+
 ## Previsto
 
 - `create_project`, `open_project`, `save_project`: trabajar sobre `.handy.json`.

@@ -193,6 +193,9 @@ export function generateCabinet(params: CabinetParams): FurnitureModel {
       edgeBanding: { top: false, bottom: false, left: false, right: true },
       edgeMaterialId,
       placement: place(t + R.shelfSideClearance, plinth + t + Math.round(gap), R.backGrooveOffset + tb, "y"),
+      instances: Array.from({ length: shelves }, (_, i) => ({
+        placement: place(t + R.shelfSideClearance, plinth + t + Math.round(gap * (i + 1)), R.backGrooveOffset + tb, "y"),
+      })),
       notes: `Separación aprox. ${Math.round(gap)} mm; ajustar a múltiplos de ${R.system32Pitch} mm.`,
     });
   }
@@ -214,8 +217,15 @@ export function generateCabinet(params: CabinetParams): FurnitureModel {
       edgeBanding: { top: true, bottom: true, left: true, right: true },
       edgeMaterialId,
       placement: place(R.doorGap, plinth + R.doorGap, D, "z"),
-      motion: { kind: "hinge", axis: doors === 1 ? "left" : "left", maxAngleDeg: 110, softClose: false },
-      notes: doors === 2 ? "Puerta izquierda con eje izquierdo; la derecha, espejo con eje derecho." : undefined,
+      motion: { kind: "hinge", axis: "left", maxAngleDeg: 110, softClose: false },
+      instances:
+        doors === 2
+          ? [
+              { placement: place(R.doorGap, plinth + R.doorGap, D, "z"), motion: { kind: "hinge", axis: "left", maxAngleDeg: 110, softClose: false } },
+              { placement: place(2 * R.doorGap + doorW, plinth + R.doorGap, D, "z"), motion: { kind: "hinge", axis: "right", maxAngleDeg: 110, softClose: false } },
+            ]
+          : undefined,
+      notes: doors === 2 ? "Puerta izquierda con eje izquierdo; la derecha, con eje derecho." : undefined,
     });
     const hinges = hingesPerDoor(doorH) * doors;
     hardware.push({

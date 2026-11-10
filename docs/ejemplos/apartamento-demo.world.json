@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "name": "Apartamento demo",
+  "rooms": [
+    {
+      "id": "dormitorio",
+      "name": "Dormitorio",
+      "origin": [
+        0,
+        0
+      ],
+      "width": 3600,
+      "depth": 3200,
+      "height": 2400,
+      "wallThickness": {
+        "north": 200,
+        "east": 200,
+        "south": 100,
+        "west": 100
+      },
+      "openings": [
+        {
+          "wall": "south",
+          "type": "door",
+          "offset": 200,
+          "width": 800,
+          "height": 2050,
+          "sill": 0,
+          "id": "door-south"
+        },
+        {
+          "wall": "north",
+          "type": "window",
+          "offset": 1200,
+          "width": 1200,
+          "height": 1200,
+          "sill": 1000,
+          "id": "window-north"
+        }
+      ]
+    },
+    {
+      "id": "cocina",
+      "name": "Cocina",
+      "origin": [
+        4000,
+        0
+      ],
+      "width": 2800,
+      "depth": 2400,
+      "height": 2400,
+      "wallThickness": {
+        "north": 150,
+        "east": 150,
+        "south": 150,
+        "west": 150
+      },
+      "openings": [
+        {
+          "wall": "south",
+          "type": "pass",
+          "offset": 1800,
+          "width": 900,
+          "height": 2100,
+          "sill": 0,
+          "id": "pass-south"
+        },
+        {
+          "wall": "north",
+          "type": "window",
+          "offset": 800,
+          "width": 1000,
+          "height": 1000,
+          "sill": 1100,
+          "id": "window-north"
+        }
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "armario",
+      "name": "Armario",
+      "roomId": "dormitorio",
+      "kind": "cabinet",
+      "params": {
+        "width": 800,
+        "height": 2000,
+        "depth": 500,
+        "shelves": 3,
+        "doors": 2,
+        "plinthHeight": 80,
+        "joinery": "minifix"
+      },
+      "wall": "east",
+      "offset": 600,
+      "elevation": 0
+    },
+    {
+      "id": "armario-2",
+      "name": "Armario 2",
+      "roomId": "dormitorio",
+      "kind": "cabinet",
+      "params": {
+        "width": 800,
+        "height": 2000,
+        "depth": 500,
+        "shelves": 3,
+        "doors": 2,
+        "plinthHeight": 80,
+        "joinery": "minifix"
+      },
+      "wall": "east",
+      "offset": 1400,
+      "elevation": 0
+    },
+    {
+      "id": "biblioteca",
+      "name": "Biblioteca",
+      "roomId": "dormitorio",
+      "kind": "cabinet",
+      "params": {
+        "width": 900,
+        "height": 1800,
+        "depth": 300,
+        "shelves": 4,
+        "joinery": "minifix"
+      },
+      "wall": "west",
+      "offset": 400,
+      "elevation": 0
+    },
+    {
+      "id": "bajo-1",
+      "name": "Bajo 1",
+      "roomId": "cocina",
+      "kind": "cabinet",
+      "params": {
+        "width": 600,
+        "height": 720,
+        "depth": 580,
+        "shelves": 1,
+        "doors": 1,
+        "joinery": "minifix"
+      },
+      "wall": "north",
+      "offset": 0,
+      "elevation": 0
+    },
+    {
+      "id": "bajo-2",
+      "name": "Bajo 2",
+      "roomId": "cocina",
+      "kind": "cabinet",
+      "params": {
+        "width": 900,
+        "height": 720,
+        "depth": 580,
+        "shelves": 1,
+        "doors": 2,
+        "joinery": "minifix"
+      },
+      "wall": "north",
+      "offset": 600,
+      "elevation": 0
+    },
+    {
+      "id": "alto-1",
+      "name": "Alto 1",
+      "roomId": "cocina",
+      "kind": "cabinet",
+      "params": {
+        "width": 900,
+        "height": 700,
+        "depth": 350,
+        "shelves": 1,
+        "doors": 2,
+        "joinery": "minifix"
+      },
+      "wall": "north",
+      "offset": 1900,
+      "elevation": 1500
+    }
+  ],
+  "updatedAt": "2026-11-10"
+}

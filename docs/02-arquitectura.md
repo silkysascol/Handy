@@ -26,6 +26,29 @@
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
+## El mundo es el centro
+
+Todo gira alrededor de un archivo: `*.world.json`, el duplicado virtual de los espacios del usuario. Contiene habitaciones (medidas, grosor de cada muro, puertas, ventanas, pasos) y lo que hay dentro (muebles con sus parámetros y su posición contra un muro). Las interfaces no guardan estado propio: la web, el ejecutable, la CLI y la IA por MCP leen y escriben ese mismo mundo.
+
+```
+        tú (web / ejecutable)            tu IA (MCP)
+                 │                            │
+                 ▼                            ▼
+        ┌──────────────────────────────────────────┐
+        │   mundo  (mi-casa.world.json)            │
+        │   habitaciones · muros · aberturas       │
+        │   muebles colocados · pisos · estructuras│
+        └───────────────┬──────────────────────────┘
+                        │  @handy/core: describir, tramos libres, colocar,
+                        │  revisar (colisiones, aberturas, solapes), cotizar
+          ┌─────────────┼──────────────┬───────────────┐
+          ▼             ▼              ▼               ▼
+      glTF → Blender   despiece     lista de compras  instrucciones
+      (renders)        madera/metal  con precios       de armado
+```
+
+Implementado hoy en `packages/core/src/world.ts` y `gltf.ts`: habitaciones rectangulares, aberturas, gabinetes contra un muro (apoyados o colgados), `describeWorld` (texto para la IA), `freeWallRuns`, `checkWorld`, cotización consolidada y exportación glTF validada. Ejes del mundo: X derecha, Y arriba, Z hacia el observador; milímetros enteros; los offsets se miden desde el extremo izquierdo del muro mirándolo desde dentro.
+
 ## Paquetes
 
 | Paquete | Rol | Estado |

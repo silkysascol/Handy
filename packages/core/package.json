@@ -21,7 +21,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "cli": "tsx src/cli.ts"
+    "cli": "tsx src/cli.ts",
+    "demo:world": "tsx src/demo-world.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

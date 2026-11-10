@@ -8,13 +8,30 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 
 - [x] Monorepo pnpm, CI, licencia MIT.
 - [x] `@handy/core`: modelo en mm, generador de gabinete, lista de corte, reglas básicas, cotización con catálogo JSON.
-- [x] CLI y servidor MCP con `design_cabinet`, `cutlist`, `search_prices`, `check_collisions`.
+- [x] CLI y servidor MCP con `design_cabinet`, `cutlist`, `search_prices`, `check_collisions` y las herramientas `world_*`.
 - [x] `MotionSpec` en piezas móviles y comprobador de colisiones nivel 1 (cajas envolventes, obstáculos externos).
 - [x] Documentos de visión, arquitectura y módulos.
 
 > Reordenado el 2026-11-07 tras el council con la visión correcta (ver `docs/investigacion/council-presupuesto-y-monetizacion.md`): Handy es para quien lo hace él mismo. El primer producto es un solo flujo completo, "mi primer closet", validado con personas reales antes de ampliar a cocina, pisos e IA de presupuesto.
 
-## M1 · "Mi primer closet": un flujo completo para quien lo hace él mismo
+## M1 · "Mi casa en Handy": el mundo primero
+
+El centro de Handy es el duplicado virtual de los espacios del autor, sobre el que él y su IA planifican. Primera versión hecha; lo que sigue se decide con el uso real.
+
+- [x] Modelo del mundo (`*.world.json`): habitaciones rectangulares con grosor por muro, puertas, ventanas y pasos; gabinetes colocados contra un muro, apoyados o colgados.
+- [x] Consultas para la IA: descripción del mundo en texto, tramos libres por muro según la altura del mueble.
+- [x] Revisión del mundo: solapes, puertas y ventanas tapadas, colisiones al abrir contra muros y muebles vecinos, reglas de cada mueble.
+- [x] Cotización consolidada de todos los muebles del mundo.
+- [x] Exportación glTF para Blender (validada con el validador de Khronos): jerarquía por habitación, muro y pieza; medidas en `extras`.
+- [x] Herramientas MCP `world_*` para que la IA cree, consulte, coloque, revise, cotice y exporte.
+- [ ] **Cargar la casa real del autor** y anotar lo que falte.
+- [ ] Habitaciones no rectangulares (polígonos), niveles y puertas entre habitaciones; importar RoomPlan/LiDAR.
+- [ ] Visor web del mundo (three.js) con tema claro y oscuro: ver lo que la IA hace en vivo.
+- [ ] Mover y redimensionar muebles ya colocados (`world_update_item`); muebles sueltos no pegados a un muro.
+- [ ] Más cosas que colocar: closet con divisiones, cajonera, marcos de tubo, piso con despiece.
+- [ ] Salidas para el corte: despiece de tableros en el formato de la tienda y despiece lineal de perfiles.
+
+## M1a · "Mi primer mueble": un flujo completo
 
 - [ ] Generadores: closet con divisiones y barra, estantería/biblioteca; cajonera después.
 - [ ] Sistema de unión según herramientas del usuario: minifix con perforación en la tienda (exportar archivo de perforado), minifix o tarugos con plantilla imprimible (Objetos), encaje sin perforar. "Sin tornillos a la vista" predeterminado.

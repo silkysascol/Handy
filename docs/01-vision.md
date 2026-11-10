@@ -1,5 +1,13 @@
 # Visión
 
+## Qué es Handy: tu taller virtual
+
+Handy es un entorno "meta": un **duplicado virtual de tus espacios** (tu casa, tu taller) donde vive todo lo que planeas. La casa está ahí con sus medidas reales, muros, puertas y ventanas; los muebles, los pisos y las estructuras se diseñan y se colocan **dentro de ese mismo espacio**.
+
+Ese mundo es el contexto compartido entre tú y tu IA. En un chat la IA no ve tu cuarto, no recuerda medidas entre conversaciones y no puede comprobar si algo cabe. En Handy la IA lee el mundo, pregunta por los tramos libres de un muro, coloca un mueble, comprueba que la puerta abre sin chocar, cotiza y corrige, todo sobre el mismo modelo que tú ves. El mundo persiste en un archivo tuyo y cada conversación continúa donde quedó la anterior.
+
+De ese mundo sale lo demás: el modelo para **Blender** cuando quieres renders, el **despiece** para quien corte la madera o el metal mientras no tengas tu propia herramienta, la lista de compras y las instrucciones de armado.
+
 ## Primero, una herramienta personal
 
 Handy empieza como la herramienta con la que su autor hace sus propios trabajos. Cada función se prueba primero en un proyecto real suyo: si le sirve a él para diseñar, costear y armar, queda. Lo comercial se piensa después, con lo aprendido en esos proyectos. Hasta entonces no hay planes de pago, ni afiliados, ni producto físico: solo código abierto y uso propio.

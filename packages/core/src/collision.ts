@@ -1,4 +1,4 @@
-import type { FurnitureModel, Millimeters, MotionSpec, Panel } from "./model/index.js";
+import type { FurnitureModel, Millimeters, MotionSpec, Panel, Placement } from "./model/index.js";
 
 export interface AABB {
   min: [Millimeters, Millimeters, Millimeters];
@@ -26,10 +26,16 @@ export interface Collision {
 
 type Vec3 = [number, number, number];
 
-/** Caja de una pieza en reposo a partir de su `placement` y su normal. */
-export function panelBox(p: Panel): AABB | undefined {
-  if (!p.placement) return undefined;
-  const { x, y, z, normal } = p.placement;
+/** Unidades de una pieza: una por `instances`, o una sola con su `placement`. */
+export function panelInstances(p: Panel): { placement: Placement; motion?: MotionSpec }[] {
+  if (p.instances?.length) return p.instances;
+  return p.placement ? [{ placement: p.placement, motion: p.motion }] : [];
+}
+
+/** Caja de una pieza en reposo a partir de su `placement` (o el que se le pase) y su normal. */
+export function panelBox(p: Panel, placement: Placement | undefined = p.placement): AABB | undefined {
+  if (!placement) return undefined;
+  const { x, y, z, normal } = placement;
   const size: Vec3 =
     normal === "x" ? [p.thickness, p.height, p.width] :
     normal === "y" ? [p.height, p.thickness, p.width] :
@@ -92,27 +98,36 @@ export function boxAt(p: Panel, rest: AABB, motion: MotionSpec, t: number): AABB
  */
 export function checkMotionCollisions(model: FurnitureModel, obstacles: Obstacle[] = [], samples = 24): Collision[] {
   const out: Collision[] = [];
-  const statics = model.panels.filter((p) => !p.motion).map((p) => ({ id: p.id, name: p.name, box: panelBox(p) })).filter((s): s is { id: string; name: string; box: AABB } => !!s.box);
+  const statics: Obstacle[] = [];
+  const movers: { panel: Panel; rest: AABB; motion: MotionSpec; label: string }[] = [];
+  for (const p of model.panels) {
+    const units = panelInstances(p);
+    units.forEach((u, i) => {
+      const box = panelBox(p, u.placement);
+      if (!box) return;
+      const label = units.length > 1 ? `${p.name} ${i + 1}` : p.name;
+      if (u.motion) movers.push({ panel: p, rest: box, motion: u.motion, label });
+      else statics.push({ id: units.length > 1 ? `${p.id}#${i + 1}` : p.id, name: label, box });
+    });
+  }
   const targets = [...statics, ...obstacles];
 
-  for (const p of model.panels) {
-    const rest = panelBox(p);
-    if (!p.motion || !rest) continue;
-    const ignore = new Set(targets.filter((t) => overlaps(rest, t.box)).map((t) => t.id));
+  for (const m of movers) {
+    const ignore = new Set(targets.filter((t) => overlaps(m.rest, t.box)).map((t) => t.id));
     const hit = new Set<string>();
     for (let i = 1; i <= samples; i++) {
       const t = i / samples;
-      const box = boxAt(p, rest, p.motion, t);
+      const box = boxAt(m.panel, m.rest, m.motion, t);
       for (const target of targets) {
         if (ignore.has(target.id) || hit.has(target.id) || !overlaps(box, target.box)) continue;
         hit.add(target.id);
-        const c: Collision = { panelId: p.id, againstId: target.id, againstName: target.name, at: t, message: "" };
-        if (p.motion.kind === "slide") {
-          c.travel = Math.round(p.motion.travel * t);
-          c.message = `${p.name} choca con ${target.name} a los ${c.travel} mm de recorrido (de ${p.motion.travel}).`;
+        const c: Collision = { panelId: m.panel.id, againstId: target.id, againstName: target.name, at: t, message: "" };
+        if (m.motion.kind === "slide") {
+          c.travel = Math.round(m.motion.travel * t);
+          c.message = `${m.label} choca con ${target.name} a los ${c.travel} mm de recorrido (de ${m.motion.travel}).`;
         } else {
-          c.angleDeg = Math.round(p.motion.maxAngleDeg * t);
-          c.message = `${p.name} choca con ${target.name} al abrir ${c.angleDeg}° (máximo ${p.motion.maxAngleDeg}°). Usa una bisagra de menor ángulo, un tope o separa el mueble.`;
+          c.angleDeg = Math.round(m.motion.maxAngleDeg * t);
+          c.message = `${m.label} choca con ${target.name} al abrir ${c.angleDeg}° (máximo ${m.motion.maxAngleDeg}°). Usa una bisagra de menor ángulo, un tope o separa el mueble.`;
         }
         out.push(c);
       }

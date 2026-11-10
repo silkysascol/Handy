@@ -13,6 +13,8 @@ import {
   type StaticCatalog,
 } from "@handy/core";
 
+import { registerWorldTools, WorldStore } from "./world-tools.js";
+
 const require = createRequire(import.meta.url);
 
 /** Catálogo de precios usado por defecto. Reemplazable con HANDY_CATALOG=/ruta/catalogo.json */
@@ -42,8 +44,9 @@ const obstacleSchema = z.object({
 });
 const obstaclesInput = z.array(obstacleSchema).default([]).describe("Obstáculos alrededor del mueble para comprobar colisiones al abrir puertas y cajones");
 
-export function createHandyServer(providers: PriceProvider[] = loadProviders()): McpServer {
+export function createHandyServer(providers: PriceProvider[] = loadProviders(), worldStore: WorldStore = new WorldStore()): McpServer {
   const server = new McpServer({ name: "handy", version: "0.0.1" });
+  registerWorldTools(server, providers, worldStore);
 
   server.registerTool(
     "design_cabinet",
