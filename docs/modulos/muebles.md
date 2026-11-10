@@ -114,6 +114,10 @@ Si el mueble lleva luces (tiras LED bajo alacena, luz interior con sensor de pue
 
 Es una opción de todo el mueble. Al activarla, el generador cambia confirmat por minifix + tarugo o tarugo encolado en todas las juntas visibles, usa bisagras clip y correderas ocultas, deja confirmat solo donde no se ve (zócalo, trasera) y actualiza la lista de herrajes, el precio y el plano de armado. El visor resalta las juntas afectadas y el asistente explica el cambio.
 
+## Estructuras en perfiles de acero, aluminio y drywall
+
+Bases de mesa, estanterías de marcos, estructura de mesones y asadores, bastidores. Despiece lineal de barras, uniones según habilidad y mixto con madera. Ver [metal.md](metal.md).
+
 ## Simulación de esfuerzos
 
 Cada mueble puede evaluarse con cargas típicas (libros 60 kg/m², ropa, TV, persona sentada) para ver deformación y zonas críticas. Ver [estructura.md](estructura.md).

@@ -1,5 +1,7 @@
 # Roadmap
 
+> **Fase actual: herramienta personal.** Handy se construye para los trabajos de su autor y se prueba en ellos. El orden de abajo es una propuesta; lo que manda es el siguiente proyecto real. Todo lo comercial (planes, afiliados, plantilla física, leads) está **aparcado** hasta haber terminado varios proyectos propios con Handy; el análisis queda guardado en `docs/investigacion/council-presupuesto-y-monetizacion.md`.
+
 Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 
 ## M0 · Fundaciones (hecho)
@@ -21,9 +23,18 @@ Fases cortas, cada una entrega algo usable. Las fechas son orientativas.
 - [ ] Instrucciones de armado en PDF sin texto (plan de ensamblaje automático, render de líneas).
 - [ ] Web mínima que conecta lo anterior: medidas → diseño → despiece → presupuesto → PDF. Tema claro y oscuro con tokens.
 - [ ] Validación dura: sin validación verde del motor no hay lista de corte; la IA (del usuario, por MCP) elige entre opciones válidas y nunca inventa medidas.
-- [ ] Prueba con 5 personas sin experiencia, taladro de mano y plantilla impresa, en una ciudad; meta: 50 muebles terminados antes de M2.
-- [ ] Sostenimiento: donaciones y patrocinio; primer producto pago, la plantilla física de perforado (jig de 15 mm y guía de tarugos).
+- [ ] Prueba real: el autor diseña, manda a cortar y arma un mueble propio con Handy de principio a fin, y anota cada fricción. Después, otras personas.
 - [ ] Sistema 32 mm, exportación CSV, `MotionSpec` por herraje (parte hecha), catálogos reales de 2 países.
+
+## M1b · Perfiles de acero y similares
+
+Ver `docs/modulos/metal.md`. Se adelanta o atrasa según el primer proyecto propio que lo necesite.
+
+- [ ] Catálogo de perfiles (tubo cuadrado y rectangular, ángulo, platina, aluminio ranurado, perfilería de drywall) con peso por metro y largo comercial.
+- [ ] Generadores: marco, base de mesa, estantería de marcos, bastidor de drywall.
+- [ ] Despiece lineal de barras de 6 m con ancho de disco e ingletes; peso, barras a comprar y consumibles.
+- [ ] Uniones según habilidad: soldado, atornillado con conectores, o plano para el cerrajero.
+- [ ] Mixto madera y metal en un mismo mueble y una misma cotización.
 
 ## M2 · Editor completo y cocina
 

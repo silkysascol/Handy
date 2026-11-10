@@ -11,7 +11,7 @@ Prototipos **rápidos y fieles** a lo que quieres, hechos en el navegador o en e
 | Sección | Enfoque | Qué resuelve |
 | --- | --- | --- |
 | **Espacios** | interfaz y medidas de apartamentos, cuartos y casas | Dibujar el mapa del lugar con grosor de muros, puertas y ventanas; importar escaneos LiDAR del iPhone; **pisos**: despiece de cerámica o porcelanato, cajas, pega y boquilla; puntos eléctricos con inferencia de canalización; reglas de tuberías; estudio de luz solar. |
-| **Muebles** | interfaz y medidas de muebles de madera, tablero y ladrillo | Gabinetes, closets, cocinas, escritorios en melamina; asadores y mesones de ladrillo. Sistema de unión según tus herramientas (perforación en la tienda o plantilla impresa), lista de corte, herrajes con su movimiento, cotización en tiempo real, decisiones como cajón o tapa con pistón, e instrucciones de armado. |
+| **Muebles** | interfaz y medidas de muebles de madera, tablero, ladrillo y perfiles de acero | Gabinetes, closets, cocinas, escritorios en melamina; asadores y mesones de ladrillo. Sistema de unión según tus herramientas (perforación en la tienda o plantilla impresa), lista de corte, herrajes con su movimiento, cotización en tiempo real, decisiones como cajón o tapa con pistón, e instrucciones de armado. |
 | **Objetos** | cosas pequeñas | Repuestos, accesorios y **plantillas de perforado** paramétricos, listos para imprimir en 3D en STL/3MF. |
 
 Transversal a las tres: **simulación de esfuerzos** para saber si una repisa, un asador o un espacio aguanta la carga, **cotización** con precios locales, **exportación** a glTF/OBJ/STL/DXF/PDF, y un servidor [MCP](https://modelcontextprotocol.io) para que Claude, Claude Code, Cursor, Ollama u otras IAs del PC diseñen y coticen contigo.

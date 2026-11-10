@@ -1,5 +1,9 @@
 # Visión
 
+## Primero, una herramienta personal
+
+Handy empieza como la herramienta con la que su autor hace sus propios trabajos. Cada función se prueba primero en un proyecto real suyo: si le sirve a él para diseñar, costear y armar, queda. Lo comercial se piensa después, con lo aprendido en esos proyectos. Hasta entonces no hay planes de pago, ni afiliados, ni producto físico: solo código abierto y uso propio.
+
 ## Para quién es Handy
 
 Handy, como su nombre lo dice, es para la persona **que hace las cosas por sí misma**: manda a cortar los tableros en Madecentro u Homecenter, los trae a casa y arma su propia cocina, su closet o su biblioteca. No tiene formación en diseño de muebles ni en arquitectura, y no quiere tenerla. Quiere que el resultado se vea bien, funcione y le cueste lo que calculó.
@@ -21,7 +25,7 @@ Prototipos rápidos y fieles. Fieles en medidas (milímetros reales, muros con s
 ## Tres secciones
 
 - **Espacios**: apartamentos, cuartos, casas. Mapa del lugar, grosor de muros, aberturas, puntos eléctricos y sanitarios, sol, **pisos y enchapes**.
-- **Muebles**: madera, tablero y ladrillo. Medidas, sistema de unión según habilidad, lista de corte, herrajes, cotización, esfuerzos, instrucciones de armado.
+- **Muebles**: madera, tablero, ladrillo y **perfiles de acero o aluminio**. Medidas, sistema de unión según habilidad, lista de corte, herrajes, cotización, esfuerzos, instrucciones de armado.
 - **Objetos**: piezas pequeñas, repuestos, **plantillas de perforado** y accesorios para imprimir en 3D.
 
 ## Principios

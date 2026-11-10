@@ -1,5 +1,7 @@
 # Council: diseño por presupuesto con IA y monetización
 
+> Estado al 2026-11-10: **lo comercial está aparcado.** Handy es por ahora la herramienta personal de su autor; este análisis se retoma cuando haya proyectos propios terminados con ella.
+
 Fecha: 2026-11-06. Cinco perspectivas evaluaron en paralelo dos propuestas del fundador: (A) que la IA desarrolle una propuesta de mueble o renovación dentro de un presupuesto, con el contexto del espacio y las herramientas de Handy; (B) monetizar comisionando pedidos de materiales hechos desde la herramienta. Roles: taller de melamina en Cali, arquitecta interiorista, ingeniero de producto IA, estratega de negocio, abogado y comunidad open source. Abajo, lo que acordaron, lo que discutieron y lo que Handy decide.
 
 ## Propuesta A: "renueva esta cocina con 6 millones"
