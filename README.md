@@ -48,6 +48,28 @@ Quedan `docs/ejemplos/apartamento-demo.world.json` y `docs/ejemplos/apartamento-
 
 ![Mundo de ejemplo exportado a glTF](docs/ejemplos/apartamento-demo.png)
 
+### El visor: clic y di qué quieres
+
+```bash
+pnpm web
+```
+
+Abre http://localhost:5174. Verás tu mundo en 3D. **Haz clic en un muro, un mueble, una puerta o una ventana** y escribe abajo lo que quieres, en tus palabras:
+
+| Seleccionas | Escribes |
+| --- | --- |
+| un muro | `pon una puerta de 80 x 205 a 2 m de la pared izquierda` · `ventana de 120 x 100 centrada, antepecho 110` · `armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas` · `grosor 20 cm` |
+| un mueble | `ensancha 10 cm` · `alto 1800` · `muévelo 30 cm a la derecha` · `agrega una repisa` · `súbelo 10 cm` · `sin tornillos a la vista` · `quítalo` |
+| una puerta o ventana | `muévela 20 cm a la derecha` · `90 x 210` · `céntrala` · `quítala` |
+| una habitación | `alto 2,6 m` · `ancho 4 m` |
+| nada | `cocina de 2,8 x 2,4 m` |
+
+Cada cambio se valida (si no cabe, no se aplica y te dice por qué), actualiza el precio de la esquina, se puede deshacer y se guarda en tu archivo de mundo. Si tu IA cambia el mundo por MCP, el visor se actualiza solo. Lo que el intérprete no entiende te lo deja listo para copiar a tu IA.
+
+![Visor de Handy](docs/mocks/visor-real.png)
+
+Los números sin unidad se leen como se habla en obra: menos de 10 son metros, menos de 300 centímetros, el resto milímetros. La respuesta siempre repite la medida en mm.
+
 ### Conectar Handy a Claude (MCP)
 
 ```bash
@@ -68,7 +90,7 @@ Configuración para Claude Desktop o Claude Code (`claude mcp add handy -- pnpm 
 }
 ```
 
-Herramientas expuestas hoy: las del mundo (`world_create`, `world_describe`, `world_add_room`, `world_add_opening`, `world_free_runs`, `world_place_cabinet`, `world_remove_item`, `world_check`, `world_quote`, `world_export_gltf`) y las de mueble suelto (`design_cabinet`, `cutlist`, `search_prices`, `check_collisions`). Con `HANDY_WORLD` eliges el archivo de tu mundo. Ver [docs/modulos/ia-mcp.md](docs/modulos/ia-mcp.md).
+Herramientas expuestas hoy: las del mundo (`world_create`, `world_describe`, `world_add_room`, `world_add_opening`, `world_free_runs`, `world_place_cabinet`, `world_update_item`, `world_command`, `world_remove_item`, `world_check`, `world_quote`, `world_export_gltf`) y las de mueble suelto (`design_cabinet`, `cutlist`, `search_prices`, `check_collisions`). Con `HANDY_WORLD` eliges el archivo de tu mundo. Ver [docs/modulos/ia-mcp.md](docs/modulos/ia-mcp.md).
 
 ### Usar tus precios locales
 
@@ -80,7 +102,7 @@ Copia `packages/core/data/catalog-ejemplo.json`, pon los precios de tu ferreter�
 Handy/
 ├── packages/core/        Motor: modelo, generadores, lista de corte, validaciones, cotización
 ├── apps/mcp-server/      Servidor MCP (stdio) para IAs
-├── apps/web/             App web (React + Three.js)            [en diseño]
+├── apps/web/             Visor web del mundo (three.js): clic para seleccionar y comandos en español
 ├── apps/desktop/         Ejecutable (Tauri) que empaqueta la web + API local  [en diseño]
 └── docs/                 Visión, arquitectura, roadmap, módulos, decisiones (ADR), ejemplos, mocks de UI
 ```

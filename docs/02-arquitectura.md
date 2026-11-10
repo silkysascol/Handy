@@ -49,6 +49,12 @@ Todo gira alrededor de un archivo: `*.world.json`, el duplicado virtual de los e
 
 Implementado hoy en `packages/core/src/world.ts` y `gltf.ts`: habitaciones rectangulares, aberturas, gabinetes contra un muro (apoyados o colgados), `describeWorld` (texto para la IA), `freeWallRuns`, `checkWorld`, cotización consolidada y exportación glTF validada. Ejes del mundo: X derecha, Y arriba, Z hacia el observador; milímetros enteros; los offsets se miden desde el extremo izquierdo del muro mirándolo desde dentro.
 
+## Seleccionar y ordenar
+
+La interacción base es **selección + orden en lenguaje natural**. La selección (`Selection`: mundo, habitación, muro, abertura o mueble) acota la orden. `runCommand(world, selection, text)` en `packages/core/src/commands.ts` es un intérprete determinista en español: entiende medidas con o sin unidad, "a X de la izquierda/derecha", "centrada", medidas relativas ("ensancha", "más bajo") y absolutas, cantidades ("2 puertas", "agrega una repisa") y borrado. Devuelve `ok`, `understood`, un mensaje que repite lo interpretado en mm y qué dejar seleccionado. Toda mutación pasa por funciones del mundo que validan y no dejan nada a medias. Si `understood` es falso, la interfaz ofrece la orden lista para la IA; la misma capacidad está en MCP como `world_command`.
+
+El visor (`apps/web`) es three.js sin framework: construye la escena desde el mundo, selecciona con clic (los muros entre la cámara y la habitación se atenúan y no interceptan el clic), muestra el precio en la esquina y guarda en el archivo del mundo a través de un servidor local mínimo que también avisa de cambios externos por SSE.
+
 ## Paquetes
 
 | Paquete | Rol | Estado |
@@ -63,7 +69,7 @@ Implementado hoy en `packages/core/src/world.ts` y `gltf.ts`: habitaciones recta
 | `packages/assembly` | Plan de ensamblaje automático y render de instrucciones (líneas, PDF, HTML). | Planificado |
 | `packages/masonry` | Muebles de ladrillo (asador, mesón): aparejos, conteo de ladrillos y mortero. | Planificado |
 | `packages/providers-*` | Adaptadores de tiendas por país (`providers-cl`, `providers-co`, ...). | Planificado |
-| `apps/web` | Editor en navegador con las tres secciones (Espacios, Muebles, Objetos). Es la interfaz principal; el ejecutable la empaqueta. | Diseño |
+| `apps/web` | Visor del mundo en navegador: clic para seleccionar, comandos en español, precio en la esquina, deshacer, tema claro y oscuro, exportar a Blender. | Funcional (primera versión) |
 | `apps/desktop` | Tauri: empaqueta la web, expone API local y MCP, acceso a archivos. | Diseño |
 | `apps/mcp-server` | Servidor MCP stdio (y más adelante HTTP) sobre `core`. | Funcional (3 herramientas) |
 

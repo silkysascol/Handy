@@ -24,10 +24,12 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [x] Cotización consolidada de todos los muebles del mundo.
 - [x] Exportación glTF para Blender (validada con el validador de Khronos): jerarquía por habitación, muro y pieza; medidas en `extras`.
 - [x] Herramientas MCP `world_*` para que la IA cree, consulte, coloque, revise, cotice y exporte.
+- [x] Intérprete de órdenes en español acotado a la selección (`runCommand`) y funciones para modificar habitaciones, aberturas y muebles con validación.
+- [x] Visor web: clic para seleccionar muro, abertura, mueble o habitación; barra de órdenes; precio en la esquina; avisos; deshacer; importar y exportar; tema claro y oscuro; actualización en vivo cuando la IA cambia el mundo.
 - [ ] **Cargar la casa real del autor** y anotar lo que falte.
 - [ ] Habitaciones no rectangulares (polígonos), niveles y puertas entre habitaciones; importar RoomPlan/LiDAR.
-- [ ] Visor web del mundo (three.js) con tema claro y oscuro: ver lo que la IA hace en vivo.
-- [ ] Mover y redimensionar muebles ya colocados (`world_update_item`); muebles sueltos no pegados a un muro.
+- [ ] Arrastrar con el mouse para mover y estirar, además de las órdenes; cotas visibles en la vista; muebles sueltos no pegados a un muro.
+- [ ] Más vocabulario en el intérprete según lo que el autor escriba y no se entienda (registro de órdenes no entendidas).
 - [ ] Más cosas que colocar: closet con divisiones, cajonera, marcos de tubo, piso con despiece.
 - [ ] Salidas para el corte: despiece de tableros en el formato de la tienda y despiece lineal de perfiles.
 

@@ -15,6 +15,9 @@ import {
   mergedModel,
   placeCabinet,
   removeItem,
+  runCommand,
+  updateItem,
+  type Selection,
   WALL_NAMES,
   type PriceProvider,
   type World,
@@ -174,6 +177,52 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
       if (!removeItem(world, itemId)) throw new Error(`No existe el mueble "${itemId}".`);
       store.save(world);
       return text(`Mueble ${itemId} quitado.`);
+    },
+  );
+
+  server.registerTool(
+    "world_update_item",
+    {
+      title: "Modificar mueble",
+      description: "Cambia medidas, posición o partes de un mueble ya colocado. Solo envía los campos que cambian. Si el resultado no cabe, no cambia nada y explica por qué.",
+      inputSchema: {
+        itemId: z.string(),
+        name: z.string().optional(),
+        wall: wall.optional(),
+        offset: z.number().int().min(0).optional(),
+        elevation: z.number().int().min(0).optional(),
+        width: z.number().int().min(100).max(3000).optional(),
+        height: z.number().int().min(100).max(3000).optional(),
+        depth: z.number().int().min(100).max(1000).optional(),
+        shelves: z.number().int().min(0).max(20).optional(),
+        doors: z.union([z.literal(0), z.literal(1), z.literal(2)]).optional(),
+        plinthHeight: z.number().int().min(0).max(200).optional(),
+        joinery: z.enum(["confirmat", "minifix", "dowel", "pocket-screw"]).optional(),
+      },
+    },
+    async ({ itemId, name, wall: w, offset, elevation, ...params }) => {
+      const world = store.load();
+      const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined));
+      const item = updateItem(world, itemId, { ...(name !== undefined ? { name } : {}), ...(w ? { wall: w } : {}), ...(offset !== undefined ? { offset } : {}), ...(elevation !== undefined ? { elevation } : {}), params: clean });
+      store.save(world);
+      const issues = checkWorld(world).filter((i) => i.itemId === item.id);
+      return text([`${item.name}: ${item.params.width} x ${item.params.height} x ${item.params.depth} mm, en el ${WALL_NAMES[item.wall]} de ${item.offset} a ${item.offset + item.params.width}.`, ...issues.map((i) => `[${i.level}] ${i.message}`)].join("\n"), { item, issues });
+    },
+  );
+
+  server.registerTool(
+    "world_command",
+    {
+      title: "Orden en lenguaje natural sobre una selección",
+      description: 'Aplica una orden corta en español sobre lo seleccionado, igual que la barra de comandos del visor: "pon una puerta de 80 x 205 a 2 m de la izquierda" (muro), "ensancha 10 cm" (mueble), "muévela 20 cm a la derecha" (abertura), "cocina de 2,8 x 2,4 m" (sin selección). Para la selección envía roomId + wall, o itemId, o roomId + openingId, o solo roomId, o nada.',
+      inputSchema: { text: z.string(), roomId: z.string().optional(), wall: wall.optional(), itemId: z.string().optional(), openingId: z.string().optional() },
+    },
+    async ({ text: order, roomId, wall: w, itemId, openingId }) => {
+      const selection: Selection = itemId ? { kind: "item", itemId } : roomId && openingId ? { kind: "opening", roomId, openingId } : roomId && w ? { kind: "wall", roomId, wall: w } : roomId ? { kind: "room", roomId } : { kind: "world" };
+      const world = store.load();
+      const result = runCommand(world, selection, order);
+      if (result.ok) store.save(world);
+      return { ...text(result.message, { ...result }), isError: !result.ok };
     },
   );
 

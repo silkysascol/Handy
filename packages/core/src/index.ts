@@ -7,3 +7,4 @@ export * from "./providers/index.js";
 export * from "./collision.js";
 export * from "./world.js";
 export * from "./gltf.js";
+export * from "./commands.js";

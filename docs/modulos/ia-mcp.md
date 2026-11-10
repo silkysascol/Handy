@@ -29,6 +29,8 @@ El mundo vive en `~/.handy/mundo.world.json` o donde indique `HANDY_WORLD`. La I
 | `world_add_opening` | Puerta, ventana o paso en un muro. |
 | `world_free_runs` | Tramos de muro donde cabe un mueble de cierta altura. |
 | `world_place_cabinet` | Coloca un gabinete contra un muro y devuelve los avisos que provoca. |
+| `world_update_item` | Cambia medidas, posición o partes de un mueble; valida que quepa. |
+| `world_command` | Aplica una orden corta en español sobre una selección, igual que la barra del visor. |
 | `world_remove_item` | Quita un mueble. |
 | `world_check` | Revisa todo: solapes, aberturas tapadas, colisiones al abrir, reglas constructivas. |
 | `world_quote` | Cotización consolidada de los muebles del mundo. |

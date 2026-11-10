@@ -20,7 +20,8 @@ export function validateFurniture(model: FurnitureModel): Issue[] {
   const issues: Issue[] = [];
 
   for (const p of model.panels) {
-    if (p.id === "shelf" || p.id === "top" || p.id === "bottom") {
+    // Techo y piso van fijos a los costados y al fondo; la regla de pandeo aplica a las repisas sueltas.
+    if (p.id === "shelf") {
       const limit = SHELF_SPAN_LIMITS[p.thickness] ?? 800;
       if (p.height > limit) {
         issues.push({

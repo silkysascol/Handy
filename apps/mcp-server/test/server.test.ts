@@ -56,6 +56,14 @@ describe("Handy MCP server", () => {
     const ok = await call("world_place_cabinet", { roomId: "dormitorio", wall: "east", offset: 1000, name: "Armario", width: 800, height: 2000, depth: 500, doors: 2, shelves: 3 });
     expect(ok.data.issues).toEqual([]);
 
+    const moved = await call("world_command", { itemId: "armario", text: "muévelo 20 cm a la derecha" });
+    expect(moved.text).toContain("de 1200 a 2000");
+    const door = await call("world_command", { roomId: "dormitorio", wall: "north", text: "pon una ventana de 120 x 100 a 1 m de la izquierda" });
+    expect(door.text).toContain("Ventana de 1200 x 1000");
+    expect((await call("world_command", { itemId: "armario", text: "hazlo volar" })).isError).toBe(true);
+    const upd = await call("world_update_item", { itemId: "armario", shelves: 5, width: 760 });
+    expect(upd.data.item.params).toMatchObject({ shelves: 5, width: 760, height: 2000 });
+
     expect((await call("world_describe")).text).toContain("Armario (id: armario)");
     expect((await call("world_check")).text).toContain("Sin avisos");
     const quote = await call("world_quote");

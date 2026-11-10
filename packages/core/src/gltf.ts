@@ -58,7 +58,7 @@ function materialKey(materialId: string): string {
 }
 
 /** Rectángulos macizos de un muro (u a lo largo del muro, y en altura) descontando puertas y ventanas. */
-function wallRects(room: Room, wall: WallSide): { u0: number; u1: number; y0: number; y1: number }[] {
+export function wallRects(room: Room, wall: WallSide): { u0: number; u1: number; y0: number; y1: number }[] {
   const len = wallLength(room, wall), H = room.height;
   const ops = room.openings.filter((o) => o.wall === wall).sort((a, b) => a.offset - b.offset);
   const rects: { u0: number; u1: number; y0: number; y1: number }[] = [];
@@ -73,7 +73,7 @@ function wallRects(room: Room, wall: WallSide): { u0: number; u1: number; y0: nu
   return rects;
 }
 
-function wallRectToBox(room: Room, wall: WallSide, r: { u0: number; u1: number; y0: number; y1: number }): AABB {
+export function wallRectToBox(room: Room, wall: WallSide, r: { u0: number; u1: number; y0: number; y1: number }): AABB {
   const [ox, oz] = room.origin;
   const t = room.wallThickness[wall];
   switch (wall) {

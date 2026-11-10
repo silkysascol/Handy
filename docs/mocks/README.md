@@ -1,5 +1,7 @@
 # Mocks de UI/UX
 
+> La primera versión real del visor ya existe en `apps/web` (captura: `visor-real.png`). Estos mocks siguen siendo la referencia de hacia dónde va la interfaz.
+
 Cuatro pantallas en HTML (abrir en el navegador) que fijan la dirección de la interfaz. El lienzo editable, con los paneles desplegables funcionando, vive en el artefacto de Claude "Handy UI Mocks".
 
 ## Principios (estilo Blender)

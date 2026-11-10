@@ -6,6 +6,8 @@ Handy es un entorno "meta": un **duplicado virtual de tus espacios** (tu casa, t
 
 Ese mundo es el contexto compartido entre tú y tu IA. En un chat la IA no ve tu cuarto, no recuerda medidas entre conversaciones y no puede comprobar si algo cabe. En Handy la IA lee el mundo, pregunta por los tramos libres de un muro, coloca un mueble, comprueba que la puerta abre sin chocar, cotiza y corrige, todo sobre el mismo modelo que tú ves. El mundo persiste en un archivo tuyo y cada conversación continúa donde quedó la anterior.
 
+Nadie necesita saber modelar. Se **hace clic** en un muro, un mueble o una ventana y se **dice qué hacer** con palabras: "pon una puerta de 80 x 205 a 2 m de la pared izquierda", "ensancha 10 cm", "quítala". Todo se modifica así. Un intérprete local resuelve las órdenes comunes al instante y sin IA; lo que no entiende se lo pasa a la IA del usuario con la selección como contexto.
+
 De ese mundo sale lo demás: el modelo para **Blender** cuando quieres renders, el **despiece** para quien corte la madera o el metal mientras no tengas tu propia herramienta, la lista de compras y las instrucciones de armado.
 
 ## Primero, una herramienta personal

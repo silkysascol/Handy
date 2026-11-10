@@ -101,7 +101,7 @@ export function addRoom(world: World, input: RoomInput): Room {
 
 export const wallLength = (room: Room, wall: WallSide): Millimeters => (wall === "north" || wall === "south" ? room.width : room.depth);
 
-function getRoom(world: World, roomId: string): Room {
+export function getRoom(world: World, roomId: string): Room {
   const room = world.rooms.find((r) => r.id === roomId);
   if (!room) throw new Error(`No existe la habitación "${roomId}". Disponibles: ${world.rooms.map((r) => r.id).join(", ") || "ninguna"}.`);
   return room;
@@ -211,6 +211,72 @@ export function placeCabinet(world: World, input: PlaceInput): PlacedItem {
   const item: PlacedItem = { id: uniqueId(slug(name), world.items.map((i) => i.id)), name, roomId: room.id, kind: "cabinet", params: input.params, wall: input.wall, offset: input.offset, elevation };
   world.items.push(item);
   return item;
+}
+
+export interface ItemPatch {
+  name?: string;
+  wall?: WallSide;
+  offset?: Millimeters;
+  elevation?: Millimeters;
+  params?: Partial<CabinetParams>;
+}
+
+/** Modifica un mueble ya colocado. Valida que siga cabiendo; si no, lanza un error y no cambia nada. */
+export function updateItem(world: World, itemId: string, patch: ItemPatch): PlacedItem {
+  const item = world.items.find((i) => i.id === itemId);
+  if (!item) throw new Error(`No existe el mueble "${itemId}".`);
+  const room = getRoom(world, item.roomId);
+  const next: PlacedItem = { ...item, ...patch, params: { ...item.params, ...patch.params } };
+  const len = wallLength(room, next.wall);
+  if (next.offset < 0 || next.offset + next.params.width > len) {
+    throw new Error(`No cabe: ocuparía de ${next.offset} a ${next.offset + next.params.width} mm y el ${WALL_NAMES[next.wall]} mide ${len} mm.`);
+  }
+  if (next.elevation < 0 || next.elevation + next.params.height > room.height) throw new Error(`No cabe en altura: llegaría a ${next.elevation + next.params.height} mm y la habitación mide ${room.height} mm.`);
+  generateCabinet(next.params);
+  Object.assign(item, next);
+  return item;
+}
+
+export function updateOpening(world: World, roomId: string, openingId: string, patch: Partial<Omit<Opening, "id" | "wall">>): Opening {
+  const room = getRoom(world, roomId);
+  const opening = room.openings.find((o) => o.id === openingId);
+  if (!opening) throw new Error(`No existe la abertura "${openingId}" en ${room.name}.`);
+  const next = { ...opening, ...patch };
+  const len = wallLength(room, next.wall);
+  if (next.offset < 0 || next.offset + next.width > len) throw new Error(`No cabe: ocuparía de ${next.offset} a ${next.offset + next.width} mm y el ${WALL_NAMES[next.wall]} mide ${len} mm.`);
+  if (next.sill < 0 || next.sill + next.height > room.height) throw new Error("La abertura supera la altura de la habitación.");
+  Object.assign(opening, next);
+  return opening;
+}
+
+export function removeOpening(world: World, roomId: string, openingId: string): boolean {
+  const room = getRoom(world, roomId);
+  const n = room.openings.length;
+  room.openings = room.openings.filter((o) => o.id !== openingId);
+  return room.openings.length < n;
+}
+
+export interface RoomPatch {
+  name?: string;
+  width?: Millimeters;
+  depth?: Millimeters;
+  height?: Millimeters;
+  wallThickness?: Partial<Record<WallSide, Millimeters>>;
+}
+
+/** Cambia medidas de una habitación. Rechaza el cambio si una abertura o un mueble dejaría de caber. */
+export function updateRoom(world: World, roomId: string, patch: RoomPatch): Room {
+  const room = getRoom(world, roomId);
+  const next: Room = { ...room, ...patch, wallThickness: { ...room.wallThickness, ...patch.wallThickness } };
+  if (next.width < 500 || next.depth < 500 || next.height < 1800) throw new Error("Medidas demasiado pequeñas para una habitación.");
+  for (const o of next.openings) {
+    if (o.offset + o.width > wallLength(next, o.wall) || o.sill + o.height > next.height) throw new Error(`Con esas medidas ya no cabe la abertura ${o.id} del ${WALL_NAMES[o.wall]}. Muévela o quítala primero.`);
+  }
+  for (const i of world.items.filter((x) => x.roomId === room.id)) {
+    if (i.offset + i.params.width > wallLength(next, i.wall) || i.elevation + i.params.height > next.height) throw new Error(`Con esas medidas ya no cabe ${i.name}. Muévelo o cámbialo primero.`);
+  }
+  Object.assign(room, next);
+  return room;
 }
 
 export function removeItem(world: World, itemId: string): boolean {

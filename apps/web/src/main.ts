@@ -1,0 +1,478 @@
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import {
+  buildQuote, checkWorld, createWorld, exportGltf, freeWallRuns, itemModel, itemTransform, mergedModel, panelBox, panelInstances,
+  runCommand, StaticCatalogProvider, wallBoxes, wallLength, wallRects, wallRectToBox, WALL_NAMES,
+  type AABB, type Quote, type Selection, type StaticCatalog, type WallSide, type World, type WorldIssue,
+} from "@handy/core";
+import catalogJson from "@handy/core/data/catalog-ejemplo.json";
+
+// ---------- Estado ----------
+
+const providers = [new StaticCatalogProvider(catalogJson as StaticCatalog)];
+const LS_KEY = "handy.world";
+let world: World = createWorld("Mi casa");
+let selection: Selection = { kind: "world" };
+let apiAvailable = false;
+let lastSaved = "";
+const history: string[] = [];
+
+const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+const app = $("app"), view = $("view"), tree = $("tree"), props = $("props");
+const SIDES: WallSide[] = ["north", "east", "south", "west"];
+const LEFT_OF: Record<WallSide, WallSide> = { north: "west", east: "north", south: "east", west: "south" };
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const fmt = (n: number) => n.toLocaleString("es-CO");
+const money = (n: number, cur: string) => `${cur === "USD" ? "US$ " : "$ "}${n.toLocaleString("es-CO", { maximumFractionDigits: cur === "COP" ? 0 : 2 })}`;
+const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+
+// ---------- Persistencia: archivo local vía API, o el navegador ----------
+
+async function loadWorld(): Promise<void> {
+  try {
+    const r = await fetch("/api/world", { cache: "no-store" });
+    if (r.ok) { world = await r.json(); apiAvailable = true; lastSaved = JSON.stringify(world); return; }
+    if (r.status === 404 && r.headers.get("content-type")?.includes("json")) apiAvailable = true;
+  } catch { /* sin servidor local: se usa el navegador */ }
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw && !apiAvailable) { world = JSON.parse(raw); return; }
+  } catch { /* almacenamiento no disponible */ }
+  world = createWorld("Mi casa");
+  runCommand(world, { kind: "world" }, "sala de 4 x 3 m");
+  if (apiAvailable) await saveWorld();
+}
+
+async function saveWorld(): Promise<void> {
+  world.updatedAt = new Date().toISOString();
+  const body = JSON.stringify(world);
+  lastSaved = body;
+  try { localStorage.setItem(LS_KEY, body); } catch { /* sin almacenamiento */ }
+  if (apiAvailable) {
+    try { await fetch("/api/world", { method: "PUT", headers: { "content-type": "application/json" }, body }); } catch { setSync("sin conexión con el archivo"); }
+  }
+}
+
+function setSync(text: string) { $("sync").textContent = text; }
+
+function listenForExternalChanges() {
+  if (!apiAvailable) { setSync("guardado en este navegador"); return; }
+  setSync("archivo local · en vivo");
+  const es = new EventSource("/api/events");
+  es.onmessage = async (e) => {
+    if (e.data !== "changed") return;
+    const r = await fetch("/api/world", { cache: "no-store" });
+    if (!r.ok) return;
+    const text = await r.text();
+    const incoming = JSON.parse(text) as World;
+    if (JSON.stringify(incoming) === lastSaved) return;
+    history.push(JSON.stringify(world));
+    world = incoming;
+    lastSaved = JSON.stringify(world);
+    if (!selectionExists(selection)) selection = { kind: "world" };
+    refresh();
+    toast("Tu IA cambió el mundo.");
+  };
+}
+
+// ---------- Escena ----------
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+view.prepend(renderer.domElement);
+renderer.domElement.tabIndex = 0;
+renderer.domElement.setAttribute("aria-label", "Vista 3D del mundo. Haz clic en un muro, mueble o abertura para seleccionarlo.");
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 200);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI / 2 - 0.02;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x555555, 1.5));
+const sun = new THREE.DirectionalLight(0xffffff, 1.8);
+sun.position.set(5, 10, 8);
+scene.add(sun);
+const content = new THREE.Group();
+scene.add(content);
+
+const unitBox = new THREE.BoxGeometry(1, 1, 1);
+const unitEdges = new THREE.EdgesGeometry(unitBox);
+const COLORS = { wall: 0xcfd3d6, floor: 0x8f9396, board: 0xece9e2, back: 0xdedad2, door: 0xb98a5a, window: 0x7fc4d9, opening: 0x9a6b3f, accent: 0xe8933a };
+const M = 0.001;
+type Pick = THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial>;
+let pickables: Pick[] = [];
+
+function box(b: AABB, color: number, data: Record<string, unknown>, opts: { opacity?: number; edges?: boolean } = {}): Pick {
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.85, transparent: opts.opacity !== undefined, opacity: opts.opacity ?? 1 });
+  const mesh = new THREE.Mesh(unitBox, mat);
+  mesh.position.set(((b.min[0] + b.max[0]) / 2) * M, ((b.min[1] + b.max[1]) / 2) * M, ((b.min[2] + b.max[2]) / 2) * M);
+  mesh.scale.set(Math.max(b.max[0] - b.min[0], 1) * M, Math.max(b.max[1] - b.min[1], 1) * M, Math.max(b.max[2] - b.min[2], 1) * M);
+  mesh.userData = { ...data, baseColor: color, baseOpacity: opts.opacity ?? 1 };
+  if (opts.edges !== false) mesh.add(new THREE.LineSegments(unitEdges, new THREE.LineBasicMaterial({ color: 0x1b1f23, transparent: true, opacity: 0.55 })));
+  return mesh;
+}
+
+function buildScene() {
+  for (const child of [...content.children]) content.remove(child);
+  pickables = [];
+  for (const room of world.rooms) {
+    const [ox, oz] = room.origin;
+    const t = room.wallThickness;
+    const floor = box({ min: [ox - t.west, -60, oz - t.north], max: [ox + room.width + t.east, 0, oz + room.depth + t.south] }, COLORS.floor, { sel: { kind: "room", roomId: room.id } });
+    content.add(floor); pickables.push(floor);
+
+    for (const wall of SIDES) {
+      for (const r of wallRects(room, wall)) {
+        const m = box(wallRectToBox(room, wall, r), COLORS.wall, { sel: { kind: "wall", roomId: room.id, wall }, ghostSides: [wall], roomId: room.id });
+        content.add(m); pickables.push(m);
+      }
+      for (const o of room.openings.filter((x) => x.wall === wall)) {
+        const full = wallRectToBox(room, wall, { u0: o.offset, u1: o.offset + o.width, y0: o.sill, y1: o.sill + o.height });
+        // Hoja delgada en el centro del muro: hace visible y seleccionable la abertura.
+        const axis = wall === "north" || wall === "south" ? 2 : 0;
+        const mid = (full.min[axis] + full.max[axis]) / 2;
+        const leaf: AABB = { min: [...full.min] as AABB["min"], max: [...full.max] as AABB["max"] };
+        leaf.min[axis] = mid - 15; leaf.max[axis] = mid + 15;
+        const m = box(leaf, o.type === "window" ? COLORS.window : COLORS.opening, { sel: { kind: "opening", roomId: room.id, openingId: o.id }, ghostSides: [wall], roomId: room.id }, { opacity: o.type === "window" ? 0.45 : o.type === "door" ? 0.75 : 0.2 });
+        content.add(m); pickables.push(m);
+      }
+    }
+    const corners: [WallSide, WallSide, number, number, number, number][] = [
+      ["north", "west", ox - t.west, ox, oz - t.north, oz], ["north", "east", ox + room.width, ox + room.width + t.east, oz - t.north, oz],
+      ["south", "west", ox - t.west, ox, oz + room.depth, oz + room.depth + t.south], ["south", "east", ox + room.width, ox + room.width + t.east, oz + room.depth, oz + room.depth + t.south],
+    ];
+    for (const [a, b, x0, x1, z0, z1] of corners) content.add(box({ min: [x0, 0, z0], max: [x1, room.height, z1] }, COLORS.wall, { ghostSides: [a, b], roomId: room.id }));
+
+    for (const item of world.items.filter((i) => i.roomId === room.id)) {
+      const tr = itemTransform(room, item);
+      const group = new THREE.Group();
+      group.position.set(tr.position[0] * M, tr.position[1] * M, tr.position[2] * M);
+      group.rotation.y = (tr.rotationY * Math.PI) / 180;
+      for (const p of itemModel(item).panels) {
+        for (const u of panelInstances(p)) {
+          const b = panelBox(p, u.placement);
+          if (!b) continue;
+          const color = p.id === "door" ? COLORS.door : p.id === "back" ? COLORS.back : COLORS.board;
+          const m = box(b, color, { sel: { kind: "item", itemId: item.id } });
+          group.add(m); pickables.push(m);
+        }
+      }
+      content.add(group);
+    }
+  }
+  applyHighlight();
+}
+
+const sameSel = (a: Selection | undefined, b: Selection) => !!a && JSON.stringify(a) === JSON.stringify(b);
+
+function applyHighlight() {
+  for (const m of pickables) {
+    const selected = sameSel(m.userData.sel as Selection | undefined, selection);
+    m.material.color.setHex(selected ? COLORS.accent : (m.userData.baseColor as number));
+    m.material.emissive.setHex(selected ? 0x4a2a08 : 0x000000);
+  }
+}
+
+/** Atenúa los muros que quedan entre la cámara y la habitación para poder ver y hacer clic adentro. */
+function updateGhostWalls() {
+  const facing = new Map<string, boolean>();
+  for (const room of world.rooms) {
+    const wb = wallBoxes(room);
+    for (const side of SIDES) {
+      const b = wb[side];
+      const cx = ((b.min[0] + b.max[0]) / 2) * M, cz = ((b.min[2] + b.max[2]) / 2) * M;
+      const n = side === "north" ? [0, -1] : side === "south" ? [0, 1] : side === "east" ? [1, 0] : [-1, 0];
+      facing.set(`${room.id}:${side}`, (camera.position.x - cx) * n[0] + (camera.position.z - cz) * n[1] > 0.05);
+    }
+  }
+  content.traverse((o) => {
+    const sides = o.userData.ghostSides as WallSide[] | undefined;
+    if (!sides) return;
+    const mesh = o as Pick;
+    const ghost = sides.some((s) => facing.get(`${o.userData.roomId}:${s}`));
+    mesh.userData.ghost = ghost;
+    mesh.material.transparent = ghost || (mesh.userData.baseOpacity as number) < 1;
+    mesh.material.opacity = ghost ? 0.08 : (mesh.userData.baseOpacity as number);
+    mesh.material.depthWrite = !ghost;
+    (mesh.children[0] as THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial> | undefined)?.material && ((mesh.children[0] as THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial>).material.opacity = ghost ? 0.12 : 0.55);
+  });
+}
+
+function frameWorld() {
+  const b = new THREE.Box3().setFromObject(content);
+  if (b.isEmpty()) { camera.position.set(4, 5, 6); controls.target.set(0, 0, 0); return; }
+  const c = b.getCenter(new THREE.Vector3()), size = b.getSize(new THREE.Vector3());
+  const d = Math.max(size.x, size.z) * 1.15 + 2;
+  controls.target.set(c.x, 0.8, c.z);
+  camera.position.set(c.x - d * 0.25, d * 0.95, c.z + d * 0.85);
+}
+
+function resize() {
+  const w = view.clientWidth, h = view.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / Math.max(h, 1);
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(view);
+
+function themeBackground() {
+  const bg = getComputedStyle(app).getPropertyValue("--bg").trim();
+  scene.background = new THREE.Color(bg || "#1A1C1E");
+}
+
+renderer.setAnimationLoop(() => {
+  controls.update();
+  updateGhostWalls();
+  renderer.render(scene, camera);
+});
+
+// ---------- Selección con clic ----------
+
+const raycaster = new THREE.Raycaster();
+let down: { x: number; y: number } | null = null;
+renderer.domElement.addEventListener("pointerdown", (e) => { down = { x: e.clientX, y: e.clientY }; });
+renderer.domElement.addEventListener("pointerup", (e) => {
+  if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 4) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  raycaster.setFromCamera(new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1), camera);
+  const hit = raycaster.intersectObjects(pickables.filter((m) => !m.userData.ghost), false)[0];
+  select((hit?.object.userData.sel as Selection | undefined) ?? { kind: "world" });
+  $<HTMLInputElement>("cmd-input").focus();
+});
+
+function selectionExists(s: Selection): boolean {
+  switch (s.kind) {
+    case "world": return true;
+    case "room": return world.rooms.some((r) => r.id === s.roomId);
+    case "wall": return world.rooms.some((r) => r.id === s.roomId);
+    case "opening": return world.rooms.some((r) => r.id === s.roomId && r.openings.some((o) => o.id === s.openingId));
+    case "item": return world.items.some((i) => i.id === s.itemId);
+  }
+}
+
+function selectionLabel(s: Selection): string {
+  switch (s.kind) {
+    case "world": return "Mundo";
+    case "room": return world.rooms.find((r) => r.id === s.roomId)?.name ?? "Habitación";
+    case "wall": return `${world.rooms.find((r) => r.id === s.roomId)?.name} · ${WALL_NAMES[s.wall]}`;
+    case "opening": {
+      const room = world.rooms.find((r) => r.id === s.roomId);
+      const o = room?.openings.find((x) => x.id === s.openingId);
+      return `${room?.name} · ${o?.type === "window" ? "ventana" : o?.type === "door" ? "puerta" : "paso"} del ${o ? WALL_NAMES[o.wall] : ""}`;
+    }
+    case "item": return world.items.find((i) => i.id === s.itemId)?.name ?? "Mueble";
+  }
+}
+
+function select(s: Selection) {
+  selection = s;
+  applyHighlight();
+  renderTree();
+  renderProps();
+  $("sel-chip").textContent = s.kind === "world" ? "Nada seleccionado" : selectionLabel(s);
+  $("cmd-prefix").textContent = `${selectionLabel(s)} ›`;
+  $<HTMLInputElement>("cmd-input").placeholder = PLACEHOLDER[s.kind];
+}
+
+const PLACEHOLDER: Record<Selection["kind"], string> = {
+  world: 'Haz clic en un muro o un mueble, o crea una habitación: "cocina de 2,8 x 2,4 m"',
+  room: '"alto 2,6 m" · "ancho 4 m" · "grosor 15 cm"',
+  wall: '"pon una puerta de 80 x 205 a 2 m de la izquierda" · "armario de 800 x 2000 x 500 con 2 puertas"',
+  opening: '"muévela 20 cm a la derecha" · "90 x 210" · "quítala"',
+  item: '"ensancha 10 cm" · "agrega una repisa" · "muévelo 30 cm a la derecha" · "quítalo"',
+};
+
+const EXAMPLES: Record<Selection["kind"], string[]> = {
+  world: ["cocina de 2,8 x 2,4 m", "habitación Estudio de 3 x 3 x 2,6 m"],
+  room: ["alto 2,6 m", "ancho 4 m", "grosor 15 cm"],
+  wall: ["pon una puerta de 80 x 205 a 2 m de la izquierda", "ventana de 120 x 100 centrada, antepecho 110", "armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas", "alacena de 900 x 700 x 350 a 1,5 m del piso con 2 puertas", "grosor 20 cm"],
+  opening: ["muévela 20 cm a la derecha", "a 1 m de la izquierda", "90 x 210", "céntrala", "quítala"],
+  item: ["ensancha 10 cm", "alto 1800", "muévelo 30 cm a la derecha", "pégalo a la izquierda", "agrega una repisa", "una puerta", "sin tornillos a la vista", "quítalo"],
+};
+
+// ---------- Paneles ----------
+
+function node(label: string, meta: string, level: number, sel: Selection): string {
+  return `<button type="button" class="node l${level}" data-sel='${esc(JSON.stringify(sel))}' aria-current="${sameSel(sel, selection)}"><span>${esc(label)}</span><span class="num">${esc(meta)}</span></button>`;
+}
+
+function renderTree() {
+  let html = "";
+  for (const room of world.rooms) {
+    html += node(room.name, `${fmt(room.width)} × ${fmt(room.depth)}`, 0, { kind: "room", roomId: room.id });
+    for (const wall of SIDES) {
+      html += node(cap(WALL_NAMES[wall]), fmt(wallLength(room, wall)), 1, { kind: "wall", roomId: room.id, wall });
+      for (const o of room.openings.filter((x) => x.wall === wall)) html += node(o.type === "window" ? "Ventana" : o.type === "door" ? "Puerta" : "Paso", `${fmt(o.width)} × ${fmt(o.height)}`, 2, { kind: "opening", roomId: room.id, openingId: o.id });
+      for (const i of world.items.filter((x) => x.roomId === room.id && x.wall === wall)) html += node(i.name, `${fmt(i.params.width)} × ${fmt(i.params.height)}`, 2, { kind: "item", itemId: i.id });
+    }
+  }
+  tree.innerHTML = html || `<p class="note">Aún no hay habitaciones. Escribe abajo: "sala de 4 x 3 m".</p>`;
+}
+tree.addEventListener("click", (e) => {
+  const b = (e.target as HTMLElement).closest<HTMLElement>(".node");
+  if (b?.dataset.sel) select(JSON.parse(b.dataset.sel));
+});
+
+const kv = (k: string, v: string) => `<div class="kv"><span class="k">${esc(k)}</span><span class="num">${esc(v)}</span></div>`;
+let issues: WorldIssue[] = [];
+
+function renderProps() {
+  const s = selection;
+  let body = "";
+  if (s.kind === "world") {
+    body = kv("Habitaciones", String(world.rooms.length)) + kv("Muebles", String(world.items.length)) + `<p class="note">Haz clic en un muro, un mueble, una puerta o una ventana y escribe abajo lo que quieres cambiar, en tus palabras.</p>`;
+  } else if (s.kind === "room") {
+    const r = world.rooms.find((x) => x.id === s.roomId)!;
+    body = kv("Ancho (norte y sur)", `${fmt(r.width)} mm`) + kv("Fondo (este y oeste)", `${fmt(r.depth)} mm`) + kv("Altura", `${fmt(r.height)} mm`) + kv("Área", `${((r.width * r.depth) / 1e6).toFixed(1).replace(".", ",")} m²`);
+  } else if (s.kind === "wall") {
+    const r = world.rooms.find((x) => x.id === s.roomId)!;
+    const runs = freeWallRuns(world, r.id, { height: 900, minLength: 200 }).filter((x) => x.wall === s.wall);
+    body = kv("Largo", `${fmt(wallLength(r, s.wall))} mm`) + kv("Grosor", `${fmt(r.wallThickness[s.wall])} mm`) + kv("Altura", `${fmt(r.height)} mm`) + kv("Izquierda", `esquina con el ${WALL_NAMES[LEFT_OF[s.wall]]}`) +
+      kv("Tramos libres", runs.map((x) => `${fmt(x.from)}–${fmt(x.to)}`).join(" · ") || "ninguno") + `<p class="note">Las distancias se miden desde la izquierda mirando el muro desde dentro de la habitación.</p>`;
+  } else if (s.kind === "opening") {
+    const r = world.rooms.find((x) => x.id === s.roomId)!;
+    const o = r.openings.find((x) => x.id === s.openingId)!;
+    body = kv("Ancho × alto", `${fmt(o.width)} × ${fmt(o.height)} mm`) + kv("Desde la izquierda", `${fmt(o.offset)} mm`) + kv("Hasta la derecha", `${fmt(wallLength(r, o.wall) - o.offset - o.width)} mm`) + (o.type === "window" ? kv("Antepecho", `${fmt(o.sill)} mm`) : "");
+  } else {
+    const i = world.items.find((x) => x.id === s.itemId)!;
+    const p = i.params;
+    body = kv("Ancho × alto × fondo", `${fmt(p.width)} × ${fmt(p.height)} × ${fmt(p.depth)}`) + kv("Muro", WALL_NAMES[i.wall]) + kv("Desde la izquierda", `${fmt(i.offset)} mm`) + kv("Del piso", `${fmt(i.elevation)} mm`) +
+      kv("Puertas", String(p.doors ?? 0)) + kv("Repisas", String(p.shelves ?? 0)) + kv("Zócalo", p.plinthHeight ? `${fmt(p.plinthHeight)} mm` : "no") + kv("Unión", p.joinery === "minifix" || p.joinery === "dowel" ? `${p.joinery} · sin tornillos a la vista` : p.joinery ?? "confirmat");
+  }
+  const mine = issues.filter((x) => (s.kind === "item" && x.itemId === s.itemId) || s.kind === "world" || ((s.kind === "room" || s.kind === "wall") && x.roomId === s.roomId));
+  props.innerHTML =
+    `<div class="sec"><h2>${esc(s.kind === "world" ? world.name : selectionLabel(s))}</h2><div class="b">${body}</div></div>` +
+    `<div class="sec"><h2>Puedes decir</h2><div class="b">${EXAMPLES[s.kind].map((x) => `<button type="button" class="ex">${esc(x)}</button>`).join("")}</div></div>` +
+    `<div class="sec"><h2>Avisos${mine.length ? ` (${mine.length})` : ""}</h2><div class="b">${mine.map((x) => `<div class="issue ${x.level}">${esc(x.message)}</div>`).join("") || `<div class="issue ok">Sin avisos aquí.</div>`}</div></div>`;
+}
+props.addEventListener("click", (e) => {
+  const b = (e.target as HTMLElement).closest<HTMLElement>(".ex");
+  if (!b) return;
+  const input = $<HTMLInputElement>("cmd-input");
+  input.value = b.textContent ?? "";
+  input.focus();
+});
+
+function renderIssues() {
+  issues = checkWorld(world);
+  const real = issues.filter((i) => i.level !== "tip");
+  const first = real.find((i) => i.level === "error") ?? real[0];
+  // Una sola línea sobre la vista; el detalle completo vive en el panel de la derecha.
+  $("issues").innerHTML = first
+    ? `<button type="button" class="issue ${first.level}" id="issue-first">${real.length > 1 ? `${real.length} avisos · ` : ""}${esc(first.message.length > 110 ? first.message.slice(0, 108) + "…" : first.message)}</button>`
+    : world.items.length ? `<div class="issue ok">Todo cabe y abre sin chocar.</div>` : "";
+  const btn = document.getElementById("issue-first");
+  if (btn) btn.onclick = () => select(first!.itemId ? { kind: "item", itemId: first!.itemId } : first!.roomId ? { kind: "room", roomId: first!.roomId } : { kind: "world" });
+}
+
+let quoteRun = 0;
+async function renderPrice() {
+  const run = ++quoteRun;
+  if (!world.items.length) { $("price-total").textContent = "—"; $("price-sub").textContent = "sin muebles todavía"; $("price-pop").innerHTML = `<span class="muted">Coloca un mueble para ver su costo.</span>`; return; }
+  const q: Quote = await buildQuote(mergedModel(world), providers);
+  if (run !== quoteRun) return;
+  $("price-total").textContent = money(q.subtotal, q.currency);
+  $("price-sub").textContent = `${q.currency} · ${world.items.length} mueble(s)${q.missingCount ? ` · faltan ${q.missingCount} precios` : ""} · ${(catalogJson as StaticCatalog).name}`;
+  $("price-pop").innerHTML = q.lines.map((l) => `<span class="pl${l.missing ? " missing" : ""}"><span>${esc(l.description)} × ${l.qty}</span><span class="num">${l.missing ? "sin precio" : money(l.total, q.currency)}</span></span>`).join("") +
+    `<span class="muted">Precios del ${esc(q.oldestPrice ?? "catálogo")}. Tableros enteros con 15 % de desperdicio.</span>`;
+}
+
+function refresh() {
+  $("world-name").textContent = world.name;
+  buildScene();
+  renderIssues();
+  renderTree();
+  renderProps();
+  void renderPrice();
+  select(selectionExists(selection) ? selection : { kind: "world" });
+}
+
+// ---------- Comandos ----------
+
+let toastTimer = 0;
+function toast(message: string, bad = false, aiPrompt?: string) {
+  const el = $("toast");
+  el.className = `show${bad ? " bad" : ""}`;
+  el.innerHTML = esc(message) + (aiPrompt ? `<button type="button" class="btn" id="copy-ai">Copiar para mi IA</button>` : "");
+  if (aiPrompt) $("copy-ai").onclick = () => { void navigator.clipboard?.writeText(aiPrompt); toast("Copiado. Pégalo en tu IA conectada a Handy."); };
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => { el.className = ""; }, aiPrompt ? 12000 : 5000);
+}
+
+$("cmd").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const input = $<HTMLInputElement>("cmd-input");
+  const text = input.value.trim();
+  if (!text) return;
+  const before = JSON.stringify(world);
+  const result = runCommand(world, selection, text);
+  if (result.ok) {
+    history.push(before);
+    input.value = "";
+    if (result.select !== undefined) selection = result.select ?? { kind: "world" };
+    await saveWorld();
+    refresh();
+    toast(result.message);
+  } else if (!result.understood) {
+    toast(result.message, true, `En mi mundo de Handy "${world.name}", sobre ${selectionLabel(selection)}: ${text}`);
+  } else {
+    toast(result.message, true);
+  }
+});
+
+async function undo() {
+  const prev = history.pop();
+  if (!prev) { toast("No hay nada que deshacer."); return; }
+  world = JSON.parse(prev);
+  await saveWorld();
+  refresh();
+  toast("Deshecho.");
+}
+$("undo").onclick = () => void undo();
+window.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "z" && document.activeElement?.id !== "cmd-input") { e.preventDefault(); void undo(); } });
+
+function download(name: string, text: string, type: string) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+const fileBase = () => world.name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-") || "mundo";
+$("export-world").onclick = () => download(`${fileBase()}.world.json`, JSON.stringify(world, null, 2), "application/json");
+$("export-gltf").onclick = () => { download(`${fileBase()}.gltf`, exportGltf(world), "model/gltf+json"); toast("Listo. En Blender: File › Import › glTF 2.0."); };
+$("import").onclick = () => $<HTMLInputElement>("file").click();
+$<HTMLInputElement>("file").onchange = async (e) => {
+  const f = (e.target as HTMLInputElement).files?.[0];
+  if (!f) return;
+  try {
+    const w = JSON.parse(await f.text()) as World;
+    if (w.version !== 1 || !Array.isArray(w.rooms) || !Array.isArray(w.items)) throw new Error("no es un mundo de Handy");
+    history.push(JSON.stringify(world));
+    world = w; selection = { kind: "world" };
+    await saveWorld(); refresh(); frameWorld();
+    toast(`Mundo "${w.name}" abierto.`);
+  } catch (err) { toast(`No pude abrir ese archivo: ${(err as Error).message}.`, true); }
+};
+
+const THEMES = ["auto", "dark", "light"] as const;
+$("theme").onclick = () => {
+  const next = THEMES[(THEMES.indexOf(app.dataset.theme as (typeof THEMES)[number]) + 1) % THEMES.length];
+  app.dataset.theme = next;
+  try { localStorage.setItem("handy.theme", next); } catch { /* sin almacenamiento */ }
+  $("theme").textContent = `Tema: ${next === "auto" ? "auto" : next === "dark" ? "oscuro" : "claro"}`;
+  themeBackground();
+};
+window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", themeBackground);
+
+// ---------- Arranque ----------
+
+try { const t = localStorage.getItem("handy.theme"); if (t && (THEMES as readonly string[]).includes(t)) app.dataset.theme = t; } catch { /* sin almacenamiento */ }
+$("theme").textContent = `Tema: ${app.dataset.theme === "auto" ? "auto" : app.dataset.theme === "dark" ? "oscuro" : "claro"}`;
+themeBackground();
+await loadWorld();
+resize();
+refresh();
+frameWorld();
+listenForExternalChanges();
+// Para pruebas automáticas.
+(window as unknown as Record<string, unknown>).__handy = { getWorld: () => world, select, getSelection: () => selection };
