@@ -14,6 +14,8 @@
     "typecheck": "pnpm -r typecheck",
     "cli": "pnpm --filter @handy/core cli",
     "mcp": "pnpm --filter @handy/mcp-server start",
-    "web": "pnpm build && pnpm --filter @handy/web start"
+    "web": "pnpm build && pnpm --filter @handy/web start",
+    "e2e": "pnpm build && pnpm --filter @handy/web e2e",
+    "check": "pnpm build && pnpm typecheck && pnpm test && pnpm --filter @handy/web e2e"
   }
 }

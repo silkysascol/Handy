@@ -475,4 +475,4 @@ refresh();
 frameWorld();
 listenForExternalChanges();
 // Para pruebas automáticas.
-(window as unknown as Record<string, unknown>).__handy = { getWorld: () => world, select, getSelection: () => selection };
+(window as unknown as Record<string, unknown>).__handy = { ready: true, getWorld: () => world, select, getSelection: () => selection };
