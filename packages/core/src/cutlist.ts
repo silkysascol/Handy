@@ -1,5 +1,6 @@
 import type { FurnitureModel, Millimeters, Panel } from "./model/index.js";
 import { mmToM2 } from "./model/index.js";
+import { buildCutPlan } from "./cutplan.js";
 
 export interface CutlistRow {
   name: string;
@@ -20,7 +21,7 @@ export interface MaterialSummary {
   thickness: Millimeters;
   /** Área neta de piezas, m². */
   areaM2: number;
-  /** Tableros estimados considerando desperdicio. */
+  /** Tableros a comprar según el plano de corte (o por área más desperdicio si alguna pieza no cabe). */
   sheetsEstimate: number;
 }
 
@@ -28,7 +29,7 @@ export interface Cutlist {
   rows: CutlistRow[];
   materials: MaterialSummary[];
   edgeBandMeters: Record<string, number>;
-  /** Factor de desperdicio usado (0.15 = 15 %). */
+  /** Desperdicio usado solo en el cálculo de respaldo por área (0.15 = 15 %). */
   wasteFactor: number;
 }
 
@@ -69,11 +70,14 @@ export function buildCutlist(model: FurnitureModel, wasteFactor = 0.15): Cutlist
     entry.areaM2 += mmToM2(p.height, p.width) * p.qty;
     byMaterial.set(key, entry);
   }
+  // Tableros a comprar: los que resultan de acomodar las piezas (plano de corte), no un porcentaje sobre el área.
+  const plan = buildCutPlan(model);
   for (const entry of byMaterial.values()) {
     const mat = model.materials.find((m) => m.id === entry.materialId);
-    const sheetArea = mat?.sheet ? mmToM2(mat.sheet.width, mat.sheet.height) : 1830 * 2500 / 1e6;
+    const sheetArea = mat?.sheet ? mmToM2(mat.sheet.width, mat.sheet.height) : (1830 * 2440) / 1e6;
     entry.areaM2 = Number(entry.areaM2.toFixed(3));
-    entry.sheetsEstimate = Math.ceil((entry.areaM2 * (1 + wasteFactor)) / sheetArea);
+    const nested = plan.totals.find((t) => t.materialId === entry.materialId)?.sheets;
+    entry.sheetsEstimate = nested && !plan.oversize.length ? nested : Math.ceil((entry.areaM2 * (1 + wasteFactor)) / sheetArea);
   }
 
   const edgeBandMeters: Record<string, number> = {};

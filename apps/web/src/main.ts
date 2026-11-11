@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
-  buildQuote, checkWorld, createWorld, exportGltf, freeWallRuns, itemModel, itemTransform, mergedModel, panelBox, panelInstances,
+  buildQuote, checkWorld, createWorld, cutSheetHtml, exportGltf, freeWallRuns, itemModel, itemTransform, mergedModel, panelBox, panelInstances,
   runCommand, StaticCatalogProvider, wallBoxes, wallLength, wallRects, wallRectToBox, WALL_NAMES,
   type AABB, type Quote, type Selection, type StaticCatalog, type WallSide, type World, type WorldIssue,
 } from "@handy/core";
@@ -373,7 +373,7 @@ async function renderPrice() {
   $("price-total").textContent = money(q.subtotal, q.currency);
   $("price-sub").textContent = `${q.currency} · ${world.items.length} mueble(s)${q.missingCount ? ` · faltan ${q.missingCount} precios` : ""} · ${(catalogJson as StaticCatalog).name}`;
   $("price-pop").innerHTML = q.lines.map((l) => `<span class="pl${l.missing ? " missing" : ""}"><span>${esc(l.description)} × ${l.qty}</span><span class="num">${l.missing ? "sin precio" : money(l.total, q.currency)}</span></span>`).join("") +
-    `<span class="muted">Precios del ${esc(q.oldestPrice ?? "catálogo")}. Tableros enteros con 15 % de desperdicio.</span>`;
+    `<span class="muted">Precios del ${esc(q.oldestPrice ?? "catálogo")}. Tableros enteros según el plano de corte.</span>`;
 }
 
 function refresh() {
@@ -440,6 +440,11 @@ function download(name: string, text: string, type: string) {
 const fileBase = () => world.name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-") || "mundo";
 $("export-world").onclick = () => download(`${fileBase()}.world.json`, JSON.stringify(world, null, 2), "application/json");
 $("export-gltf").onclick = () => { download(`${fileBase()}.gltf`, exportGltf(world), "model/gltf+json"); toast("Listo. En Blender: File › Import › glTF 2.0."); };
+$("export-cut").onclick = () => {
+  if (!world.items.length) { toast("Aún no hay muebles que cortar.", true); return; }
+  download(`${fileBase()}-despiece.html`, cutSheetHtml(mergedModel(world), world.name), "text/html");
+  toast("Despiece listo: ábrelo e imprímelo para llevarlo a la tienda.");
+};
 $("import").onclick = () => $<HTMLInputElement>("file").click();
 $<HTMLInputElement>("file").onchange = async (e) => {
   const f = (e.target as HTMLInputElement).files?.[0];

@@ -6,7 +6,10 @@ import { z } from "zod";
 import {
   addOpening,
   addRoom,
+  buildCutPlan,
   buildQuote,
+  cutlistCsv,
+  cutSheetHtml,
   checkWorld,
   createWorld,
   describeWorld,
@@ -254,6 +257,28 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
         [`Cotización de ${itemIds?.length ?? world.items.length} mueble(s): ${quote.subtotal} ${quote.currency}${quote.missingCount ? ` · INCOMPLETA: ${quote.missingCount} ítems sin precio` : ""}`, ...lines].join("\n"),
         { currency: quote.currency, subtotal: quote.subtotal, missingCount: quote.missingCount, lines: quote.lines, materials: quote.cutlist.materials },
       );
+    },
+  );
+
+  server.registerTool(
+    "world_cutplan",
+    {
+      title: "Despiece y plano de corte",
+      description: "Acomoda todas las piezas de los muebles en tableros enteros (con ancho de disco y refilado), dice cuántos tableros comprar y escribe el despiece para la tienda: un HTML imprimible con lista de piezas, cantos y plano de corte, y un CSV.",
+      inputSchema: { itemIds: z.array(z.string()).optional(), kerf: z.number().int().min(0).max(10).default(3), trim: z.number().int().min(0).max(50).default(10) },
+    },
+    async ({ itemIds, kerf, trim }) => {
+      const world = store.load();
+      const model = mergedModel(world, itemIds);
+      if (!model.panels.length) throw new Error("No hay muebles que cortar.");
+      const plan = buildCutPlan(model, { kerf, trim });
+      const base = store.path.replace(/(\.world)?\.json$/, "");
+      mkdirSync(dirname(base), { recursive: true });
+      writeFileSync(`${base}-despiece.html`, cutSheetHtml(model, world.name, { kerf, trim }));
+      writeFileSync(`${base}-despiece.csv`, cutlistCsv(model));
+      const lines = plan.totals.map((t) => `${t.sheets} tablero(s) de ${t.materialName} · ocupación ${t.usedPct} %`);
+      if (plan.oversize.length) lines.push(`NO CABEN en un tablero: ${plan.oversize.map((o) => `${o.name} (${o.height} x ${o.width})`).join(", ")}`);
+      return text([...lines, `Despiece en ${base}-despiece.html y ${base}-despiece.csv`].join("\n"), { totals: plan.totals, oversize: plan.oversize, sheets: plan.sheets.length, html: `${base}-despiece.html`, csv: `${base}-despiece.csv` });
     },
   );
 

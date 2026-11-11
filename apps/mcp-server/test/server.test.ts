@@ -70,6 +70,11 @@ describe("Handy MCP server", () => {
     expect(quote.data.subtotal).toBeGreaterThan(50);
     expect(quote.data.missingCount).toBe(0);
 
+    const cut = await call("world_cutplan");
+    expect(cut.text).toMatch(/tablero\(s\) de Melamina 18 mm Blanco/);
+    expect(readFileSync(cut.data.html, "utf8")).toContain("Plano de corte");
+    expect(readFileSync(cut.data.csv, "utf8").split("\n")[0]).toContain("Pieza;Cantidad");
+
     const exported = await call("world_export_gltf");
     expect(existsSync(exported.data.path)).toBe(true);
     expect(JSON.parse(readFileSync(exported.data.path, "utf8")).asset.version).toBe("2.0");

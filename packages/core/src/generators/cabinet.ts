@@ -52,7 +52,7 @@ const DEFAULT_MATERIALS: Material[] = [
     name: "Melamina 18 mm Blanco",
     kind: "board",
     thickness: 18,
-    sheet: { width: 1830, height: 2500 },
+    sheet: { width: 1830, height: 2440 },
     finish: "Blanco",
   },
   {
@@ -60,7 +60,7 @@ const DEFAULT_MATERIALS: Material[] = [
     name: "HDF 3 mm Blanco",
     kind: "board",
     thickness: 3,
-    sheet: { width: 1830, height: 2500 },
+    sheet: { width: 1830, height: 2440 },
     finish: "Blanco",
   },
   {

@@ -98,6 +98,21 @@ test("exporta a Blender un glTF válido en estructura", async ({ h }) => {
   assert.ok(gltf.nodes.some((n) => n.name === "Dormitorio"));
 });
 
+test("el despiece descarga un documento con lista de piezas y plano de corte", async ({ h }) => {
+  const [download] = await Promise.all([h.page.waitForEvent("download"), h.page.click("#export-cut")]);
+  assert.match(download.suggestedFilename(), /-despiece\.html$/);
+  const html = readFileSync(await download.path(), "utf8");
+  assert.match(html, /tablero\(s\) de Melamina 18 mm Blanco/);
+  assert.match(html, /Tablero 1 de \d+/);
+  assert.match(html, /Armario · Costado izquierdo/);
+  // El documento debe abrir y dibujar el plano sin errores.
+  const doc = await h.page.context().newPage();
+  await doc.setContent(html);
+  assert.ok((await doc.locator("svg rect").count()) > 20);
+  assert.ok((await doc.locator("tbody tr").count()) > 10);
+  await doc.close();
+});
+
 test("tema claro y oscuro cambian los tokens", async ({ h }) => {
   const bg = () => h.page.evaluate("getComputedStyle(document.getElementById('app')).getPropertyValue('--bg').trim()");
   await h.page.evaluate("document.getElementById('app').dataset.theme = 'dark'");
