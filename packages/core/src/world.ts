@@ -2,6 +2,7 @@ import type { FurnitureModel, HardwareItem, Millimeters } from "./model/index.js
 import { generateCabinet, type CabinetParams } from "./generators/cabinet.js";
 import { checkMotionCollisions, overlaps, type AABB, type Collision, type Obstacle } from "./collision.js";
 import { validateFurniture, type Issue } from "./validate.js";
+import { planFloor, type FloorSpec } from "./flooring.js";
 
 /**
  * El "mundo" de Handy: el duplicado virtual de los espacios del usuario (su casa, su taller)
@@ -36,6 +37,8 @@ export interface Room {
   height: Millimeters;
   wallThickness: Record<WallSide, Millimeters>;
   openings: Opening[];
+  /** Piso instalado o planeado en la habitación. */
+  floor?: FloorSpec;
 }
 
 export interface PlacedItem {
@@ -442,6 +445,10 @@ export function describeWorld(world: World): string {
     for (const i of items) {
       const p = i.params;
       lines.push(`- ${i.name} (id: ${i.id}): ${p.width} x ${p.height} x ${p.depth}, en ${WALL_NAMES[i.wall]} de ${i.offset} a ${i.offset + p.width}${i.elevation ? `, colgado a ${i.elevation}` : ""}; ${p.doors ?? 0} puerta(s), ${p.shelves ?? 0} repisa(s), unión ${p.joinery ?? "confirmat"}`);
+    }
+    if (room.floor) {
+      const f = room.floor, plan = planFloor(room, f);
+      lines.push(`Piso: ${f.material === "porcelain" ? "porcelanato" : "cerámica"} ${f.tileWidth} x ${f.tileLength}, junta ${f.joint}, ${f.pattern === "brick" ? "trabado" : "recto"}, arranque ${f.start === "center" ? "centrado" : "desde la esquina"}; ${plan.tilesToBuy} piezas en ${plan.boxes} caja(s), pega ${plan.adhesive.type} ${plan.adhesive.kg} kg, boquilla ${plan.grout.kg} kg`);
     }
     const runs = freeWallRuns(world, room.id, { height: 900, minLength: 300 });
     lines.push(`Tramos libres a nivel de piso (≥ 300): ${runs.map((r) => `${WALL_NAMES[r.wall]} ${r.from}–${r.to} (${r.length})`).join("; ") || "ninguno"}`);

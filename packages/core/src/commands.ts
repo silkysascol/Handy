@@ -1,4 +1,5 @@
 import type { Joinery } from "./model/index.js";
+import { defaultFloorSpec, planFloor, type FloorSpec } from "./flooring.js";
 import {
   addOpening, addRoom, getRoom, placeCabinet, removeItem, removeOpening, updateItem, updateOpening, updateRoom,
   wallLength, WALL_NAMES, type WallSide, type World,
@@ -268,6 +269,25 @@ function roomCommand(world: World, sel: Extract<Selection, { kind: "room" }>, t:
   const room = getRoom(world, sel.roomId);
   const done = (message: string): CommandResult => ({ ok: true, understood: true, select: sel, message });
   const dims = parseDims(t);
+
+  // Piso: "piso de porcelanato 60 x 60", "cerámica 45 x 45 trabada", "junta 2", "quita el piso"
+  if (/\b(piso|enchape|baldosa|baldosas|ceramica|porcelanato|junta|trabad[oa]|traba)\b/.test(t)) {
+    if (DELETE.test(t)) { room.floor = undefined; return done(`${room.name}: sin piso.`); }
+    const jointMatch = t.match(new RegExp(`junta(?: de)? ${NUM} ?(mm|cm)?`));
+    const patch: Partial<FloorSpec> = {};
+    if (/porcelanato/.test(t)) patch.material = "porcelain"; else if (/ceramica/.test(t)) patch.material = "ceramic";
+    if (dims) { patch.tileWidth = dims[0]; patch.tileLength = dims[1]; }
+    if (jointMatch) patch.joint = jointMatch[2] === "cm" ? Math.round(Number(jointMatch[1]) * 10) : Math.round(Number(jointMatch[1]));
+    if (/trabad[oa]|traba\b|ladrillo|intercalad[oa]/.test(t)) { patch.pattern = "brick"; patch.brickOffset = /tercio|1\/3/.test(t) ? 1 / 3 : 0.5; }
+    if (/\brect[oa]\b|en linea|alinead[oa]/.test(t)) patch.pattern = "straight";
+    if (/esquina/.test(t)) patch.start = "corner"; else if (/centrad[oa]|al centro|desde el centro/.test(t)) patch.start = "center";
+    if (!room.floor && !dims) return fail('Dime el tamaño de la pieza: "piso de porcelanato 60 x 60".');
+    const spec = room.floor ? { ...room.floor, ...patch } : defaultFloorSpec(patch);
+    const plan = planFloor(room, spec);
+    room.floor = spec;
+    return done(`${room.name}: piso de ${spec.material === "porcelain" ? "porcelanato" : "cerámica"} ${spec.tileWidth} x ${spec.tileLength} mm, junta ${spec.joint} mm, ${spec.pattern === "brick" ? "trabado" : "recto"}. Necesitas ${plan.tilesToBuy} piezas (${String(Number((plan.tilesToBuy * spec.tileWidth * spec.tileLength / 1e6).toFixed(1))).replace(".", ",")} m², reserva del ${plan.reservePct} % incluida), ${plan.adhesive.bags25} saco(s) de pega ${plan.adhesive.type} y ${plan.grout.bags2} bolsa(s) de boquilla.`);
+  }
+
   if (dims && !/puerta|ventana/.test(t)) {
     updateRoom(world, room.id, { width: dims[0], depth: dims[1], ...(dims[2] ? { height: dims[2] } : {}) });
     return done(`${room.name}: ${room.width} x ${room.depth} x ${room.height} mm.`);
@@ -280,7 +300,7 @@ function roomCommand(world: World, sel: Extract<Selection, { kind: "room" }>, t:
   if (depth !== undefined) { updateRoom(world, room.id, { depth }); return done(`${room.name}: fondo ${depth} mm.`); }
   const thickness = lengthAfter(t, "grosor|espesor");
   if (thickness !== undefined) { updateRoom(world, room.id, { wallThickness: { north: thickness, east: thickness, south: thickness, west: thickness } }); return done(`${room.name}: muros de ${thickness} mm.`); }
-  return unknown('En una habitación puedes: "3,6 x 3,2 m", "alto 2,6 m", "ancho 4 m", "grosor 15 cm". Para puertas, ventanas y muebles, selecciona el muro.');
+  return unknown('En una habitación puedes: "piso de porcelanato 60 x 60", "piso de cerámica 45 x 45 trabado", "junta 2", "3,6 x 3,2 m", "alto 2,6 m", "grosor 15 cm". Para puertas, ventanas y muebles, selecciona el muro.');
 }
 
 function worldCommand(world: World, t: string): CommandResult {

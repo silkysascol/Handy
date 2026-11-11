@@ -7,7 +7,6 @@ import {
   addOpening,
   addRoom,
   buildCutPlan,
-  buildQuote,
   cutlistCsv,
   cutSheetHtml,
   checkWorld,
@@ -17,6 +16,8 @@ import {
   freeWallRuns,
   mergedModel,
   placeCabinet,
+  planFloor,
+  quoteWorld,
   removeItem,
   runCommand,
   updateItem,
@@ -246,16 +247,35 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
     "world_quote",
     {
       title: "Cotizar el mundo",
-      description: "Cotiza de forma consolidada todos los muebles del mundo (o los indicados): tableros enteros, tapacanto y herrajes con el catálogo configurado. Los precios vienen del catálogo; nunca los inventes ni los ajustes.",
+      description: "Cotiza todo el mundo: muebles (tableros según plano de corte, tapacanto, herrajes) y pisos (cajas, pega, boquilla), o solo los muebles indicados. Los precios vienen del catálogo; nunca los inventes ni los ajustes.",
       inputSchema: { itemIds: z.array(z.string()).optional() },
     },
     async ({ itemIds }) => {
       const world = store.load();
-      const quote = await buildQuote(mergedModel(world, itemIds), providers);
+      const quote = await quoteWorld(world, providers, itemIds);
       const lines = quote.lines.map((l) => `${l.description}: ${l.qty} ${l.unit} x ${l.unitPrice} = ${Number(l.total.toFixed(2))}${l.missing ? " (SIN PRECIO)" : ""}${l.offer ? ` · ${l.offer.store} · ${l.offer.fetchedAt}` : ""}`);
       return text(
-        [`Cotización de ${itemIds?.length ?? world.items.length} mueble(s): ${quote.subtotal} ${quote.currency}${quote.missingCount ? ` · INCOMPLETA: ${quote.missingCount} ítems sin precio` : ""}`, ...lines].join("\n"),
-        { currency: quote.currency, subtotal: quote.subtotal, missingCount: quote.missingCount, lines: quote.lines, materials: quote.cutlist.materials },
+        [`Cotización: ${quote.subtotal} ${quote.currency} (muebles ${quote.groups.furniture}, pisos ${quote.groups.floors})${quote.missingCount ? ` · INCOMPLETA: ${quote.missingCount} ítems sin precio` : ""}`, ...lines].join("\n"),
+        { currency: quote.currency, subtotal: quote.subtotal, groups: quote.groups, missingCount: quote.missingCount, lines: quote.lines },
+      );
+    },
+  );
+
+  server.registerTool(
+    "world_floor_plan",
+    {
+      title: "Plan de piso de una habitación",
+      description: 'Devuelve el cálculo del piso definido en una habitación: piezas enteras y cortes, cajas, pega (tipo, kilos, sacos), boquilla, guardaescobas y avisos. El piso se define o cambia con world_command sobre la habitación: "piso de porcelanato 60 x 60", "trabado a un tercio", "junta 3", "quita el piso".',
+      inputSchema: { roomId: z.string() },
+    },
+    async ({ roomId }) => {
+      const room = store.load().rooms.find((r) => r.id === roomId);
+      if (!room) throw new Error(`No existe la habitación "${roomId}".`);
+      if (!room.floor) throw new Error(`${room.name} no tiene piso definido. Usa world_command con roomId y una orden como "piso de porcelanato 60 x 60".`);
+      const { tiles, ...plan } = planFloor(room, room.floor);
+      return text(
+        [`${room.name}: ${plan.areaM2} m², ${plan.fullTiles} piezas enteras y ${plan.cutTiles} cortes.`, `Comprar ${plan.tilesToBuy} piezas (${plan.reservePct} % de reserva incluida): ${room.floor.piecesPerBox ? `${plan.boxes} caja(s) de ${plan.piecesPerBox}` : `unas ${plan.boxes} cajas si traen ${plan.piecesPerBox} piezas; world_quote calcula las cajas con la presentación real de la tienda`}.`, `Pega ${plan.adhesive.type}: ${plan.adhesive.kg} kg en ${plan.adhesive.bags25} saco(s) de 25 kg, ${plan.adhesive.trowel}.`, `Boquilla: ${plan.grout.kg} kg en ${plan.grout.bags2} bolsa(s) de 2 kg. Guardaescobas: ${plan.skirtingM} m.`, ...plan.notes].join("\n"),
+        { spec: room.floor, plan, tileCount: tiles.length },
       );
     },
   );

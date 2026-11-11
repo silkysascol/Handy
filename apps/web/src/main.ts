@@ -1,9 +1,9 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
-  buildQuote, checkWorld, createWorld, cutSheetHtml, exportGltf, freeWallRuns, itemModel, itemTransform, mergedModel, panelBox, panelInstances,
+  checkWorld, createWorld, cutSheetHtml, exportGltf, freeWallRuns, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planFloor, quoteWorld,
   runCommand, StaticCatalogProvider, wallBoxes, wallLength, wallRects, wallRectToBox, WALL_NAMES,
-  type AABB, type Quote, type Selection, type StaticCatalog, type WallSide, type World, type WorldIssue,
+  type AABB, type Selection, type StaticCatalog, type WallSide, type World, type WorldIssue, type WorldQuote,
 } from "@handy/core";
 import catalogJson from "@handy/core/data/catalog-ejemplo.json";
 
@@ -96,7 +96,7 @@ scene.add(content);
 
 const unitBox = new THREE.BoxGeometry(1, 1, 1);
 const unitEdges = new THREE.EdgesGeometry(unitBox);
-const COLORS = { wall: 0xcfd3d6, floor: 0x8f9396, board: 0xece9e2, back: 0xdedad2, door: 0xb98a5a, window: 0x7fc4d9, opening: 0x9a6b3f, accent: 0xe8933a };
+const COLORS = { wall: 0xcfd3d6, floor: 0x8f9396, ceramic: 0xd9cdb8, porcelain: 0xbfc3c4, board: 0xece9e2, back: 0xdedad2, door: 0xb98a5a, window: 0x7fc4d9, opening: 0x9a6b3f, accent: 0xe8933a };
 const M = 0.001;
 type Pick = THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial>;
 let pickables: Pick[] = [];
@@ -119,6 +119,20 @@ function buildScene() {
     const t = room.wallThickness;
     const floor = box({ min: [ox - t.west, -60, oz - t.north], max: [ox + room.width + t.east, 0, oz + room.depth + t.south] }, COLORS.floor, { sel: { kind: "room", roomId: room.id } });
     content.add(floor); pickables.push(floor);
+    if (room.floor) {
+      floor.userData.baseColor = room.floor.material === "porcelain" ? COLORS.porcelain : COLORS.ceramic;
+      // Juntas: una línea por cada borde de baldosa, apenas sobre el piso.
+      const pts: number[] = [];
+      for (const t of planFloor(room, room.floor).tiles) {
+        const x0 = (ox + t.x) * M, x1 = (ox + t.x + t.w) * M, z0 = (oz + t.z) * M, z1 = (oz + t.z + t.d) * M, y = 0.002;
+        pts.push(x0, y, z0, x1, y, z0, x1, y, z0, x1, y, z1, x1, y, z1, x0, y, z1, x0, y, z1, x0, y, z0);
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+      const joints = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x5b5f63 }));
+      joints.userData.floorJoints = room.id;
+      content.add(joints);
+    }
 
     for (const wall of SIDES) {
       for (const r of wallRects(room, wall)) {
@@ -275,7 +289,7 @@ function select(s: Selection) {
 
 const PLACEHOLDER: Record<Selection["kind"], string> = {
   world: 'Haz clic en un muro o un mueble, o crea una habitación: "cocina de 2,8 x 2,4 m"',
-  room: '"alto 2,6 m" · "ancho 4 m" · "grosor 15 cm"',
+  room: '"piso de porcelanato 60 x 60" · "alto 2,6 m" · "ancho 4 m"',
   wall: '"pon una puerta de 80 x 205 a 2 m de la izquierda" · "armario de 800 x 2000 x 500 con 2 puertas"',
   opening: '"muévela 20 cm a la derecha" · "90 x 210" · "quítala"',
   item: '"ensancha 10 cm" · "agrega una repisa" · "muévelo 30 cm a la derecha" · "quítalo"',
@@ -283,7 +297,7 @@ const PLACEHOLDER: Record<Selection["kind"], string> = {
 
 const EXAMPLES: Record<Selection["kind"], string[]> = {
   world: ["cocina de 2,8 x 2,4 m", "habitación Estudio de 3 x 3 x 2,6 m"],
-  room: ["alto 2,6 m", "ancho 4 m", "grosor 15 cm"],
+  room: ["piso de porcelanato 60 x 60", "piso de cerámica 45 x 45 trabado", "junta 3", "quita el piso", "alto 2,6 m", "ancho 4 m"],
   wall: ["pon una puerta de 80 x 205 a 2 m de la izquierda", "ventana de 120 x 100 centrada, antepecho 110", "armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas", "alacena de 900 x 700 x 350 a 1,5 m del piso con 2 puertas", "grosor 20 cm"],
   opening: ["muévela 20 cm a la derecha", "a 1 m de la izquierda", "90 x 210", "céntrala", "quítala"],
   item: ["ensancha 10 cm", "alto 1800", "muévelo 30 cm a la derecha", "pégalo a la izquierda", "agrega una repisa", "una puerta", "sin tornillos a la vista", "quítalo"],
@@ -323,6 +337,19 @@ function renderProps() {
   } else if (s.kind === "room") {
     const r = world.rooms.find((x) => x.id === s.roomId)!;
     body = kv("Ancho (norte y sur)", `${fmt(r.width)} mm`) + kv("Fondo (este y oeste)", `${fmt(r.depth)} mm`) + kv("Altura", `${fmt(r.height)} mm`) + kv("Área", `${((r.width * r.depth) / 1e6).toFixed(1).replace(".", ",")} m²`);
+    if (r.floor) {
+      const f = r.floor, plan = planFloor(r, f);
+      body += `<div class="kv"><span class="k"><strong>Piso</strong></span><span class="num">${f.material === "porcelain" ? "porcelanato" : "cerámica"} ${fmt(f.tileWidth)} × ${fmt(f.tileLength)}</span></div>` +
+        kv("Colocación", `${f.pattern === "brick" ? "trabado" : "recto"} · junta ${f.joint} mm · ${f.start === "center" ? "centrado" : "desde la esquina"}`) +
+        kv("Piezas", `${plan.fullTiles} enteras + ${plan.cutTiles} cortes`) +
+        kv("Comprar", `${plan.tilesToBuy} piezas (reserva ${plan.reservePct} %)`) +
+        kv("Cajas", boxesFor(r.name, plan.tilesToBuy) ?? `aprox. ${plan.boxes} si traen ${plan.piecesPerBox}`) +
+        kv("Pega", `${plan.adhesive.bags25} saco(s) de 25 kg · ${plan.adhesive.type}`) +
+        kv("Boquilla", `${String(plan.grout.kg).replace(".", ",")} kg · ${plan.grout.bags2} bolsa(s) de 2 kg`) +
+        kv("Guardaescobas", `${String(plan.skirtingM).replace(".", ",")} m`) +
+        kv("Llana", plan.adhesive.trowel) +
+        plan.notes.map((n) => `<p class="note">${esc(n)}</p>`).join("");
+    }
   } else if (s.kind === "wall") {
     const r = world.rooms.find((x) => x.id === s.roomId)!;
     const runs = freeWallRuns(world, r.id, { height: 900, minLength: 200 }).filter((x) => x.wall === s.wall);
@@ -365,15 +392,28 @@ function renderIssues() {
 }
 
 let quoteRun = 0;
+let lastQuote: WorldQuote | undefined;
+/** Cajas según la presentación de la tienda que cotizó ese piso; undefined si no hay precio. */
+function boxesFor(roomName: string, tilesToBuy: number): string | undefined {
+  const line = lastQuote?.lines.find((l) => l.category === "tile" && l.description.startsWith(`${roomName} · `) && !l.missing);
+  const perBox = Number(line?.offer?.attributes?.piecesPerBox);
+  return line && perBox ? `${Math.ceil(tilesToBuy / perBox)} de ${perBox} piezas · ${line.offer!.store}` : undefined;
+}
 async function renderPrice() {
   const run = ++quoteRun;
-  if (!world.items.length) { $("price-total").textContent = "—"; $("price-sub").textContent = "sin muebles todavía"; $("price-pop").innerHTML = `<span class="muted">Coloca un mueble para ver su costo.</span>`; return; }
-  const q: Quote = await buildQuote(mergedModel(world), providers);
+  const hasFloor = world.rooms.some((r) => r.floor);
+  if (!world.items.length && !hasFloor) { $("price-total").textContent = "—"; $("price-sub").textContent = "sin muebles ni pisos todavía"; $("price-pop").innerHTML = `<span class="muted">Coloca un mueble o define un piso para ver su costo.</span>`; return; }
+  const q: WorldQuote = await quoteWorld(world, providers);
   if (run !== quoteRun) return;
+  lastQuote = q;
+  renderProps();
   $("price-total").textContent = money(q.subtotal, q.currency);
-  $("price-sub").textContent = `${q.currency} · ${world.items.length} mueble(s)${q.missingCount ? ` · faltan ${q.missingCount} precios` : ""} · ${(catalogJson as StaticCatalog).name}`;
-  $("price-pop").innerHTML = q.lines.map((l) => `<span class="pl${l.missing ? " missing" : ""}"><span>${esc(l.description)} × ${l.qty}</span><span class="num">${l.missing ? "sin precio" : money(l.total, q.currency)}</span></span>`).join("") +
-    `<span class="muted">Precios del ${esc(q.oldestPrice ?? "catálogo")}. Tableros enteros según el plano de corte.</span>`;
+  const parts = [world.items.length ? `${world.items.length} mueble(s)` : "", hasFloor ? `${world.rooms.filter((r) => r.floor).length} piso(s)` : ""].filter(Boolean).join(" + ");
+  $("price-sub").textContent = `${q.currency} · ${parts}${q.missingCount ? ` · faltan ${q.missingCount} precios` : ""} · ${(catalogJson as StaticCatalog).name}`;
+  $("price-pop").innerHTML =
+    (q.groups.furniture && q.groups.floors ? `<span class="pl"><strong>Muebles</strong><span class="num">${money(q.groups.furniture, q.currency)}</span></span><span class="pl"><strong>Pisos</strong><span class="num">${money(q.groups.floors, q.currency)}</span></span>` : "") +
+    q.lines.map((l) => `<span class="pl${l.missing ? " missing" : ""}"><span>${esc(l.description)} × ${l.qty}</span><span class="num">${l.missing ? "sin precio" : money(l.total, q.currency)}</span></span>`).join("") +
+    `<span class="muted">Precios del ${esc(q.oldestPrice ?? "catálogo")}. Tableros según el plano de corte; pisos con reserva incluida.</span>`;
 }
 
 function refresh() {

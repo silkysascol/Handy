@@ -70,6 +70,15 @@ describe("Handy MCP server", () => {
     expect(quote.data.subtotal).toBeGreaterThan(50);
     expect(quote.data.missingCount).toBe(0);
 
+    expect((await call("world_floor_plan", { roomId: "dormitorio" })).isError).toBe(true);
+    const floor = await call("world_command", { roomId: "dormitorio", text: "piso de porcelanato 60 x 60" });
+    expect(floor.text).toMatch(/Necesitas \d+ piezas/);
+    const fp = await call("world_floor_plan", { roomId: "dormitorio" });
+    expect(fp.text).toContain("Pega flexible para porcelanato");
+    const withFloor = await call("world_quote");
+    expect(withFloor.data.groups.floors).toBeGreaterThan(0);
+    expect(withFloor.data.subtotal).toBeGreaterThan(quote.data.subtotal);
+
     const cut = await call("world_cutplan");
     expect(cut.text).toMatch(/tablero\(s\) de Melamina 18 mm Blanco/);
     expect(readFileSync(cut.data.html, "utf8")).toContain("Plano de corte");

@@ -98,6 +98,24 @@ test("exporta a Blender un glTF válido en estructura", async ({ h }) => {
   assert.ok(gltf.nodes.some((n) => n.name === "Dormitorio"));
 });
 
+test("orden sobre una habitación: piso con cajas, pega y boquilla, sumado al precio", async ({ h, app }) => {
+  const before = await h.page.textContent("#price-total");
+  await h.pick("Cocina");
+  const msg = await h.say("piso de porcelanato 60 x 60");
+  assert.match(msg, /porcelanato 600 x 600 mm.*Necesitas \d+ piezas.*pega flexible para porcelanato.*boquilla/);
+  assert.equal(app.readWorld().rooms[1].floor.tileWidth, 600);
+  await h.page.waitForTimeout(300);
+  assert.notEqual(await h.page.textContent("#price-total"), before);
+  const props = await h.page.textContent("#props");
+  assert.match(props, /Comprar\d+ piezas/);
+  assert.match(props, /Cajas\d+ de 4 piezas/); // la presentación de la tienda, igual que en el precio
+  assert.match(props, /Boquilla/);
+  assert.match(await h.page.textContent("#price-sub"), /1 piso/);
+  assert.match(await h.say("trabado a un tercio"), /trabado/);
+  assert.match(await h.say("quita el piso"), /sin piso/);
+  assert.equal(app.readWorld().rooms[1].floor, undefined);
+});
+
 test("el despiece descarga un documento con lista de piezas y plano de corte", async ({ h }) => {
   const [download] = await Promise.all([h.page.waitForEvent("download"), h.page.click("#export-cut")]);
   assert.match(download.suggestedFilename(), /-despiece\.html$/);

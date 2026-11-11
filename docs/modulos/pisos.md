@@ -1,5 +1,7 @@
 # Módulo: Pisos y enchapes
 
+> Primera versión hecha en `packages/core/src/flooring.ts`: habitación rectangular, patrón recto o trabado, arranque centrado o desde la esquina, emparejado de recortes, cajas, pega, boquilla y guardaescobas, con cotización. En el visor: selecciona la habitación y escribe "piso de porcelanato 60 x 60". Pendiente: diagonal y espina de pez, plano numerado de cortes, paredes, laminado y vinílico.
+
 Parte de la sección Espacios. Responde: cuánto cuesta el piso de este cuarto, cuántas cajas compro, cómo lo corto para desperdiciar menos, cuánta pega y boquilla necesito.
 
 ## Entradas
@@ -15,7 +17,7 @@ Parte de la sección Espacios. Responde: cuánto cuesta el piso de este cuarto, 
 - **Despiece de piso**: coloca las piezas en el recinto según patrón y punto de partida, calcula cortes en bordes y obstáculos y **reutiliza recortes** cuando el patrón lo permite (los sobrantes de una hilera arrancan la siguiente). Muestra el plano con cada pieza numerada y la lista de cortes para la cortadora.
 - **Cajas**: piezas enteras + cortes con reutilización + reserva (5 % recto, 10–15 % diagonal y espina) → cajas enteras; sugiere una caja extra para reparaciones futuras.
 - **Pega**: por m² según formato y llana: 3–4 kg/m² (llana 6–8 mm, formatos ≤ 30 x 30), 5–6 kg/m² (llana 10 mm, 60 x 60), 7–8 kg/m² (llana 12 mm o doble encolado, formatos ≥ 60 x 120 o porcelanato). Tipo de pega: cemento cola estándar para cerámica porosa, **flexible / porcelánico** para porcelanato y pisos radiantes, blanca para piedra clara.
-- **Boquilla**: fórmula estándar (largo + ancho) × espesor × junta / (largo × ancho) × densidad ≈ kg/m²; p.ej. 60 x 60 x 9 mm con junta 3 mm ≈ 0,3 kg/m². Epóxica para zonas húmedas.
+- **Boquilla**: fórmula estándar (largo + ancho) × espesor × junta / (largo × ancho) × densidad ≈ kg/m²; p.ej. 60 x 60 x 9 mm con junta 3 mm ≈ 0,15 kg/m². Epóxica para zonas húmedas.
 - **Extras**: crucetas o niveladores (cantidad por pieza), guardaescobas por metro lineal, perfil de transición, impermeabilizante en baños, nivelación si el desnivel supera 5 mm en 2 m.
 - **Comparación**: cerámica vs porcelanato (precio, absorción, dureza, dificultad de corte: el porcelanato exige cortadora con disco diamantado), formato grande vs pequeño (menos juntas, más desperdicio en cortes).
 

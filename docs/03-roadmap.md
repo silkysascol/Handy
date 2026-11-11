@@ -26,12 +26,15 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [x] Herramientas MCP `world_*` para que la IA cree, consulte, coloque, revise, cotice y exporte.
 - [x] Intérprete de órdenes en español acotado a la selección (`runCommand`) y funciones para modificar habitaciones, aberturas y muebles con validación.
 - [x] Visor web: clic para seleccionar muro, abertura, mueble o habitación; barra de órdenes; precio en la esquina; avisos; deshacer; importar y exportar; tema claro y oscuro; actualización en vivo cuando la IA cambia el mundo.
+- [x] Pruebas de navegador en el repo (`pnpm e2e`): 12 casos de extremo a extremo con servidor y mundo temporales. `pnpm check` corre todo.
+- [x] Plano de corte real: piezas acomodadas en tableros con ancho de disco, refilado y veta; despiece imprimible y CSV para la tienda (botón Despiece, `world_cutplan`). La cotización usa esos tableros, no un porcentaje.
+- [x] Pisos: baldosas dibujadas en la habitación, piezas enteras y cortes, cajas según la tienda, pega por formato y material, boquilla, guardaescobas; sumado al precio del mundo (`world_floor_plan`).
 - [ ] **Cargar la casa real del autor** y anotar lo que falte.
 - [ ] Habitaciones no rectangulares (polígonos), niveles y puertas entre habitaciones; importar RoomPlan/LiDAR.
 - [ ] Arrastrar con el mouse para mover y estirar, además de las órdenes; cotas visibles en la vista; muebles sueltos no pegados a un muro.
 - [ ] Más vocabulario en el intérprete según lo que el autor escriba y no se entienda (registro de órdenes no entendidas).
 - [ ] Más cosas que colocar: closet con divisiones, cajonera, marcos de tubo, piso con despiece.
-- [ ] Salidas para el corte: despiece de tableros en el formato de la tienda y despiece lineal de perfiles.
+- [ ] Despiece lineal de perfiles de acero; validar el despiece de tableros con el operario de la tienda.
 
 ## M1a · "Mi primer mueble": un flujo completo
 
@@ -89,7 +92,7 @@ Ver `docs/modulos/metal.md`. Se adelanta o atrasa según el primer proyecto prop
 
 ## M5 · Arquitectura, pisos y estructura
 
-- [ ] Pisos y enchapes: despiece de cerámica y porcelanato con reutilización de recortes, cajas, pega y boquilla por formato, comparación cerámica vs porcelanato (ver `docs/modulos/pisos.md`).
+- [ ] Pisos, segunda parte: diagonal y espina de pez, plano numerado de cortes, enchape de paredes, laminado y vinílico, comparación cerámica vs porcelanato (ver `docs/modulos/pisos.md`).
 
 - [ ] Electrodomésticos: biblioteca con medidas y conexiones, comando de reemplazo, servicios del mueble (desagüe, agua, gas, tomas) e iluminación integrada con recorrido de cable.
 - [ ] Esfuerzos nivel 2: método de rigidez para muebles completos, mapa de color; nivel 3 preliminar para luces y aberturas en espacios.

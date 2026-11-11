@@ -5,18 +5,211 @@
   "currency": "USD",
   "updatedAt": "2026-11-05",
   "items": [
-    { "sku": "MEL-18-BLA", "category": "board", "name": "Melamina 18 mm Blanco 1830x2500", "price": 42.0, "currency": "USD", "unit": "sheet", "attributes": { "thickness": 18, "finish": "Blanco", "width": 1830, "height": 2500 } },
-    { "sku": "MEL-18-ROB", "category": "board", "name": "Melamina 18 mm Roble 1830x2500", "price": 55.0, "currency": "USD", "unit": "sheet", "attributes": { "thickness": 18, "finish": "Roble", "width": 1830, "height": 2500 } },
-    { "sku": "HDF-3-BLA", "category": "board", "name": "HDF 3 mm Blanco 1830x2500", "price": 12.0, "currency": "USD", "unit": "sheet", "attributes": { "thickness": 3, "finish": "Blanco", "width": 1830, "height": 2500 } },
-    { "sku": "TAP-PVC-BLA", "category": "edgeband", "name": "Tapacanto PVC 19x0,45 Blanco (metro)", "price": 0.25, "currency": "USD", "unit": "meter", "attributes": { "finish": "Blanco" } },
-    { "sku": "BIS-35", "category": "hinge", "name": "Bisagra cazoleta 35 mm recta", "price": 1.1, "currency": "USD", "unit": "unit" },
-    { "sku": "MAN-128", "category": "handle", "name": "Manilla aluminio 128 mm", "price": 2.5, "currency": "USD", "unit": "unit" },
-    { "sku": "CONF-7x50", "category": "confirmat", "name": "Confirmat 7x50 (pack 100)", "price": 6.0, "currency": "USD", "unit": "pack", "packSize": 100 },
-    { "sku": "TAPA-CONF", "category": "cap", "name": "Tapa confirmat blanca (pack 100)", "price": 2.0, "currency": "USD", "unit": "pack", "packSize": 100 },
-    { "sku": "MINI-CAM", "category": "cam-lock", "name": "Excéntrica minifix 15 mm + perno (pack 50)", "price": 7.5, "currency": "USD", "unit": "pack", "packSize": 50 },
-    { "sku": "TAR-8x30", "category": "dowel", "name": "Tarugo 8x30 (pack 100)", "price": 2.2, "currency": "USD", "unit": "pack", "packSize": 100 },
-    { "sku": "SOP-5", "category": "shelf-pin", "name": "Soporte repisa 5 mm (pack 20)", "price": 1.5, "currency": "USD", "unit": "pack", "packSize": 20 },
-    { "sku": "TOR-3.5x16", "category": "screw", "name": "Tornillo 3,5x16 (pack 100)", "price": 1.8, "currency": "USD", "unit": "pack", "packSize": 100 },
-    { "sku": "PATA-NIV", "category": "foot", "name": "Pata niveladora 100 mm", "price": 0.9, "currency": "USD", "unit": "unit" }
+    {
+      "sku": "MEL-18-BLA",
+      "category": "board",
+      "name": "Melamina 18 mm Blanco 1830x2500",
+      "price": 42.0,
+      "currency": "USD",
+      "unit": "sheet",
+      "attributes": {
+        "thickness": 18,
+        "finish": "Blanco",
+        "width": 1830,
+        "height": 2500
+      }
+    },
+    {
+      "sku": "MEL-18-ROB",
+      "category": "board",
+      "name": "Melamina 18 mm Roble 1830x2500",
+      "price": 55.0,
+      "currency": "USD",
+      "unit": "sheet",
+      "attributes": {
+        "thickness": 18,
+        "finish": "Roble",
+        "width": 1830,
+        "height": 2500
+      }
+    },
+    {
+      "sku": "HDF-3-BLA",
+      "category": "board",
+      "name": "HDF 3 mm Blanco 1830x2500",
+      "price": 12.0,
+      "currency": "USD",
+      "unit": "sheet",
+      "attributes": {
+        "thickness": 3,
+        "finish": "Blanco",
+        "width": 1830,
+        "height": 2500
+      }
+    },
+    {
+      "sku": "TAP-PVC-BLA",
+      "category": "edgeband",
+      "name": "Tapacanto PVC 19x0,45 Blanco (metro)",
+      "price": 0.25,
+      "currency": "USD",
+      "unit": "meter",
+      "attributes": {
+        "finish": "Blanco"
+      }
+    },
+    {
+      "sku": "BIS-35",
+      "category": "hinge",
+      "name": "Bisagra cazoleta 35 mm recta",
+      "price": 1.1,
+      "currency": "USD",
+      "unit": "unit"
+    },
+    {
+      "sku": "MAN-128",
+      "category": "handle",
+      "name": "Manilla aluminio 128 mm",
+      "price": 2.5,
+      "currency": "USD",
+      "unit": "unit"
+    },
+    {
+      "sku": "CONF-7x50",
+      "category": "confirmat",
+      "name": "Confirmat 7x50 (pack 100)",
+      "price": 6.0,
+      "currency": "USD",
+      "unit": "pack",
+      "packSize": 100
+    },
+    {
+      "sku": "TAPA-CONF",
+      "category": "cap",
+      "name": "Tapa confirmat blanca (pack 100)",
+      "price": 2.0,
+      "currency": "USD",
+      "unit": "pack",
+      "packSize": 100
+    },
+    {
+      "sku": "MINI-CAM",
+      "category": "cam-lock",
+      "name": "Excéntrica minifix 15 mm + perno (pack 50)",
+      "price": 7.5,
+      "currency": "USD",
+      "unit": "pack",
+      "packSize": 50
+    },
+    {
+      "sku": "TAR-8x30",
+      "category": "dowel",
+      "name": "Tarugo 8x30 (pack 100)",
+      "price": 2.2,
+      "currency": "USD",
+      "unit": "pack",
+      "packSize": 100
+    },
+    {
+      "sku": "SOP-5",
+      "category": "shelf-pin",
+      "name": "Soporte repisa 5 mm (pack 20)",
+      "price": 1.5,
+      "currency": "USD",
+      "unit": "pack",
+      "packSize": 20
+    },
+    {
+      "sku": "TOR-3.5x16",
+      "category": "screw",
+      "name": "Tornillo 3,5x16 (pack 100)",
+      "price": 1.8,
+      "currency": "USD",
+      "unit": "pack",
+      "packSize": 100
+    },
+    {
+      "sku": "PATA-NIV",
+      "category": "foot",
+      "name": "Pata niveladora 100 mm",
+      "price": 0.9,
+      "currency": "USD",
+      "unit": "unit"
+    },
+    {
+      "sku": "POR-60x60",
+      "category": "tile",
+      "name": "Porcelanato 60x60 gris (caja 1,44 m², 4 u)",
+      "price": 38.0,
+      "currency": "USD",
+      "unit": "pack",
+      "packSize": 4,
+      "attributes": {
+        "material": "porcelain",
+        "width": 600,
+        "length": 600,
+        "piecesPerBox": 4
+      }
+    },
+    {
+      "sku": "CER-45x45",
+      "category": "tile",
+      "name": "Cerámica 45x45 beige (caja 2,03 m², 10 u)",
+      "price": 24.0,
+      "currency": "USD",
+      "unit": "pack",
+      "packSize": 10,
+      "attributes": {
+        "material": "ceramic",
+        "width": 450,
+        "length": 450,
+        "piecesPerBox": 10
+      }
+    },
+    {
+      "sku": "POR-20x120",
+      "category": "tile",
+      "name": "Porcelanato 20x120 madera (caja 1,44 m², 6 u)",
+      "price": 46.0,
+      "currency": "USD",
+      "unit": "pack",
+      "packSize": 6,
+      "attributes": {
+        "material": "porcelain",
+        "width": 200,
+        "length": 1200,
+        "piecesPerBox": 6
+      }
+    },
+    {
+      "sku": "PEGA-STD",
+      "category": "tile-adhesive",
+      "name": "Pega cerámica estándar 25 kg",
+      "price": 6.5,
+      "currency": "USD",
+      "unit": "unit",
+      "attributes": {
+        "flexible": 0
+      }
+    },
+    {
+      "sku": "PEGA-FLEX",
+      "category": "tile-adhesive",
+      "name": "Pega flexible porcelanato 25 kg",
+      "price": 14.0,
+      "currency": "USD",
+      "unit": "unit",
+      "attributes": {
+        "flexible": 1
+      }
+    },
+    {
+      "sku": "BOQ-2",
+      "category": "grout",
+      "name": "Boquilla con látex 2 kg",
+      "price": 4.2,
+      "currency": "USD",
+      "unit": "unit"
+    }
   ]
 }
