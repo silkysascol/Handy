@@ -1,9 +1,9 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
-  checkWorld, createWorld, cutSheetHtml, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld,
+  checkWorld, createWorld, cutSheetHtml, dimensionsFor, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld, snapAlongWall, updateItem, updateOpening, wallCoord, wallPoint, itemBox,
   runCommand, StaticCatalogProvider, wallBoxes, wallLength, wallRects, wallRectToBox, WALL_NAMES,
-  type AABB, type Selection, type StaticCatalog, type WallSide, type World, type WorldIssue, type WorldQuote,
+  type AABB, type DimLine, type Room, type Selection, type StaticCatalog, type WallSide, type World, type WorldIssue, type WorldQuote,
 } from "@handy/core";
 import catalogJson from "@handy/core/data/catalog-ejemplo.json";
 
@@ -185,6 +185,8 @@ function buildScene() {
     }
   }
   applyHighlight();
+  buildHandles();
+  buildDims();
 }
 
 const sameSel = (a: Selection | undefined, b: Selection) => !!a && JSON.stringify(a) === JSON.stringify(b);
@@ -248,21 +250,189 @@ renderer.setAnimationLoop(() => {
   controls.update();
   updateGhostWalls();
   renderer.render(scene, camera);
+  placeDimLabels();
 });
 
-// ---------- Selección con clic ----------
+// ---------- Cotas: medidas de lo seleccionado, dibujadas sobre la vista ----------
+
+const dimsLayer = document.createElement("div");
+dimsLayer.id = "dims";
+view.appendChild(dimsLayer);
+const dimLines = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: COLORS.accent, depthTest: false, transparent: true }));
+dimLines.renderOrder = 10;
+scene.add(dimLines);
+let dims: DimLine[] = [];
+
+function buildDims() {
+  dims = dimensionsFor(world, selection);
+  const pts: number[] = [];
+  for (const d of dims) pts.push(d.from[0] * M, d.from[1] * M, d.from[2] * M, d.to[0] * M, d.to[1] * M, d.to[2] * M);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+  dimLines.geometry.dispose();
+  dimLines.geometry = g;
+  dimsLayer.innerHTML = dims.map((d) => `<span class="dim ${d.kind}">${fmt(d.value)}</span>`).join("");
+}
+
+const projected = new THREE.Vector3();
+function placeDimLabels() {
+  const w = view.clientWidth, h = view.clientHeight;
+  dimsLayer.childNodes.forEach((n, i) => {
+    const d = dims[i], el = n as HTMLElement;
+    if (!d) return;
+    projected.set(((d.from[0] + d.to[0]) / 2) * M, ((d.from[1] + d.to[1]) / 2) * M, ((d.from[2] + d.to[2]) / 2) * M).project(camera);
+    const visible = projected.z < 1 && Math.abs(projected.x) < 1.05 && Math.abs(projected.y) < 1.05;
+    el.style.display = visible ? "" : "none";
+    el.style.transform = `translate(-50%, -50%) translate(${(((projected.x + 1) / 2) * w).toFixed(1)}px, ${(((1 - projected.y) / 2) * h).toFixed(1)}px)`;
+  });
+}
+
+// ---------- Selección con clic y arrastre con el mouse ----------
+
+/** Lo que se puede arrastrar a lo largo de su muro: un mueble o una abertura. */
+function dragTarget(sel: Selection): { room: Room; wall: WallSide; offset: number; width: number; height: number; base: number; front: number } | null {
+  if (sel.kind === "item") {
+    const item = world.items.find((i) => i.id === sel.itemId);
+    const room = item && world.rooms.find((r) => r.id === item.roomId);
+    if (!item || !room) return null;
+    const b = itemBox(room, item);
+    const front = Math.max(wallCoord(room, item.wall, b.min[0], b.min[2]).inset, wallCoord(room, item.wall, b.max[0], b.max[2]).inset);
+    return { room, wall: item.wall, offset: item.offset, width: item.params.width, height: item.params.height, base: item.elevation, front };
+  }
+  if (sel.kind === "opening") {
+    const room = world.rooms.find((r) => r.id === sel.roomId);
+    const o = room?.openings.find((x) => x.id === sel.openingId);
+    if (!room || !o) return null;
+    return { room, wall: o.wall, offset: o.offset, width: o.width, height: o.height, base: o.sill, front: 0 };
+  }
+  return null;
+}
+
+/** Cuadros naranjas del mueble seleccionado: uno en el borde derecho (ancho) y otro arriba (alto). */
+let handles: Pick[] = [];
+function buildHandles() {
+  for (const h of handles) content.remove(h);
+  handles = [];
+  if (selection.kind !== "item") return;
+  const t = dragTarget(selection);
+  if (!t) return;
+  const make = (kind: "width" | "height", u: number, y: number) => {
+    const [x, yy, z] = wallPoint(t.room, t.wall, u, y, t.front + 25);
+    const m = box({ min: [x - 40, yy - 40, z - 40], max: [x + 40, yy + 40, z + 40] }, COLORS.accent, { handle: kind });
+    m.material.emissive.setHex(0x6a3a08);
+    m.renderOrder = 5;
+    content.add(m);
+    handles.push(m);
+  };
+  make("width", t.offset + t.width, t.base + t.height / 2);
+  make("height", t.offset + t.width / 2, t.base + t.height);
+}
 
 const raycaster = new THREE.Raycaster();
-let down: { x: number; y: number } | null = null;
-renderer.domElement.addEventListener("pointerdown", (e) => { down = { x: e.clientX, y: e.clientY }; });
-renderer.domElement.addEventListener("pointerup", (e) => {
-  if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 4) return;
+const pointerNdc = (e: { clientX: number; clientY: number }) => {
   const rect = renderer.domElement.getBoundingClientRect();
-  raycaster.setFromCamera(new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1), camera);
+  return new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+};
+
+interface Drag { mode: "move" | "width" | "height"; sel: Selection; snapshot: string; plane: THREE.Plane; u0: number; y0: number; startOffset: number; startValue: number; active: boolean; changed: boolean }
+let down: { x: number; y: number } | null = null;
+let drag: Drag | null = null;
+let rebuildQueued = false;
+function queueRebuild() {
+  if (rebuildQueued) return;
+  rebuildQueued = true;
+  requestAnimationFrame(() => { rebuildQueued = false; buildScene(); renderProps(); });
+}
+
+// En captura, para decidir antes que la cámara si este gesto mueve un mueble o gira la vista.
+renderer.domElement.addEventListener("pointerdown", (e) => {
+  down = { x: e.clientX, y: e.clientY };
+  if (e.button !== 0) return;
+  raycaster.setFromCamera(pointerNdc(e), camera);
+  const onHandle = raycaster.intersectObjects(handles, false)[0];
+  const hit = onHandle ?? raycaster.intersectObjects(pickables.filter((m) => !m.userData.ghost), false)[0];
+  if (!hit) return;
+  // Solo se arrastra lo que ya está seleccionado: el primer clic selecciona, el segundo gesto mueve.
+  const sel = onHandle ? selection : (hit.object.userData.sel as Selection | undefined);
+  if (!sel || !sameSel(sel, selection)) return;
+  const t = dragTarget(sel);
+  if (!t) return;
+  const mode = (onHandle ? onHandle.object.userData.handle : "move") as Drag["mode"];
+  const plane = new THREE.Plane();
+  if (mode === "height") {
+    const n = new THREE.Vector3(camera.position.x - hit.point.x, 0, camera.position.z - hit.point.z).normalize();
+    plane.setFromNormalAndCoplanarPoint(n, hit.point);
+  } else plane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), hit.point);
+  drag = { mode, sel, snapshot: JSON.stringify(world), plane, u0: wallCoord(t.room, t.wall, hit.point.x / M, hit.point.z / M).u, y0: hit.point.y / M, startOffset: t.offset, startValue: mode === "width" ? t.width : t.height, active: false, changed: false };
+  controls.enabled = false;
+}, { capture: true });
+
+window.addEventListener("pointermove", (e) => {
+  if (!drag || !down) return;
+  if (!drag.active) {
+    if (Math.hypot(e.clientX - down.x, e.clientY - down.y) < 5) return;
+    drag.active = true;
+    renderer.domElement.style.cursor = "grabbing";
+  }
+  raycaster.setFromCamera(pointerNdc(e), camera);
+  const p = raycaster.ray.intersectPlane(drag.plane, new THREE.Vector3());
+  const t = dragTarget(drag.sel);
+  if (!p || !t) return;
+  const round = (v: number) => Math.round(v / 10) * 10;
+  try {
+    if (drag.mode === "move") {
+      const raw = drag.startOffset + (wallCoord(t.room, t.wall, p.x / M, p.z / M).u - drag.u0);
+      const exclude = drag.sel.kind === "item" ? { itemId: drag.sel.itemId } : drag.sel.kind === "opening" ? { openingId: drag.sel.openingId } : {};
+      const offset = snapAlongWall(world, t.room.id, t.wall, t.width, raw, exclude);
+      if (offset === t.offset) return;
+      if (drag.sel.kind === "item") updateItem(world, drag.sel.itemId, { offset });
+      else if (drag.sel.kind === "opening") updateOpening(world, drag.sel.roomId, drag.sel.openingId, { offset });
+    } else if (drag.sel.kind === "item" && drag.mode === "width") {
+      const width = round(drag.startValue + (wallCoord(t.room, t.wall, p.x / M, p.z / M).u - drag.u0));
+      if (width === t.width || width < 150) return;
+      updateItem(world, drag.sel.itemId, { params: { width } });
+    } else if (drag.sel.kind === "item" && drag.mode === "height") {
+      const height = round(drag.startValue + (p.y / M - drag.y0));
+      if (height === t.height || height < 100) return;
+      updateItem(world, drag.sel.itemId, { params: { height } });
+    } else return;
+    drag.changed = true;
+    queueRebuild();
+  } catch { /* esa medida no cabe o no se puede construir: se conserva la última válida */ }
+});
+
+window.addEventListener("pointerup", async (e) => {
+  const d = drag, start = down;
+  drag = null; down = null;
+  controls.enabled = true;
+  renderer.domElement.style.cursor = "";
+  if (d?.active) {
+    if (d.changed) {
+      history.push(d.snapshot);
+      await saveWorld();
+      refresh();
+      const t = dragTarget(d.sel);
+      if (t) toast(d.mode === "move" ? `${selectionLabel(d.sel)}: de ${fmt(t.offset)} a ${fmt(t.offset + t.width)} mm en el ${WALL_NAMES[t.wall]}.` : `${selectionLabel(d.sel)}: ${d.mode === "width" ? "ancho" : "alto"} ${fmt(d.mode === "width" ? t.width : t.height)} mm.`);
+    }
+    return;
+  }
+  if (e.target !== renderer.domElement || !start || Math.hypot(e.clientX - start.x, e.clientY - start.y) > 4) return;
+  raycaster.setFromCamera(pointerNdc(e), camera);
+  if (raycaster.intersectObjects(handles, false)[0]) return;
   const hit = raycaster.intersectObjects(pickables.filter((m) => !m.userData.ghost), false)[0];
   select((hit?.object.userData.sel as Selection | undefined) ?? { kind: "world" });
   $<HTMLInputElement>("cmd-input").focus();
 });
+
+/** Cancela un arrastre en curso y deja todo como estaba. */
+function cancelDrag() {
+  if (!drag) return;
+  world = JSON.parse(drag.snapshot);
+  drag = null;
+  controls.enabled = true;
+  renderer.domElement.style.cursor = "";
+  refresh();
+}
 
 function selectionExists(s: Selection): boolean {
   switch (s.kind) {
@@ -291,6 +461,8 @@ function selectionLabel(s: Selection): string {
 function select(s: Selection) {
   selection = s;
   applyHighlight();
+  buildHandles();
+  buildDims();
   renderTree();
   renderProps();
   $("sel-chip").textContent = s.kind === "world" ? "Nada seleccionado" : selectionLabel(s);
@@ -384,6 +556,7 @@ function renderProps() {
     } else body = kv("Ancho × alto × fondo", `${fmt(p.width)} × ${fmt(p.height)} × ${fmt(p.depth)}`) + kv("Muro", WALL_NAMES[i.wall]) + kv("Desde la izquierda", `${fmt(i.offset)} mm`) + kv("Del piso", `${fmt(i.elevation)} mm`) +
       kv("Puertas", String(p.doors ?? 0)) + kv("Repisas", String(p.shelves ?? 0)) + (p.dividers ? kv("Divisiones", `${p.dividers} · ${p.dividers + 1} cuerpos`) : "") + (p.drawers ? kv("Cajones", `${p.drawers} de ${fmt(p.drawerHeight ?? 200)} mm`) : "") + (p.hangingBar ? kv("Barra de colgar", "sí, con maletero") : "") + kv("Zócalo", p.plinthHeight ? `${fmt(p.plinthHeight)} mm` : "no") + kv("Unión", p.joinery === "minifix" || p.joinery === "dowel" ? `${p.joinery} · sin tornillos a la vista` : p.joinery ?? "confirmat");
   }
+  if (s.kind === "item" || s.kind === "opening") body += `<p class="note">Arrástralo para moverlo a lo largo del muro${s.kind === "item" ? "; tira de los cuadros naranjas para cambiar ancho y alto" : ""}. Flechas: 10 mm, con Mayús 100.</p>`;
   const mine = issues.filter((x) => (s.kind === "item" && x.itemId === s.itemId) || s.kind === "world" || ((s.kind === "room" || s.kind === "wall") && x.roomId === s.roomId));
   props.innerHTML =
     `<div class="sec"><h2>${esc(s.kind === "world" ? world.name : selectionLabel(s))}</h2><div class="b">${body}</div></div>` +
@@ -457,25 +630,44 @@ function toast(message: string, bad = false, aiPrompt?: string) {
   toastTimer = window.setTimeout(() => { el.className = ""; }, aiPrompt ? 12000 : 5000);
 }
 
-$("cmd").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const input = $<HTMLInputElement>("cmd-input");
-  const text = input.value.trim();
-  if (!text) return;
+/** Aplica una orden sobre la selección actual, igual si viene de la barra o del teclado. */
+async function applyCommand(text: string, quiet = false): Promise<boolean> {
   const before = JSON.stringify(world);
   const result = runCommand(world, selection, text);
   if (result.ok) {
     history.push(before);
-    input.value = "";
     if (result.select !== undefined) selection = result.select ?? { kind: "world" };
     await saveWorld();
     refresh();
     toast(result.message);
-  } else if (!result.understood) {
-    toast(result.message, true, `En mi mundo de Handy "${world.name}", sobre ${selectionLabel(selection)}: ${text}`);
-  } else {
-    toast(result.message, true);
+    return true;
   }
+  if (!result.understood) toast(result.message, true, `En mi mundo de Handy "${world.name}", sobre ${selectionLabel(selection)}: ${text}`);
+  else if (!quiet) toast(result.message, true);
+  return false;
+}
+
+$("cmd").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const input = $<HTMLInputElement>("cmd-input");
+  const text = input.value.trim();
+  if (text && (await applyCommand(text))) input.value = "";
+});
+
+// Flechas: mueven lo seleccionado 10 mm (con Mayús, 100). Supr lo quita. Esc cancela un arrastre.
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { cancelDrag(); return; }
+  const input = $<HTMLInputElement>("cmd-input");
+  const typing = document.activeElement === input && input.value !== "";
+  if (typing || (selection.kind !== "item" && selection.kind !== "opening") || e.ctrlKey || e.metaKey || e.altKey) return;
+  const step = e.shiftKey ? 100 : 10;
+  const it = selection.kind === "item";
+  const cmd = e.key === "ArrowRight" ? `muévelo ${step} mm a la derecha` : e.key === "ArrowLeft" ? `muévelo ${step} mm a la izquierda`
+    : it && e.key === "ArrowUp" ? `súbelo ${step} mm` : it && e.key === "ArrowDown" ? `bájalo ${step} mm`
+    : e.key === "Delete" && document.activeElement !== input ? "quita" : null;
+  if (!cmd) return;
+  e.preventDefault();
+  void applyCommand(cmd, true);
 });
 
 async function undo() {
@@ -539,4 +731,15 @@ refresh();
 frameWorld();
 listenForExternalChanges();
 // Para pruebas automáticas.
-(window as unknown as Record<string, unknown>).__handy = { ready: true, getWorld: () => world, select, getSelection: () => selection };
+const toScreen = (v: THREE.Vector3) => {
+  const r = renderer.domElement.getBoundingClientRect();
+  const q = v.clone().project(camera);
+  return { x: r.left + ((q.x + 1) / 2) * r.width, y: r.top + ((1 - q.y) / 2) * r.height };
+};
+(window as unknown as Record<string, unknown>).__handy = {
+  ready: true, getWorld: () => world, select, getSelection: () => selection,
+  /** Punto en pantalla del centro del frente de lo seleccionado, y de sus manijas. */
+  selectionScreen: () => { const t = dragTarget(selection); if (!t) return null; const [x, y, z] = wallPoint(t.room, t.wall, t.offset + t.width / 2, t.base + t.height / 2, t.front); return toScreen(new THREE.Vector3(x * M, y * M, z * M)); },
+  handleScreen: (kind: string) => { const h = handles.find((m) => m.userData.handle === kind); return h ? toScreen(h.getWorldPosition(new THREE.Vector3())) : null; },
+  dimLabels: () => [...dimsLayer.querySelectorAll(".dim")].map((n) => n.textContent),
+};

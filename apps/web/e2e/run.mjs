@@ -150,6 +150,91 @@ test("orden sobre una habitación: piso con cajas, pega y boquilla, sumado al pr
   assert.equal(app.readWorld().rooms[1].floor, undefined);
 });
 
+test("cotas: al seleccionar un mueble aparecen su ancho, su alto y los espacios a cada lado", async ({ h }) => {
+  await h.pick("Biblioteca");
+  const labels = await h.page.evaluate("window.__handy.dimLabels()");
+  // Biblioteca de 900 x 1800 en el muro oeste (3200), de 400 a 1300.
+  assert.deepEqual(labels, ["400", "900", "1.900", "1.800"]);
+  await h.pick("Muro norte", 0);
+  assert.deepEqual(await h.page.evaluate("window.__handy.dimLabels()"), ["3.600", "2.400"]);
+});
+
+test("arrastrar un mueble seleccionado lo mueve por su muro, se guarda y se deshace", async ({ h, app }) => {
+  const offset = () => app.readWorld().items.find((i) => i.id === "biblioteca").offset;
+  await h.pick("Biblioteca");
+  const start = offset();
+  const p = await h.page.evaluate("window.__handy.selectionScreen()");
+  await h.page.mouse.move(p.x, p.y);
+  await h.page.mouse.down();
+  for (let i = 1; i <= 8; i++) await h.page.mouse.move(p.x + i * 12, p.y - i * 5);
+  await h.page.mouse.up();
+  await h.page.waitForTimeout(400);
+  const moved = offset();
+  assert.notEqual(moved, start, "el mueble no se movió");
+  assert.equal(moved % 10, 0, "la posición debe quedar en la rejilla de 10 mm");
+  assert.match(await h.page.textContent("#toast"), /Biblioteca: de [\d.]+ a [\d.]+ mm en el muro oeste/);
+  assert.equal((await h.page.evaluate("window.__handy.dimLabels()"))[0], moved.toLocaleString("es-CO"));
+  await h.page.click("#undo");
+  await h.page.waitForTimeout(300);
+  assert.equal(offset(), start);
+});
+
+test("un clic sin arrastrar no mueve nada, y arrastrar lo no seleccionado gira la vista", async ({ h, app }) => {
+  const before = JSON.stringify(app.readWorld().items);
+  await h.pick("Biblioteca");
+  const p = await h.page.evaluate("window.__handy.selectionScreen()");
+  await h.page.mouse.click(p.x, p.y);
+  await h.page.evaluate("window.__handy.select({ kind: 'world' })");
+  await h.page.mouse.move(p.x, p.y);
+  await h.page.mouse.down();
+  for (let i = 1; i <= 6; i++) await h.page.mouse.move(p.x + i * 15, p.y);
+  await h.page.mouse.up();
+  await h.page.waitForTimeout(300);
+  assert.equal(JSON.stringify(app.readWorld().items), before);
+});
+
+test("las manijas cambian ancho y alto; lo que no cabe se queda en la última medida válida", async ({ h, app }) => {
+  const params = () => app.readWorld().items.find((i) => i.id === "biblioteca").params;
+  await h.pick("Biblioteca");
+  const w0 = params().width, h0 = params().height;
+  let p = await h.page.evaluate("window.__handy.handleScreen('width')");
+  await h.page.mouse.move(p.x, p.y);
+  await h.page.mouse.down();
+  for (let i = 1; i <= 8; i++) await h.page.mouse.move(p.x + i * 8, p.y - i * 3);
+  await h.page.mouse.up();
+  await h.page.waitForTimeout(400);
+  assert.notEqual(params().width, w0, "el ancho no cambió");
+  assert.match(await h.page.textContent("#toast"), /Biblioteca: ancho [\d.]+ mm/);
+  p = await h.page.evaluate("window.__handy.handleScreen('height')");
+  await h.page.mouse.move(p.x, p.y);
+  await h.page.mouse.down();
+  for (let i = 1; i <= 30; i++) await h.page.mouse.move(p.x, p.y - i * 15);
+  await h.page.mouse.up();
+  await h.page.waitForTimeout(400);
+  assert.ok(params().height > h0, "el alto no creció");
+  assert.ok(params().height <= 2400, "el mueble no puede pasar del techo");
+});
+
+test("flechas mueven 10 mm y con Mayús 100; Esc cancela un arrastre", async ({ h, app }) => {
+  const offset = () => app.readWorld().items.find((i) => i.id === "biblioteca").offset;
+  await h.pick("Biblioteca");
+  const start = offset();
+  await h.page.keyboard.press("ArrowRight");
+  await h.page.waitForTimeout(250);
+  assert.equal(offset(), start + 10);
+  await h.page.keyboard.press("Shift+ArrowLeft");
+  await h.page.waitForTimeout(250);
+  assert.equal(offset(), start - 90);
+  const p = await h.page.evaluate("window.__handy.selectionScreen()");
+  await h.page.mouse.move(p.x, p.y);
+  await h.page.mouse.down();
+  for (let i = 1; i <= 6; i++) await h.page.mouse.move(p.x + i * 12, p.y - i * 5);
+  await h.page.keyboard.press("Escape");
+  await h.page.mouse.up();
+  await h.page.waitForTimeout(300);
+  assert.equal(offset(), start - 90);
+});
+
 test("el despiece descarga un documento con lista de piezas y plano de corte", async ({ h }) => {
   const [download] = await Promise.all([h.page.waitForEvent("download"), h.page.click("#export-cut")]);
   assert.match(download.suggestedFilename(), /-despiece\.html$/);

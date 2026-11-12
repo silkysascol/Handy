@@ -64,6 +64,8 @@ Abre http://localhost:5174. Verás tu mundo en 3D. **Haz clic en un muro, un mue
 | una habitación | `piso de porcelanato 60 x 60` · `piso de cerámica 45 x 45 trabado` · `junta 3` · `alto 2,6 m` |
 | nada | `cocina de 2,8 x 2,4 m` |
 
+También puedes usar el mouse: **arrastra** lo seleccionado para moverlo por su muro (se imanta a esquinas, puertas y muebles vecinos), tira de los **cuadros naranjas** para cambiar ancho y alto, y usa las **flechas** para ajustes de 10 mm, o 100 con Mayús. Las medidas de lo seleccionado se ven sobre la vista.
+
 Cada cambio se valida (si no cabe, no se aplica y te dice por qué), actualiza el precio de la esquina, se puede deshacer y se guarda en tu archivo de mundo. Si tu IA cambia el mundo por MCP, el visor se actualiza solo. Lo que el intérprete no entiende te lo deja listo para copiar a tu IA.
 
 ![Visor de Handy](docs/mocks/visor-real.png)

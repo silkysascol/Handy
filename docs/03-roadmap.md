@@ -31,9 +31,10 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [x] Pisos: baldosas dibujadas en la habitación, piezas enteras y cortes, cajas según la tienda, pega por formato y material, boquilla, guardaescobas; sumado al precio del mundo (`world_floor_plan`).
 - [x] Más muebles con el mismo generador: divisiones verticales (cuerpos iguales), cajones con correderas (frente visible o interiores tras puertas), barra de colgar con maletero, puertas de 2 por cuerpo. Con eso salen closets, cajoneras y bibliotecas con divisiones. Reglas nuevas: barra larga, closet poco profundo, cajón ancho.
 - [x] Estructuras de tubo cuadrado: mesa y estantería con tablero opcional, soldadas o atornilladas; despiece lineal de barras de 6 m, peso, consumibles y precio; sección de perfiles en el despiece imprimible (`world_place_frame`).
+- [x] Cotas sobre la vista (ancho, alto y espacios a cada lado de lo seleccionado) y manejo con el mouse: arrastrar un mueble o una abertura por su muro con imán a bordes y vecinos, manijas para ancho y alto, flechas para ajustes de 10 y 100 mm, Esc para cancelar.
 - [ ] **Cargar la casa real del autor** y anotar lo que falte.
 - [ ] Habitaciones no rectangulares (polígonos), niveles y puertas entre habitaciones; importar RoomPlan/LiDAR.
-- [ ] Arrastrar con el mouse para mover y estirar, además de las órdenes; cotas visibles en la vista; muebles sueltos no pegados a un muro.
+- [ ] Muebles sueltos no pegados a un muro; arrastrar de un muro a otro; manija de fondo.
 - [ ] Más vocabulario en el intérprete según lo que el autor escriba y no se entienda (registro de órdenes no entendidas).
 - [ ] Más cosas que colocar: muebles sueltos en medio del cuarto (mesa, cama), cajones en cualquier cuerpo.
 - [ ] Validar el despiece de tableros y de perfiles con el operario de la tienda.

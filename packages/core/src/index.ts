@@ -14,3 +14,4 @@ export * from "./worldquote.js";
 export * from "./profiles.js";
 export * from "./barcut.js";
 export * from "./generators/frame.js";
+export * from "./dimensions.js";
