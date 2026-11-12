@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
-  checkWorld, createWorld, cutSheetHtml, exportGltf, freeWallRuns, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planFloor, quoteWorld,
+  checkWorld, createWorld, cutSheetHtml, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld,
   runCommand, StaticCatalogProvider, wallBoxes, wallLength, wallRects, wallRectToBox, WALL_NAMES,
   type AABB, type Selection, type StaticCatalog, type WallSide, type World, type WorldIssue, type WorldQuote,
 } from "@handy/core";
@@ -96,7 +96,7 @@ scene.add(content);
 
 const unitBox = new THREE.BoxGeometry(1, 1, 1);
 const unitEdges = new THREE.EdgesGeometry(unitBox);
-const COLORS = { wall: 0xcfd3d6, floor: 0x8f9396, ceramic: 0xd9cdb8, porcelain: 0xbfc3c4, board: 0xece9e2, back: 0xdedad2, door: 0xb98a5a, window: 0x7fc4d9, opening: 0x9a6b3f, metal: 0xa7adb3, accent: 0xe8933a };
+const COLORS = { wall: 0xcfd3d6, floor: 0x8f9396, ceramic: 0xd9cdb8, porcelain: 0xbfc3c4, board: 0xece9e2, back: 0xdedad2, door: 0xb98a5a, window: 0x7fc4d9, opening: 0x9a6b3f, metal: 0xa7adb3, steel: 0x3d4247, accent: 0xe8933a };
 const M = 0.001;
 type Pick = THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial>;
 let pickables: Pick[] = [];
@@ -170,6 +170,11 @@ function buildScene() {
           const m = box(b, color, { sel: { kind: "item", itemId: item.id } });
           group.add(m); pickables.push(m);
         }
+      }
+      for (const b of model.bars ?? []) for (const bx of b.boxes) {
+        const m = box(bx, COLORS.steel, { sel: { kind: "item", itemId: item.id } });
+        m.material.metalness = 0.5; m.material.roughness = 0.5;
+        group.add(m); pickables.push(m);
       }
       for (const f of model.fixtures ?? []) {
         const m = box(f.box, COLORS.metal, { sel: { kind: "item", itemId: item.id } });
@@ -304,10 +309,12 @@ const PLACEHOLDER: Record<Selection["kind"], string> = {
 const EXAMPLES: Record<Selection["kind"], string[]> = {
   world: ["cocina de 2,8 x 2,4 m", "habitación Estudio de 3 x 3 x 2,6 m"],
   room: ["piso de porcelanato 60 x 60", "piso de cerámica 45 x 45 trabado", "junta 3", "quita el piso", "alto 2,6 m", "ancho 4 m"],
-  wall: ["pon una puerta de 80 x 205 a 2 m de la izquierda", "ventana de 120 x 100 centrada, antepecho 110", "armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas", "closet de 180 x 220 x 60 con 2 divisiones, barra y 3 cajones", "cajonera de 80 x 90 x 50", "alacena de 900 x 700 x 350 a 1,5 m del piso con 2 puertas", "grosor 20 cm"],
+  wall: ["pon una puerta de 80 x 205 a 2 m de la izquierda", "ventana de 120 x 100 centrada, antepecho 110", "armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas", "closet de 180 x 220 x 60 con 2 divisiones, barra y 3 cajones", "cajonera de 80 x 90 x 50", "mesa de tubo de 120 x 75 x 60", "estantería metálica de 100 x 200 x 40 con 5 niveles", "alacena de 900 x 700 x 350 a 1,5 m del piso con 2 puertas", "grosor 20 cm"],
   opening: ["muévela 20 cm a la derecha", "a 1 m de la izquierda", "90 x 210", "céntrala", "quítala"],
   item: ["ensancha 10 cm", "alto 1800", "muévelo 30 cm a la derecha", "agrega una repisa", "2 divisiones", "3 cajones", "con barra de colgar", "2 puertas", "sin tornillos a la vista", "quítalo"],
 };
+
+const FRAME_EXAMPLES = ["tubo de 50", "tubo de 25", "5 niveles", "sin tablero", "atornillada", "ensancha 20 cm", "alto 90 cm", "muévelo 30 cm a la derecha", "quítalo"];
 
 // ---------- Paneles ----------
 
@@ -368,13 +375,19 @@ function renderProps() {
   } else {
     const i = world.items.find((x) => x.id === s.itemId)!;
     const p = i.params;
-    body = kv("Ancho × alto × fondo", `${fmt(p.width)} × ${fmt(p.height)} × ${fmt(p.depth)}`) + kv("Muro", WALL_NAMES[i.wall]) + kv("Desde la izquierda", `${fmt(i.offset)} mm`) + kv("Del piso", `${fmt(i.elevation)} mm`) +
+    if (i.kind === "frame") {
+      const m = itemModel(i), meta = m.meta as { profile: string; steelKg: number; steelMeters: number; joint: string; joints: number };
+      const bars = planBars(m.bars ?? []).totals[0];
+      body = kv("Ancho × alto × fondo", `${fmt(p.width)} × ${fmt(p.height)} × ${fmt(p.depth)}`) + kv("Tipo", i.frame?.type === "shelving" ? `estantería · ${i.frame.levels ?? 4} niveles` : "mesa") + kv("Perfil", getProfile(meta.profile).name.replace("Tubo cuadrado ", "tubo ")) +
+        kv("Acero", `${String(meta.steelMeters).replace(".", ",")} m · ${String(meta.steelKg).replace(".", ",")} kg`) + kv("Barras de 6 m", bars ? `${bars.bars} · sobra ${bars.wastePct} %` : "—") +
+        kv("Uniones", `${meta.joints} · ${meta.joint === "weld" ? "soldadas" : "atornilladas"}`) + kv("Tablero", i.frame?.top === false ? "no" : "sí") + kv("Muro", WALL_NAMES[i.wall]) + kv("Desde la izquierda", `${fmt(i.offset)} mm`);
+    } else body = kv("Ancho × alto × fondo", `${fmt(p.width)} × ${fmt(p.height)} × ${fmt(p.depth)}`) + kv("Muro", WALL_NAMES[i.wall]) + kv("Desde la izquierda", `${fmt(i.offset)} mm`) + kv("Del piso", `${fmt(i.elevation)} mm`) +
       kv("Puertas", String(p.doors ?? 0)) + kv("Repisas", String(p.shelves ?? 0)) + (p.dividers ? kv("Divisiones", `${p.dividers} · ${p.dividers + 1} cuerpos`) : "") + (p.drawers ? kv("Cajones", `${p.drawers} de ${fmt(p.drawerHeight ?? 200)} mm`) : "") + (p.hangingBar ? kv("Barra de colgar", "sí, con maletero") : "") + kv("Zócalo", p.plinthHeight ? `${fmt(p.plinthHeight)} mm` : "no") + kv("Unión", p.joinery === "minifix" || p.joinery === "dowel" ? `${p.joinery} · sin tornillos a la vista` : p.joinery ?? "confirmat");
   }
   const mine = issues.filter((x) => (s.kind === "item" && x.itemId === s.itemId) || s.kind === "world" || ((s.kind === "room" || s.kind === "wall") && x.roomId === s.roomId));
   props.innerHTML =
     `<div class="sec"><h2>${esc(s.kind === "world" ? world.name : selectionLabel(s))}</h2><div class="b">${body}</div></div>` +
-    `<div class="sec"><h2>Puedes decir</h2><div class="b">${EXAMPLES[s.kind].map((x) => `<button type="button" class="ex">${esc(x)}</button>`).join("")}</div></div>` +
+    `<div class="sec"><h2>Puedes decir</h2><div class="b">${(s.kind === "item" && world.items.find((x) => x.id === s.itemId)?.kind === "frame" ? FRAME_EXAMPLES : EXAMPLES[s.kind]).map((x) => `<button type="button" class="ex">${esc(x)}</button>`).join("")}</div></div>` +
     `<div class="sec"><h2>Avisos${mine.length ? ` (${mine.length})` : ""}</h2><div class="b">${mine.map((x) => `<div class="issue ${x.level}">${esc(x.message)}</div>`).join("") || `<div class="issue ok">Sin avisos aquí.</div>`}</div></div>`;
 }
 props.addEventListener("click", (e) => {

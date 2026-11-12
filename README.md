@@ -11,7 +11,7 @@ Prototipos **rápidos y fieles** a lo que quieres, hechos en el navegador o en e
 | Sección | Enfoque | Qué resuelve |
 | --- | --- | --- |
 | **Espacios** | interfaz y medidas de apartamentos, cuartos y casas | Dibujar el mapa del lugar con grosor de muros, puertas y ventanas; importar escaneos LiDAR del iPhone; **pisos**: despiece de cerámica o porcelanato, cajas, pega y boquilla; puntos eléctricos con inferencia de canalización; reglas de tuberías; estudio de luz solar. |
-| **Muebles** | interfaz y medidas de muebles de madera, tablero, ladrillo y perfiles de acero | Gabinetes, closets, cocinas, escritorios en melamina; asadores y mesones de ladrillo. Sistema de unión según tus herramientas (perforación en la tienda o plantilla impresa), lista de corte, herrajes con su movimiento, cotización en tiempo real, decisiones como cajón o tapa con pistón, e instrucciones de armado. |
+| **Muebles** | interfaz y medidas de muebles de madera, tablero, ladrillo y perfiles de acero | Gabinetes, closets, cajoneras y bibliotecas en melamina; mesas y estanterías de tubo; asadores y mesones de ladrillo (pendiente). Sistema de unión según tus herramientas (perforación en la tienda o plantilla impresa), lista de corte, herrajes con su movimiento, cotización en tiempo real, decisiones como cajón o tapa con pistón, e instrucciones de armado. |
 | **Objetos** | cosas pequeñas | Repuestos, accesorios y **plantillas de perforado** paramétricos, listos para imprimir en 3D en STL/3MF. |
 
 Transversal a las tres: **simulación de esfuerzos** para saber si una repisa, un asador o un espacio aguanta la carga, **cotización** con precios locales, **exportación** a glTF/OBJ/STL/DXF/PDF, y un servidor [MCP](https://modelcontextprotocol.io) para que Claude, Claude Code, Cursor, Ollama u otras IAs del PC diseñen y coticen contigo.
@@ -58,7 +58,7 @@ Abre http://localhost:5174. Verás tu mundo en 3D. **Haz clic en un muro, un mue
 
 | Seleccionas | Escribes |
 | --- | --- |
-| un muro | `pon una puerta de 80 x 205 a 2 m de la pared izquierda` · `ventana de 120 x 100 centrada, antepecho 110` · `armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas` · `closet de 180 x 220 x 60 con 2 divisiones, barra y 3 cajones` · `cajonera de 80 x 90 x 50` · `grosor 20 cm` |
+| un muro | `pon una puerta de 80 x 205 a 2 m de la pared izquierda` · `ventana de 120 x 100 centrada, antepecho 110` · `armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas` · `closet de 180 x 220 x 60 con 2 divisiones, barra y 3 cajones` · `cajonera de 80 x 90 x 50` · `mesa de tubo de 120 x 75 x 60` · `estantería metálica de 100 x 200 x 40 con 5 niveles` · `grosor 20 cm` |
 | un mueble | `ensancha 10 cm` · `muévelo 30 cm a la derecha` · `agrega una repisa` · `2 divisiones` · `3 cajones` · `con barra de colgar` · `sin tornillos a la vista` · `quítalo` |
 | una puerta o ventana | `muévela 20 cm a la derecha` · `90 x 210` · `céntrala` · `quítala` |
 | una habitación | `piso de porcelanato 60 x 60` · `piso de cerámica 45 x 45 trabado` · `junta 3` · `alto 2,6 m` |
@@ -98,7 +98,7 @@ Configuración para Claude Desktop o Claude Code (`claude mcp add handy -- pnpm 
 }
 ```
 
-Herramientas expuestas hoy: las del mundo (`world_create`, `world_describe`, `world_add_room`, `world_add_opening`, `world_free_runs`, `world_place_cabinet`, `world_update_item`, `world_command`, `world_remove_item`, `world_check`, `world_quote`, `world_cutplan`, `world_floor_plan`, `world_export_gltf`) y las de mueble suelto (`design_cabinet`, `cutlist`, `search_prices`, `check_collisions`). Con `HANDY_WORLD` eliges el archivo de tu mundo. Ver [docs/modulos/ia-mcp.md](docs/modulos/ia-mcp.md).
+Herramientas expuestas hoy: las del mundo (`world_create`, `world_describe`, `world_add_room`, `world_add_opening`, `world_free_runs`, `world_place_cabinet`, `world_place_frame`, `world_update_item`, `world_command`, `world_remove_item`, `world_check`, `world_quote`, `world_cutplan`, `world_floor_plan`, `world_export_gltf`) y las de mueble suelto (`design_cabinet`, `cutlist`, `search_prices`, `check_collisions`). Con `HANDY_WORLD` eliges el archivo de tu mundo. Ver [docs/modulos/ia-mcp.md](docs/modulos/ia-mcp.md).
 
 ### Usar tus precios locales
 

@@ -1,7 +1,9 @@
 import type { Joinery } from "./model/index.js";
 import { defaultFloorSpec, planFloor, type FloorSpec } from "./flooring.js";
+import type { FrameOptions } from "./generators/frame.js";
+import { profileBySide } from "./profiles.js";
 import {
-  addOpening, addRoom, getRoom, placeCabinet, removeItem, removeOpening, updateItem, updateOpening, updateRoom,
+  addOpening, addRoom, getRoom, itemModel, placeCabinet, removeItem, removeOpening, updateItem, updateOpening, updateRoom,
   wallLength, WALL_NAMES, type WallSide, type World,
 } from "./world.js";
 
@@ -101,6 +103,24 @@ const offsetFor = (anchor: Anchor, len: number, width: number): number =>
 const describeAnchor = (anchor: Anchor, offset: number) => (!anchor || anchor.from === "center" ? `centrada, a ${offset} mm de la izquierda` : `a ${offset} mm de la izquierda`);
 
 const FURNITURE = /gabinete|mueble|armario|closet|cajonera|comoda|estante|estanteria|biblioteca|repisero|alacena|modulo/;
+/** Estructura metálica: "mesa de tubo", "estantería metálica", "estructura en acero". */
+const METAL = /\b(metal|metalic[oa]|acero|hierro|perfil|perfiles|de tubo|en tubo|tubo cuadrado|tubo de \d|tubo \d)/;
+const FRAME_WORD = /\b(mesa|meson|banco|base|estanteria|estante|repisero|estructura|marco|rack)\b/;
+
+/** Opciones de estructura que se pueden leer de una frase. */
+function parseFrame(t: string): Partial<FrameOptions> {
+  const out: Partial<FrameOptions> = {};
+  const side = t.match(/(?:tubo|perfil)(?: cuadrado)?(?: de| en)? (\d{2})(?:\s?x\s?\d{2})?\b/);
+  if (side) out.profileId = profileBySide(Number(side[1])).id;
+  const levels = countOf(t, "niveles|nivel|pisos|entrepanos?|repisas?");
+  if (levels !== undefined) out.levels = levels;
+  if (/sin (tapa|cubierta|tablero|madera)|solo (el )?marco|solo (la )?estructura/.test(t)) out.top = false;
+  else if (/con (tapa|cubierta|tablero|madera)/.test(t)) out.top = true;
+  if (/atornillad|sin soldar|sin soldadura|con tornillos|conectores/.test(t)) out.joint = "bolt";
+  else if (/soldad|con soldadura/.test(t)) out.joint = "weld";
+  return out;
+}
+
 const DELETE = /\b(borra|borrar|borral[ao]|quita|quitar|quital[ao]|elimina|eliminar|eliminal[ao]|saca|sacal[ao])\b/;
 const fail = (message: string): CommandResult => ({ ok: false, understood: true, message });
 const unknown = (hint: string): CommandResult => ({ ok: false, understood: false, message: `No entendí esa orden. ${hint}` });
@@ -126,6 +146,17 @@ function wallCommand(world: World, sel: Extract<Selection, { kind: "wall" }>, t:
   const len = wallLength(room, sel.wall);
   const anchor = parseAnchor(t);
   const dims = parseDims(t);
+
+  if (METAL.test(t) && FRAME_WORD.test(t) && !/closet|armario|cajonera/.test(t)) {
+    const shelving = /estanteria|estante|repisero|rack|niveles|nivel/.test(t);
+    const def = shelving ? [1000, 2000, 400] : [1200, 750, 600];
+    const [width, height, depth] = [dims?.[0] ?? def[0], dims?.[1] ?? def[1], dims?.[2] ?? def[2]];
+    const offset = offsetFor(anchor, len, width);
+    const frame: FrameOptions = { type: shelving ? "shelving" : "table", ...parseFrame(t) };
+    const item = placeCabinet(world, { roomId: room.id, wall: sel.wall, offset, name: shelving ? "Estantería de tubo" : /banco/.test(t) ? "Banco de tubo" : "Mesa de tubo", params: { width, height, depth }, frame });
+    const meta = itemModel(item).meta as { profile: string; steelKg: number };
+    return { ok: true, understood: true, select: { kind: "item", itemId: item.id }, message: `${item.name} de ${width} x ${height} x ${depth} mm en ${meta.profile}, ${String(meta.steelKg).replace(".", ",")} kg de acero, en el ${WALL_NAMES[sel.wall]}, ${describeAnchor(anchor, offset)}.` };
+  }
 
   if (FURNITURE.test(t)) {
     const word = t.match(FURNITURE)![0];
@@ -166,7 +197,7 @@ function wallCommand(world: World, sel: Extract<Selection, { kind: "wall" }>, t:
     updateRoom(world, room.id, { wallThickness: { [sel.wall]: thickness } });
     return { ok: true, understood: true, message: `Grosor del ${WALL_NAMES[sel.wall]}: ${thickness} mm.` };
   }
-  return unknown('En un muro puedes: "pon una puerta de 80 x 205 a 2 m de la izquierda", "ventana de 120 x 100 centrada, antepecho 100", "armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas", "closet de 180 x 220 x 60 con 2 divisiones, barra y 3 cajones", "grosor 20 cm".');
+  return unknown('En un muro puedes: "pon una puerta de 80 x 205 a 2 m de la izquierda", "ventana de 120 x 100 centrada, antepecho 100", "armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas", "closet de 180 x 220 x 60 con 2 divisiones, barra y 3 cajones", "mesa de tubo de 120 x 75 x 60", "estantería metálica de 100 x 200 x 40 con 5 niveles", "grosor 20 cm".');
 }
 
 function itemCommand(world: World, sel: Extract<Selection, { kind: "item" }>, t: string): CommandResult {
@@ -182,6 +213,17 @@ function itemCommand(world: World, sel: Extract<Selection, { kind: "item" }>, t:
   if (DELETE.test(t) && !/repisa|puerta|zocalo|entrepano|barra|tubo|colgador|cajon|gaveta|division|divisor/.test(t)) {
     removeItem(world, item.id);
     return { ok: true, understood: true, select: null, message: `${item.name} quitado.` };
+  }
+
+  // Estructuras de tubo: perfil, niveles, tablero y tipo de unión. Lo de tablero (puertas, cajones) no aplica.
+  if (item.kind === "frame") {
+    const fp = parseFrame(t);
+    if (Object.keys(fp).length && !/ancho|alto|altura|fondo|profund|muev|corre|pegal|central/.test(t)) {
+      updateItem(world, item.id, { frame: fp });
+      const meta = itemModel(item).meta as { profile: string; steelKg: number; joint: string };
+      return done(`${item.name}: perfil ${meta.profile}${item.frame?.type === "shelving" ? `, ${item.frame.levels ?? 4} niveles` : ""}, ${item.frame?.top === false ? "sin tablero" : "con tablero"}, ${meta.joint === "weld" ? "soldada" : "atornillada"}; ${String(meta.steelKg).replace(".", ",")} kg de acero.`);
+    }
+    if (/puerta|cajon|gaveta|division|divisor|barra|zocalo|minifix|confirmat|tarugo/.test(t)) return fail(`${item.name} es una estructura de tubo: no lleva puertas, cajones ni divisiones. Puedes cambiar "tubo de 50", "4 niveles", "sin tablero" o "atornillada".`);
   }
 
   // Divisiones, cajones y barra de colgar

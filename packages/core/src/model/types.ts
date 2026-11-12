@@ -84,6 +84,8 @@ export interface FurnitureModel {
   materials: Material[];
   /** Elementos que no son tablero pero ocupan lugar y se dibujan: tubos de colgar, etc. */
   fixtures?: Fixture[];
+  /** Piezas de perfil metálico (patas, travesaños) de las estructuras de tubo. */
+  bars?: Bar[];
   meta?: Record<string, unknown>;
 }
 
@@ -103,4 +105,14 @@ export type MotionSpec =
 export interface PanelInstance {
   placement: Placement;
   motion?: MotionSpec;
+}
+
+/** Pieza de perfil metálico: `qty` unidades iguales, cada una con su caja para dibujarla. */
+export interface Bar {
+  id: string;
+  name: string;
+  profileId: string;
+  length: Millimeters;
+  qty: number;
+  boxes: { min: [Millimeters, Millimeters, Millimeters]; max: [Millimeters, Millimeters, Millimeters] }[];
 }

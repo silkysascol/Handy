@@ -1,5 +1,7 @@
 # Módulo: Estructuras en perfiles de acero y similares
 
+> Primera versión hecha: `packages/core/src/profiles.ts`, `generators/frame.ts` y `barcut.ts`. Mesa o base y estantería en tubo cuadrado de 20 a 50 mm, con cubierta o entrepaños de tablero, soldada o atornillada; despiece lineal en barras de 6 m, peso, consumibles, cotización, avisos de travesaño largo y de vuelco. En el visor: selecciona un muro y escribe "mesa de tubo de 120 x 75 x 60". Pendiente: ángulo, platina, rectangular y aluminio; ingletes; marcos sueltos, pérgolas y bastidores de drywall; cálculo de flecha real.
+
 Parte de la sección Muebles (y de Espacios cuando la estructura es de obra). Cubre lo que se arma con barras: bases de mesa, estanterías industriales, marcos de cama, estructura de mesones y de asadores, pérgolas, rejas, soportes, y la perfilería liviana de drywall.
 
 ## Materiales

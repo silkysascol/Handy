@@ -10,6 +10,8 @@ import {
   cutlistCsv,
   cutSheetHtml,
   checkWorld,
+  itemModel,
+  planBars,
   createWorld,
   describeWorld,
   exportGltf,
@@ -178,6 +180,39 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
   );
 
   server.registerTool(
+    "world_place_frame",
+    {
+      title: "Colocar estructura de tubo",
+      description: "Coloca una estructura de tubo cuadrado de acero contra un muro: una mesa o base (4 patas, marco superior e inferior, cubierta opcional) o una estantería (4 parales, un marco y un entrepaño por nivel). Calcula barras de 6 m, peso y uniones.",
+      inputSchema: {
+        roomId: z.string(),
+        wall,
+        offset: z.number().int().min(0),
+        name: z.string().optional(),
+        type: z.enum(["table", "shelving"]).describe("table = mesa o base; shelving = estantería"),
+        width: z.number().int().min(100).max(6000),
+        height: z.number().int().min(200).max(3000),
+        depth: z.number().int().min(100).max(2000),
+        profileId: z.enum(["tubo-20x20x1.2", "tubo-25x25x1.5", "tubo-30x30x1.5", "tubo-40x40x1.5", "tubo-50x50x2"]).default("tubo-40x40x1.5"),
+        levels: z.number().int().min(2).max(8).default(4).describe("Solo estantería"),
+        top: z.boolean().default(true).describe("Cubierta o entrepaños de tablero"),
+        joint: z.enum(["weld", "bolt"]).default("weld").describe("weld = soldada; bolt = atornillada con conectores, para quien no suelda"),
+      },
+    },
+    async ({ roomId, wall: w, offset, name, type, width, height, depth, profileId, levels, top, joint }) => {
+      const world = store.load();
+      const item = placeCabinet(world, { roomId, wall: w, offset, name, params: { width, height, depth }, frame: { type, profileId, top, joint, ...(type === "shelving" ? { levels } : {}) } });
+      store.save(world);
+      const issues = checkWorld(world).filter((i) => i.itemId === item.id);
+      const plan = planBars(itemModel(item).bars ?? []);
+      return text(
+        [`${item.name} (id: ${item.id}) colocada en el ${WALL_NAMES[item.wall]} de ${offset} a ${offset + width} mm.`, ...plan.totals.map((t) => `${t.bars} barra(s) de 6 m de ${t.profileName}: ${t.meters} m, ${t.kg} kg, sobra ${t.wastePct} %.`), ...issues.map((i) => `[${i.level}] ${i.message}`)].join("\n"),
+        { item, issues, bars: plan.totals },
+      );
+    },
+  );
+
+  server.registerTool(
     "world_remove_item",
     { title: "Quitar mueble", description: "Quita un mueble del mundo por su id.", inputSchema: { itemId: z.string() } },
     async ({ itemId }) => {
@@ -298,13 +333,14 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
     async ({ itemIds, kerf, trim }) => {
       const world = store.load();
       const model = mergedModel(world, itemIds);
-      if (!model.panels.length) throw new Error("No hay muebles que cortar.");
+      if (!model.panels.length && !model.bars?.length) throw new Error("No hay muebles que cortar.");
       const plan = buildCutPlan(model, { kerf, trim });
       const base = store.path.replace(/(\.world)?\.json$/, "");
       mkdirSync(dirname(base), { recursive: true });
       writeFileSync(`${base}-despiece.html`, cutSheetHtml(model, world.name, { kerf, trim }));
       writeFileSync(`${base}-despiece.csv`, cutlistCsv(model));
       const lines = plan.totals.map((t) => `${t.sheets} tablero(s) de ${t.materialName} · ocupación ${t.usedPct} %`);
+      for (const t of planBars(model.bars ?? []).totals) lines.push(`${t.bars} barra(s) de 6 m de ${t.profileName} · ${t.kg} kg · sobra ${t.wastePct} %`);
       if (plan.oversize.length) lines.push(`NO CABEN en un tablero: ${plan.oversize.map((o) => `${o.name} (${o.height} x ${o.width})`).join(", ")}`);
       return text([...lines, `Despiece en ${base}-despiece.html y ${base}-despiece.csv`].join("\n"), { totals: plan.totals, oversize: plan.oversize, sheets: plan.sheets.length, html: `${base}-despiece.html`, csv: `${base}-despiece.csv` });
     },

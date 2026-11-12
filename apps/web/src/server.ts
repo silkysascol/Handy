@@ -59,7 +59,9 @@ createServer((req, res) => {
     return;
   }
   res.writeHead(404).end("No encontrado");
-}).listen(port, () => {
-  console.log(`Handy en http://localhost:${port}  ·  mundo: ${worldPath}`);
+}).listen(port, function (this: import("node:net").Server) {
+  // Con PORT=0 el sistema asigna un puerto libre; se informa el real.
+  const actual = (this.address() as import("node:net").AddressInfo).port;
+  console.log(`Handy en http://localhost:${actual}  ·  mundo: ${worldPath}`);
   if (!existsSync(join(dist, "index.html"))) console.log("Aviso: falta construir el visor. Ejecuta: pnpm --filter @handy/web build");
 });

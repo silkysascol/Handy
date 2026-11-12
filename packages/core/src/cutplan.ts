@@ -1,4 +1,5 @@
 import type { FurnitureModel, Material, Millimeters, Panel } from "./model/index.js";
+import { planBars } from "./barcut.js";
 
 /**
  * Plano de corte: acomoda las piezas en tableros enteros para saber cuántos comprar de verdad
@@ -198,6 +199,18 @@ export function cutlistCsv(model: FurnitureModel): string {
   return rows.map((r) => r.map((c) => (/[",;\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c)).join(";")).join("\n") + "\n";
 }
 
+/** Sección de perfiles metálicos del documento: barras a comprar y cómo cortar cada una. */
+function barsSection(model: FurnitureModel): string {
+  if (!model.bars?.length) return "";
+  const plan = planBars(model.bars);
+  const totals = plan.totals.map((t) => `<li><strong>${t.bars}</strong> barra(s) de 6 m de ${escXml(t.profileName)} · ${String(t.meters).replace(".", ",")} m útiles · ${String(t.kg).replace(".", ",")} kg · sobra ${t.wastePct} %</li>`).join("");
+  const rows = plan.stock.map((b, i) => `<tr><td class="n">${i + 1}</td><td>${escXml(plan.totals.find((t) => t.profileId === b.profileId)!.profileName)}</td><td>${b.cuts.map((c) => `${escXml(c.name)} <span class="muted">${c.length}</span>`).join(" · ")}</td><td class="n">${b.leftover}</td></tr>`).join("");
+  return `<h2>Perfiles metálicos</h2><ul>${totals}</ul>
+<table><thead><tr><th>Barra</th><th>Perfil</th><th>Cortes en orden (mm)</th><th>Sobrante (mm)</th></tr></thead><tbody>${rows}</tbody></table>
+<p class="muted">Cortes rectos, disco de ${plan.kerf} mm. Peso total de acero: ${String(plan.totalKg).replace(".", ",")} kg.</p>
+${plan.oversize.length ? `<p style="color:#8c1d18">Más largas que la barra comercial: ${escXml(plan.oversize.map((o) => o.name).join(", "))}.</p>` : ""}`;
+}
+
 /** Documento imprimible para llevar a la tienda: resumen de tableros, lista de piezas con cantos y plano de corte. */
 export function cutSheetHtml(model: FurnitureModel, title: string, options: CutPlanOptions = {}): string {
   const plan = buildCutPlan(model, options);
@@ -213,9 +226,9 @@ table{border-collapse:collapse;width:100%}th,td{border:1px solid #c9ced3;padding
 </style></head><body>
 <h1>Despiece · ${escXml(title)}</h1>
 <p class="muted">Medidas en milímetros, largo x ancho. El largo sigue la veta. Cantos marcados con X llevan tapacanto.</p>
-<h2>Para comprar</h2><ul>${totals}<li><strong>${Math.ceil(edgeMeters * 1.1)}</strong> m de tapacanto (incluye 10 % de reserva)</li></ul>
+<h2>Para comprar</h2><ul>${totals}${edgeMeters > 0 ? `<li><strong>${Math.ceil(edgeMeters * 1.1)}</strong> m de tapacanto (incluye 10 % de reserva)</li>` : ""}</ul>
 ${plan.oversize.length ? `<p style="color:#8c1d18">Piezas que no caben en un tablero: ${escXml(plan.oversize.map((o) => o.name).join(", "))}.</p>` : ""}
-<h2>Lista de piezas</h2>${table}
+${barsSection(model)}<h2>Lista de piezas de tablero</h2>${table}
 <p><a class="csv" download="despiece.csv" href="data:text/csv;charset=utf-8,${encodeURIComponent(csv)}">Descargar la lista como CSV</a></p>
 <h2>Plano de corte</h2>${cutPlanSvg(plan)}
 </body></html>

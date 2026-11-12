@@ -234,6 +234,102 @@
       "price": 0.6,
       "currency": "USD",
       "unit": "unit"
+    },
+    {
+      "sku": "TUBO-20X20X1.2",
+      "category": "steel-profile",
+      "name": "Tubo cuadrado 20x20 cal. 18 · 6 m",
+      "price": 7.5,
+      "currency": "USD",
+      "unit": "unit",
+      "attributes": {
+        "profileId": "tubo-20x20x1.2"
+      }
+    },
+    {
+      "sku": "TUBO-25X25X1.5",
+      "category": "steel-profile",
+      "name": "Tubo cuadrado 25x25 cal. 16 · 6 m",
+      "price": 10.5,
+      "currency": "USD",
+      "unit": "unit",
+      "attributes": {
+        "profileId": "tubo-25x25x1.5"
+      }
+    },
+    {
+      "sku": "TUBO-30X30X1.5",
+      "category": "steel-profile",
+      "name": "Tubo cuadrado 30x30 cal. 16 · 6 m",
+      "price": 12.8,
+      "currency": "USD",
+      "unit": "unit",
+      "attributes": {
+        "profileId": "tubo-30x30x1.5"
+      }
+    },
+    {
+      "sku": "TUBO-40X40X1.5",
+      "category": "steel-profile",
+      "name": "Tubo cuadrado 40x40 cal. 16 · 6 m",
+      "price": 16.0,
+      "currency": "USD",
+      "unit": "unit",
+      "attributes": {
+        "profileId": "tubo-40x40x1.5"
+      }
+    },
+    {
+      "sku": "TUBO-50X50X2",
+      "category": "steel-profile",
+      "name": "Tubo cuadrado 50x50 cal. 14 · 6 m",
+      "price": 27.0,
+      "currency": "USD",
+      "unit": "unit",
+      "attributes": {
+        "profileId": "tubo-50x50x2"
+      }
+    },
+    {
+      "sku": "ELEC-6013",
+      "category": "welding-rod",
+      "name": "Electrodo 6013 3/32 (kg)",
+      "price": 4.5,
+      "currency": "USD",
+      "unit": "unit"
+    },
+    {
+      "sku": "CON-TUBO",
+      "category": "tube-connector",
+      "name": "Conector atornillado para tubo cuadrado",
+      "price": 1.2,
+      "currency": "USD",
+      "unit": "unit"
+    },
+    {
+      "sku": "AUTOP-8",
+      "category": "self-drilling-screw",
+      "name": "Tornillo autoperforante 8x3/4 (pack 100)",
+      "price": 4.0,
+      "currency": "USD",
+      "unit": "pack",
+      "packSize": 100
+    },
+    {
+      "sku": "REGATON",
+      "category": "tube-cap",
+      "name": "Regatón plástico para tubo cuadrado",
+      "price": 0.15,
+      "currency": "USD",
+      "unit": "unit"
+    },
+    {
+      "sku": "PINT-M2",
+      "category": "paint-m2",
+      "name": "Anticorrosivo y esmalte (rinde por m²)",
+      "price": 3.5,
+      "currency": "USD",
+      "unit": "unit"
     }
   ]
 }

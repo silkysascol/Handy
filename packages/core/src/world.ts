@@ -1,5 +1,6 @@
 import type { FurnitureModel, HardwareItem, Millimeters } from "./model/index.js";
 import { generateCabinet, type CabinetParams } from "./generators/cabinet.js";
+import { generateFrame, type FrameOptions } from "./generators/frame.js";
 import { checkMotionCollisions, overlaps, type AABB, type Collision, type Obstacle } from "./collision.js";
 import { validateFurniture, type Issue } from "./validate.js";
 import { planFloor, type FloorSpec } from "./flooring.js";
@@ -45,8 +46,10 @@ export interface PlacedItem {
   id: string;
   name: string;
   roomId: string;
-  kind: "cabinet";
+  /** Mueble de tablero, o estructura de tubo (entonces `params` solo aporta ancho, alto y fondo, y `frame` el resto). */
+  kind: "cabinet" | "frame";
   params: CabinetParams;
+  frame?: FrameOptions;
   /** Muro contra el que apoya la espalda del mueble. */
   wall: WallSide;
   /** Distancia desde el extremo izquierdo del muro, mirándolo desde dentro. */
@@ -179,7 +182,11 @@ export function wallBoxes(room: Room): Record<WallSide, AABB> {
   };
 }
 
-export function itemModel(item: PlacedItem): FurnitureModel {
+export function itemModel(item: Pick<PlacedItem, "kind" | "params" | "frame" | "name">): FurnitureModel {
+  if (item.kind === "frame") {
+    const { width, height, depth } = item.params;
+    return generateFrame({ width, height, depth, type: "table", ...item.frame, name: item.name });
+  }
   return generateCabinet({ ...item.params, name: item.name });
 }
 
@@ -200,8 +207,11 @@ export interface PlaceInput {
   elevation?: Millimeters;
   name?: string;
   params: CabinetParams;
+  /** Si viene, se coloca una estructura de tubo en vez de un mueble de tablero. */
+  frame?: FrameOptions;
 }
 
+/** Coloca un mueble de tablero o, con `frame`, una estructura de tubo, con la espalda contra un muro. */
 export function placeCabinet(world: World, input: PlaceInput): PlacedItem {
   const room = getRoom(world, input.roomId);
   const len = wallLength(room, input.wall);
@@ -210,9 +220,10 @@ export function placeCabinet(world: World, input: PlaceInput): PlacedItem {
     throw new Error(`No cabe: el mueble ocupa de ${input.offset} a ${input.offset + input.params.width} mm y el ${WALL_NAMES[input.wall]} mide ${len} mm.`);
   }
   if (elevation + input.params.height > room.height) throw new Error(`No cabe en altura: ${elevation + input.params.height} mm contra ${room.height} mm de la habitación.`);
-  generateCabinet(input.params); // valida medidas
-  const name = input.name ?? `Gabinete ${input.params.width}`;
-  const item: PlacedItem = { id: uniqueId(slug(name), world.items.map((i) => i.id)), name, roomId: room.id, kind: "cabinet", params: input.params, wall: input.wall, offset: input.offset, elevation };
+  const kind = input.frame ? "frame" : "cabinet";
+  const name = input.name ?? (input.frame ? (input.frame.type === "shelving" ? "Estantería de tubo" : "Mesa de tubo") : `Gabinete ${input.params.width}`);
+  itemModel({ kind, params: input.params, frame: input.frame, name }); // valida medidas
+  const item: PlacedItem = { id: uniqueId(slug(name), world.items.map((i) => i.id)), name, roomId: room.id, kind, params: input.params, ...(input.frame ? { frame: input.frame } : {}), wall: input.wall, offset: input.offset, elevation };
   world.items.push(item);
   return item;
 }
@@ -223,6 +234,7 @@ export interface ItemPatch {
   offset?: Millimeters;
   elevation?: Millimeters;
   params?: Partial<CabinetParams>;
+  frame?: Partial<FrameOptions>;
 }
 
 /** Modifica un mueble ya colocado. Valida que siga cabiendo; si no, lanza un error y no cambia nada. */
@@ -230,13 +242,15 @@ export function updateItem(world: World, itemId: string, patch: ItemPatch): Plac
   const item = world.items.find((i) => i.id === itemId);
   if (!item) throw new Error(`No existe el mueble "${itemId}".`);
   const room = getRoom(world, item.roomId);
-  const next: PlacedItem = { ...item, ...patch, params: { ...item.params, ...patch.params } };
+  const { frame: framePatch, params: paramsPatch, ...rest } = patch;
+  const frame: FrameOptions | undefined = item.frame || framePatch ? { type: "table", ...item.frame, ...framePatch } : undefined;
+  const next: PlacedItem = { ...item, ...rest, params: { ...item.params, ...paramsPatch }, ...(frame ? { frame } : {}) };
   const len = wallLength(room, next.wall);
   if (next.offset < 0 || next.offset + next.params.width > len) {
     throw new Error(`No cabe: ocuparía de ${next.offset} a ${next.offset + next.params.width} mm y el ${WALL_NAMES[next.wall]} mide ${len} mm.`);
   }
   if (next.elevation < 0 || next.elevation + next.params.height > room.height) throw new Error(`No cabe en altura: llegaría a ${next.elevation + next.params.height} mm y la habitación mide ${room.height} mm.`);
-  generateCabinet(next.params);
+  itemModel(next); // valida que el resultado se pueda construir
   Object.assign(item, next);
   return item;
 }
@@ -420,6 +434,7 @@ export function mergedModel(world: World, itemIds?: string[]): FurnitureModel {
   for (const item of items) {
     const m = itemModel(item);
     for (const p of m.panels) merged.panels.push({ ...p, id: `${item.id}/${p.id}`, name: `${item.name} · ${p.name}`, placement: undefined, instances: undefined, motion: undefined });
+    for (const b of m.bars ?? []) (merged.bars ??= []).push({ ...b, id: `${item.id}/${b.id}`, name: `${item.name} · ${b.name}` });
     for (const h of m.hardware) {
       const cur = hardware.get(h.id);
       if (cur) cur.qty += h.qty; else hardware.set(h.id, { ...h });
@@ -445,6 +460,11 @@ export function describeWorld(world: World): string {
     if (items.length) lines.push("Muebles:");
     for (const i of items) {
       const p = i.params;
+      if (i.kind === "frame") {
+        const meta = itemModel(i).meta as { profile: string; steelKg: number; joint: string };
+        lines.push(`- ${i.name} (id: ${i.id}): estructura de tubo ${p.width} x ${p.height} x ${p.depth}, en ${WALL_NAMES[i.wall]} de ${i.offset} a ${i.offset + p.width}; ${i.frame?.type === "shelving" ? `estantería de ${i.frame.levels ?? 4} niveles` : "mesa"}, perfil ${meta.profile}, ${meta.steelKg} kg de acero, ${meta.joint === "weld" ? "soldada" : "atornillada"}${i.frame?.top === false ? ", sin tablero" : ", con tablero"}`);
+        continue;
+      }
       lines.push(`- ${i.name} (id: ${i.id}): ${p.width} x ${p.height} x ${p.depth}, en ${WALL_NAMES[i.wall]} de ${i.offset} a ${i.offset + p.width}${i.elevation ? `, colgado a ${i.elevation}` : ""}; ${p.doors ?? 0} puerta(s), ${p.shelves ?? 0} repisa(s)${p.dividers ? `, ${p.dividers} división(es)` : ""}${p.drawers ? `, ${p.drawers} cajón(es)` : ""}${p.hangingBar ? ", barra de colgar" : ""}, unión ${p.joinery ?? "confirmat"}`);
     }
     if (room.floor) {

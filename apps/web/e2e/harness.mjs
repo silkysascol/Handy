@@ -22,19 +22,22 @@ export async function startHandy({ demo = true } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "handy-e2e-"));
   const worldPath = join(dir, "casa.world.json");
   if (demo) copyFileSync(join(repoRoot, "docs", "ejemplos", "apartamento-demo.world.json"), worldPath);
-  const port = 5600 + Math.floor(Math.random() * 300);
+  // PORT=0: el sistema asigna un puerto libre y el servidor lo anuncia en su primera línea.
   const server = spawn(process.execPath, [join(webRoot, "node_modules", "tsx", "dist", "cli.mjs"), join(webRoot, "src", "server.ts")], {
-    env: { ...process.env, HANDY_WORLD: worldPath, PORT: String(port) }, stdio: ["ignore", "pipe", "pipe"],
+    env: { ...process.env, HANDY_WORLD: worldPath, PORT: "0" }, stdio: ["ignore", "pipe", "pipe"],
   });
   let log = "";
   server.stdout.on("data", (d) => { log += d; });
   server.stderr.on("data", (d) => { log += d; });
-  const url = `http://127.0.0.1:${port}`;
-  for (let i = 0; i < 60; i++) {
-    try { const r = await fetch(`${url}/api/world`); if (r.status === 200 || r.status === 204) break; } catch { /* aún no escucha */ }
-    await new Promise((r) => setTimeout(r, 250));
-    if (i === 59) throw new Error(`El servidor no arrancó:\n${log}`);
+  let url;
+  for (let i = 0; i < 80 && !url; i++) {
+    const m = log.match(/Handy en http:\/\/localhost:(\d+)/);
+    if (m) url = `http://127.0.0.1:${m[1]}`;
+    else await new Promise((r) => setTimeout(r, 250));
   }
+  if (!url) { server.kill(); throw new Error(`El servidor no arrancó:\n${log}`); }
+  const ready = await fetch(`${url}/api/world`);
+  if (ready.status !== 200 && ready.status !== 204) { server.kill(); throw new Error(`El servidor respondió ${ready.status}`); }
   return {
     url, dir, worldPath,
     readWorld: () => JSON.parse(readFileSync(worldPath, "utf8")),

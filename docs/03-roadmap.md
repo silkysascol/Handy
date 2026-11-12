@@ -30,12 +30,13 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [x] Plano de corte real: piezas acomodadas en tableros con ancho de disco, refilado y veta; despiece imprimible y CSV para la tienda (botón Despiece, `world_cutplan`). La cotización usa esos tableros, no un porcentaje.
 - [x] Pisos: baldosas dibujadas en la habitación, piezas enteras y cortes, cajas según la tienda, pega por formato y material, boquilla, guardaescobas; sumado al precio del mundo (`world_floor_plan`).
 - [x] Más muebles con el mismo generador: divisiones verticales (cuerpos iguales), cajones con correderas (frente visible o interiores tras puertas), barra de colgar con maletero, puertas de 2 por cuerpo. Con eso salen closets, cajoneras y bibliotecas con divisiones. Reglas nuevas: barra larga, closet poco profundo, cajón ancho.
+- [x] Estructuras de tubo cuadrado: mesa y estantería con tablero opcional, soldadas o atornilladas; despiece lineal de barras de 6 m, peso, consumibles y precio; sección de perfiles en el despiece imprimible (`world_place_frame`).
 - [ ] **Cargar la casa real del autor** y anotar lo que falte.
 - [ ] Habitaciones no rectangulares (polígonos), niveles y puertas entre habitaciones; importar RoomPlan/LiDAR.
 - [ ] Arrastrar con el mouse para mover y estirar, además de las órdenes; cotas visibles en la vista; muebles sueltos no pegados a un muro.
 - [ ] Más vocabulario en el intérprete según lo que el autor escriba y no se entienda (registro de órdenes no entendidas).
-- [ ] Más cosas que colocar: marcos de tubo, muebles sueltos (mesa, cama), cajones en cualquier cuerpo.
-- [ ] Despiece lineal de perfiles de acero; validar el despiece de tableros con el operario de la tienda.
+- [ ] Más cosas que colocar: muebles sueltos en medio del cuarto (mesa, cama), cajones en cualquier cuerpo.
+- [ ] Validar el despiece de tableros y de perfiles con el operario de la tienda.
 
 ## M1a · "Mi primer mueble": un flujo completo
 
@@ -48,15 +49,13 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [ ] Prueba real: el autor diseña, manda a cortar y arma un mueble propio con Handy de principio a fin, y anota cada fricción. Después, otras personas.
 - [ ] Sistema 32 mm, exportación CSV, `MotionSpec` por herraje (parte hecha), catálogos reales de 2 países.
 
-## M1b · Perfiles de acero y similares
+## M1b · Perfiles de acero, segunda parte
 
-Ver `docs/modulos/metal.md`. Se adelanta o atrasa según el primer proyecto propio que lo necesite.
+Ver `docs/modulos/metal.md`.
 
-- [ ] Catálogo de perfiles (tubo cuadrado y rectangular, ángulo, platina, aluminio ranurado, perfilería de drywall) con peso por metro y largo comercial.
-- [ ] Generadores: marco, base de mesa, estantería de marcos, bastidor de drywall.
-- [ ] Despiece lineal de barras de 6 m con ancho de disco e ingletes; peso, barras a comprar y consumibles.
-- [ ] Uniones según habilidad: soldado, atornillado con conectores, o plano para el cerrajero.
-- [ ] Mixto madera y metal en un mismo mueble y una misma cotización.
+- [ ] Más perfiles: rectangular, ángulo, platina, aluminio ranurado, perfilería de drywall.
+- [ ] Más generadores: marco suelto, banco, pérgola, bastidor de drywall; cortes a inglete.
+- [ ] Flecha y pandeo calculados con la inercia del perfil, en vez de la tabla de luces máximas.
 
 ## M2 · Editor completo y cocina
 

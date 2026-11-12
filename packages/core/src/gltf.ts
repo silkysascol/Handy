@@ -135,6 +135,7 @@ export function exportGltf(world: World): string {
           parts.push(boxNode(units.length > 1 ? `${p.name} ${i + 1}` : p.name, box, materialKey(p.materialId), { handy: { panelId: p.id, lengthMm: p.height, widthMm: p.width, thicknessMm: p.thickness, materialId: p.materialId, edges: p.edgeBanding } }));
         });
       }
+      for (const b of model.bars ?? []) b.boxes.forEach((bx, i) => parts.push(boxNode(b.boxes.length > 1 ? `${b.name} ${i + 1}` : b.name, bx, "metal", { handy: { barId: b.id, profileId: b.profileId, lengthMm: b.length } })));
       for (const f of model.fixtures ?? []) parts.push(boxNode(f.name, f.box, "metal", { handy: { fixtureId: f.id, kind: f.kind } }));
       const half = (tr.rotationY * Math.PI) / 360;
       itemNodes.push(add({

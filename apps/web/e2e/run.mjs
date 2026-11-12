@@ -114,6 +114,24 @@ test("closet con divisiones, barra y cajones desde una frase, y se edita por par
   assert.match(await h.say("6 puertas"), /6 puerta/);
 });
 
+test("estructura de tubo: mesa con barras, peso y precio; se edita y entra al despiece", async ({ h, app }) => {
+  await h.pick("Muro sur", 1);
+  const msg = await h.say("mesa de tubo de 120 x 75 x 60 pegada a la izquierda");
+  assert.match(msg, /Mesa de tubo de 1200 x 750 x 600 mm en tubo-40x40x1\.5, \d+,\d kg de acero/);
+  const item = () => app.readWorld().items.find((i) => i.id === "mesa-de-tubo");
+  assert.equal(item().kind, "frame");
+  const props = await h.page.textContent("#props");
+  assert.match(props, /Barras de 6 m2 · sobra \d+ %/);
+  assert.match(props, /Uniones16 · soldadas/);
+  assert.match(await h.say("tubo de 50"), /tubo-50x50x2/);
+  assert.match(await h.say("agrega un cajón"), /estructura de tubo/);
+  assert.equal(item().frame.profileId, "tubo-50x50x2");
+  const [download] = await Promise.all([h.page.waitForEvent("download"), h.page.click("#export-cut")]);
+  const html = readFileSync(await download.path(), "utf8");
+  assert.match(html, /Perfiles metálicos/);
+  assert.match(html, /Mesa de tubo · Pata/);
+});
+
 test("orden sobre una habitación: piso con cajas, pega y boquilla, sumado al precio", async ({ h, app }) => {
   const before = await h.page.textContent("#price-total");
   await h.pick("Cocina");

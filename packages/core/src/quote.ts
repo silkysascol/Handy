@@ -1,6 +1,7 @@
 import type { FurnitureModel } from "./model/index.js";
 import { buildCutlist, type Cutlist } from "./cutlist.js";
 import type { PriceOffer, PriceProvider } from "./providers/types.js";
+import { planBars } from "./barcut.js";
 
 export interface QuoteLine {
   description: string;
@@ -76,6 +77,16 @@ export async function buildQuote(model: FurnitureModel, providers: PriceProvider
       offer,
       missing: !offer,
     });
+  }
+
+  // Perfiles metálicos: barras comerciales enteras según el despiece lineal.
+  if (model.bars?.length) {
+    const offers = (await Promise.all(providers.map((p) => p.search({ category: "steel-profile", region: opts.region }).catch(() => [] as PriceOffer[])))).flat();
+    for (const t of planBars(model.bars).totals) {
+      const offer = offers.filter((o) => o.attributes?.profileId === t.profileId).sort((a, b) => a.price - b.price)[0];
+      note(offer);
+      lines.push({ description: `${t.profileName} · barra de 6 m`, category: "steel-profile", qty: t.bars, unit: "unit", unitPrice: offer?.price ?? 0, total: (offer?.price ?? 0) * t.bars, offer, missing: !offer });
+    }
   }
 
   for (const h of model.hardware) {

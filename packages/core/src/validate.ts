@@ -1,4 +1,5 @@
 import type { FurnitureModel } from "./model/index.js";
+import { getProfile } from "./profiles.js";
 
 export type IssueLevel = "error" | "warning" | "tip";
 
@@ -21,7 +22,8 @@ export function validateFurniture(model: FurnitureModel): Issue[] {
 
   for (const p of model.panels) {
     // Techo y piso van fijos a los costados y al fondo; la regla de pandeo aplica a las repisas sueltas.
-    if (p.id === "shelf" || p.id === "shelf-top" || p.id === "shelf-fixed") {
+    // El entrepaño fijo sobre cajones va unido a ambos lados y no carga como una repisa suelta.
+    if (p.id === "shelf" || p.id === "shelf-top") {
       const limit = SHELF_SPAN_LIMITS[p.thickness] ?? 800;
       if (p.height > limit) {
         issues.push({
@@ -51,6 +53,19 @@ export function validateFurniture(model: FurnitureModel): Issue[] {
       }
     }
   }
+
+  // Estructuras de tubo: travesaños demasiado largos para su perfil y uniones.
+  for (const bar of model.bars ?? []) {
+    if (!bar.id.startsWith("rail")) continue;
+    const profile = getProfile(bar.profileId);
+    if (bar.length > profile.maxSpan) {
+      issues.push({ level: "warning", code: "rail-span", message: `${bar.name} de ${bar.length} mm en ${profile.name}: sobre ${profile.maxSpan} mm se flecta con carga. Agrega un apoyo intermedio o usa un perfil mayor.` });
+    }
+  }
+  if (model.bars?.length && model.dims.height > 4 * Math.min(model.dims.width, model.dims.depth)) {
+    issues.push({ level: "warning", code: "tip-over", message: `Estructura alta y angosta (${model.dims.height} mm de alto sobre una base de ${Math.min(model.dims.width, model.dims.depth)} mm): fíjala al muro para que no se vuelque.` });
+  }
+  if (model.bars?.length) return issues;
 
   const params = (model.meta?.params ?? {}) as { hangingBar?: boolean };
   const rod = model.fixtures?.find((f) => f.kind === "rod");

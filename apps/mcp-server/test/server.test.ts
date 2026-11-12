@@ -77,6 +77,13 @@ describe("Handy MCP server", () => {
     expect(quote.data.subtotal).toBeGreaterThan(50);
     expect(quote.data.missingCount).toBe(0);
 
+    const frame = await call("world_place_frame", { roomId: "dormitorio", wall: "north", offset: 2300, type: "table", width: 1200, height: 750, depth: 600 });
+    expect(frame.text).toContain("2 barra(s) de 6 m de Tubo cuadrado 40 x 40");
+    expect(frame.data.item.kind).toBe("frame");
+    expect((await call("world_command", { itemId: "mesa-de-tubo", text: "atornillada" })).text).toContain("atornillada");
+    expect((await call("world_cutplan")).text).toContain("barra(s) de 6 m");
+    await call("world_remove_item", { itemId: "mesa-de-tubo" });
+
     expect((await call("world_floor_plan", { roomId: "dormitorio" })).isError).toBe(true);
     const floor = await call("world_command", { roomId: "dormitorio", text: "piso de porcelanato 60 x 60" });
     expect(floor.text).toMatch(/Necesitas \d+ piezas/);
