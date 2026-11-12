@@ -34,6 +34,11 @@ export interface Placement {
   z: Millimeters;
   /** Eje perpendicular a la cara de la pieza: "x" costado, "y" piso/techo, "z" fondo/puerta. */
   normal: "x" | "y" | "z";
+  /**
+   * Eje por el que corre el largo (`height`) de la pieza. Por defecto: vertical ("y") en piezas de canto
+   * ("x" y "z") y a lo ancho ("x") en piezas horizontales ("y"). Los costados de un cajón usan "z".
+   */
+  along?: "x" | "y" | "z";
 }
 
 export interface Panel {
@@ -77,7 +82,16 @@ export interface FurnitureModel {
   panels: Panel[];
   hardware: HardwareItem[];
   materials: Material[];
+  /** Elementos que no son tablero pero ocupan lugar y se dibujan: tubos de colgar, etc. */
+  fixtures?: Fixture[];
   meta?: Record<string, unknown>;
+}
+
+export interface Fixture {
+  id: string;
+  name: string;
+  kind: "rod";
+  box: { min: [Millimeters, Millimeters, Millimeters]; max: [Millimeters, Millimeters, Millimeters] };
 }
 
 /** Cómo se mueve una pieza según su herraje. Lo anima el visor y lo usa la detección de colisiones. */

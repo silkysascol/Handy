@@ -58,8 +58,8 @@ Abre http://localhost:5174. Verás tu mundo en 3D. **Haz clic en un muro, un mue
 
 | Seleccionas | Escribes |
 | --- | --- |
-| un muro | `pon una puerta de 80 x 205 a 2 m de la pared izquierda` · `ventana de 120 x 100 centrada, antepecho 110` · `armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas` · `grosor 20 cm` |
-| un mueble | `ensancha 10 cm` · `alto 1800` · `muévelo 30 cm a la derecha` · `agrega una repisa` · `súbelo 10 cm` · `sin tornillos a la vista` · `quítalo` |
+| un muro | `pon una puerta de 80 x 205 a 2 m de la pared izquierda` · `ventana de 120 x 100 centrada, antepecho 110` · `armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas` · `closet de 180 x 220 x 60 con 2 divisiones, barra y 3 cajones` · `cajonera de 80 x 90 x 50` · `grosor 20 cm` |
+| un mueble | `ensancha 10 cm` · `muévelo 30 cm a la derecha` · `agrega una repisa` · `2 divisiones` · `3 cajones` · `con barra de colgar` · `sin tornillos a la vista` · `quítalo` |
 | una puerta o ventana | `muévela 20 cm a la derecha` · `90 x 210` · `céntrala` · `quítala` |
 | una habitación | `piso de porcelanato 60 x 60` · `piso de cerámica 45 x 45 trabado` · `junta 3` · `alto 2,6 m` |
 | nada | `cocina de 2,8 x 2,4 m` |

@@ -186,7 +186,8 @@ export function itemModel(item: PlacedItem): FurnitureModel {
 /** Volumen cerrado del mueble (incluye el espesor de las puertas) en el mundo. */
 export function itemBox(room: Room, item: PlacedItem): AABB {
   const p = item.params;
-  const front = p.depth + ((p.doors ?? 0) > 0 ? (p.boardThickness ?? 18) : 0);
+  // Puertas y frentes de cajón van por fuera de la caja.
+  const front = p.depth + ((p.doors ?? 0) > 0 || (p.drawers ?? 0) > 0 ? (p.boardThickness ?? 18) : 0);
   return localToWorld({ min: [0, 0, 0], max: [p.width, p.height, front] }, itemTransform(room, item));
 }
 
@@ -444,7 +445,7 @@ export function describeWorld(world: World): string {
     if (items.length) lines.push("Muebles:");
     for (const i of items) {
       const p = i.params;
-      lines.push(`- ${i.name} (id: ${i.id}): ${p.width} x ${p.height} x ${p.depth}, en ${WALL_NAMES[i.wall]} de ${i.offset} a ${i.offset + p.width}${i.elevation ? `, colgado a ${i.elevation}` : ""}; ${p.doors ?? 0} puerta(s), ${p.shelves ?? 0} repisa(s), unión ${p.joinery ?? "confirmat"}`);
+      lines.push(`- ${i.name} (id: ${i.id}): ${p.width} x ${p.height} x ${p.depth}, en ${WALL_NAMES[i.wall]} de ${i.offset} a ${i.offset + p.width}${i.elevation ? `, colgado a ${i.elevation}` : ""}; ${p.doors ?? 0} puerta(s), ${p.shelves ?? 0} repisa(s)${p.dividers ? `, ${p.dividers} división(es)` : ""}${p.drawers ? `, ${p.drawers} cajón(es)` : ""}${p.hangingBar ? ", barra de colgar" : ""}, unión ${p.joinery ?? "confirmat"}`);
     }
     if (room.floor) {
       const f = room.floor, plan = planFloor(room, f);

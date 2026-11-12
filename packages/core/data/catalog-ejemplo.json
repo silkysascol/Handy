@@ -210,6 +210,30 @@
       "price": 4.2,
       "currency": "USD",
       "unit": "unit"
+    },
+    {
+      "sku": "COR-TEL-450",
+      "category": "slide",
+      "name": "Corredera telescópica 450 mm 30 kg (par)",
+      "price": 5.8,
+      "currency": "USD",
+      "unit": "unit"
+    },
+    {
+      "sku": "TUBO-OVAL",
+      "category": "closet-rod",
+      "name": "Tubo ovalado cromado para closet (metro)",
+      "price": 3.2,
+      "currency": "USD",
+      "unit": "meter"
+    },
+    {
+      "sku": "SOP-TUBO",
+      "category": "rod-support",
+      "name": "Soporte lateral tubo ovalado",
+      "price": 0.6,
+      "currency": "USD",
+      "unit": "unit"
     }
   ]
 }

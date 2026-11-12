@@ -36,10 +36,12 @@ export function panelInstances(p: Panel): { placement: Placement; motion?: Motio
 export function panelBox(p: Panel, placement: Placement | undefined = p.placement): AABB | undefined {
   if (!placement) return undefined;
   const { x, y, z, normal } = placement;
-  const size: Vec3 =
-    normal === "x" ? [p.thickness, p.height, p.width] :
-    normal === "y" ? [p.height, p.thickness, p.width] :
-    [p.width, p.height, p.thickness];
+  const along = placement.along ?? (normal === "y" ? "x" : "y");
+  const size: Vec3 = [0, 0, 0];
+  const axis = { x: 0, y: 1, z: 2 } as const;
+  size[axis[normal]] = p.thickness;
+  size[axis[along]] = p.height;
+  size[3 - axis[normal] - axis[along]] = p.width;
   return { min: [x, y, z], max: [x + size[0], y + size[1], z + size[2]] };
 }
 
@@ -133,5 +135,14 @@ export function checkMotionCollisions(model: FurnitureModel, obstacles: Obstacle
       }
     }
   }
-  return out;
+  // Un cajón son varias piezas que se mueven juntas: se reporta una sola vez por obstáculo,
+  // con el primer punto de contacto.
+  const merged = new Map<string, Collision>();
+  for (const c of out) {
+    const drawer = c.panelId.startsWith("drawer-");
+    const key = `${drawer ? "drawer" : c.message.split(" choca ")[0]}|${c.againstId}`;
+    const cur = merged.get(key);
+    if (!cur || c.at < cur.at) merged.set(key, drawer ? { ...c, panelId: "drawer", message: `Un cajón choca con ${c.againstName} a los ${c.travel} mm de recorrido${c.message.match(/ \(de \d+\)\./)?.[0] ?? "."} Deja libre el frente o mueve el mueble.` } : c);
+  }
+  return [...merged.values()];
 }

@@ -78,8 +78,9 @@ function firstLength(t: string): number | undefined {
 
 const WORDS: Record<string, number> = { un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8 };
 function countOf(t: string, noun: string): number | undefined {
-  if (new RegExp(`sin ${noun}`).test(t)) return 0;
-  const m = t.match(new RegExp(`(\\d+|${Object.keys(WORDS).join("|")}) ${noun}`));
+  // `noun` puede traer alternativas ("cajones|cajon"): se agrupan para que el número aplique a todas.
+  if (new RegExp(`sin (?:${noun})`).test(t)) return 0;
+  const m = t.match(new RegExp(`(\\d+|${Object.keys(WORDS).join("|")}) (?:${noun})`));
   if (!m) return undefined;
   return WORDS[m[1]] ?? Number(m[1]);
 }
@@ -99,7 +100,7 @@ const offsetFor = (anchor: Anchor, len: number, width: number): number =>
 
 const describeAnchor = (anchor: Anchor, offset: number) => (!anchor || anchor.from === "center" ? `centrada, a ${offset} mm de la izquierda` : `a ${offset} mm de la izquierda`);
 
-const FURNITURE = /gabinete|mueble|armario|closet|estante|estanteria|biblioteca|repisero|alacena|modulo/;
+const FURNITURE = /gabinete|mueble|armario|closet|cajonera|comoda|estante|estanteria|biblioteca|repisero|alacena|modulo/;
 const DELETE = /\b(borra|borrar|borral[ao]|quita|quitar|quital[ao]|elimina|eliminar|eliminal[ao]|saca|sacal[ao])\b/;
 const fail = (message: string): CommandResult => ({ ok: false, understood: true, message });
 const unknown = (hint: string): CommandResult => ({ ok: false, understood: false, message: `No entendí esa orden. ${hint}` });
@@ -135,7 +136,15 @@ function wallCommand(world: World, sel: Extract<Selection, { kind: "wall" }>, t:
     const item = placeCabinet(world, {
       roomId: room.id, wall: sel.wall, offset, elevation,
       name: word.charAt(0).toUpperCase() + word.slice(1),
-      params: { width, height, depth, doors: (Math.min(countOf(t, "puertas?") ?? 0, 2)) as 0 | 1 | 2, shelves: countOf(t, "repisas?|entrepanos?") ?? 0, plinthHeight: lengthAfter(t, "zocalo") ?? 0, joinery },
+      params: {
+        width, height, depth, joinery,
+        doors: countOf(t, "puertas?") ?? 0,
+        shelves: countOf(t, "repisas?|entrepanos?") ?? 0,
+        dividers: countOf(t, "divisiones|division|divisores|divisor") ?? 0,
+        drawers: countOf(t, "cajones|cajon|gavetas?") ?? (/cajonera|comoda/.test(t) ? Math.max(1, Math.floor((height - 40) / 200)) : 0),
+        hangingBar: /\b(barra|tubo|colgar|colgador)\b/.test(t) && !/sin (barra|tubo)/.test(t),
+        plinthHeight: lengthAfter(t, "zocalo") ?? 0,
+      },
     });
     return { ok: true, understood: true, select: { kind: "item", itemId: item.id }, message: `${item.name} de ${width} x ${height} x ${depth} mm en el ${WALL_NAMES[sel.wall]}, ${describeAnchor(anchor, offset)}${elevation ? `, a ${elevation} mm del piso` : ""}.` };
   }
@@ -157,7 +166,7 @@ function wallCommand(world: World, sel: Extract<Selection, { kind: "wall" }>, t:
     updateRoom(world, room.id, { wallThickness: { [sel.wall]: thickness } });
     return { ok: true, understood: true, message: `Grosor del ${WALL_NAMES[sel.wall]}: ${thickness} mm.` };
   }
-  return unknown('En un muro puedes: "pon una puerta de 80 x 205 a 2 m de la izquierda", "ventana de 120 x 100 centrada, antepecho 100", "armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas", "grosor 20 cm".');
+  return unknown('En un muro puedes: "pon una puerta de 80 x 205 a 2 m de la izquierda", "ventana de 120 x 100 centrada, antepecho 100", "armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas", "closet de 180 x 220 x 60 con 2 divisiones, barra y 3 cajones", "grosor 20 cm".');
 }
 
 function itemCommand(world: World, sel: Extract<Selection, { kind: "item" }>, t: string): CommandResult {
@@ -169,9 +178,32 @@ function itemCommand(world: World, sel: Extract<Selection, { kind: "item" }>, t:
   const L = firstLength(t);
   const done = (message: string): CommandResult => ({ ok: true, understood: true, select: sel, message });
 
-  if (DELETE.test(t) && !/repisa|puerta|zocalo|entrepano/.test(t)) {
+  // "quita la barra" o "quita un cajón" quitan una parte, no el mueble.
+  if (DELETE.test(t) && !/repisa|puerta|zocalo|entrepano|barra|tubo|colgador|cajon|gaveta|division|divisor/.test(t)) {
     removeItem(world, item.id);
     return { ok: true, understood: true, select: null, message: `${item.name} quitado.` };
+  }
+
+  // Divisiones, cajones y barra de colgar
+  if (/division|divisor/.test(t)) {
+    const n = countOf(t, "divisiones|division|divisores|divisor") ?? 1;
+    const dividers = /agrega|anade|suma|\bmas\b/.test(t) ? (p.dividers ?? 0) + n : DELETE.test(t) ? Math.max(0, (p.dividers ?? 0) - n) : n;
+    // Si el mueble tenía 2 puertas por cuerpo, se conservan 2 por cuerpo con la nueva cantidad.
+    const doors = (p.doors ?? 0) > 2 ? 2 * (dividers + 1) : p.doors;
+    updateItem(world, item.id, { params: { dividers, ...(doors !== p.doors ? { doors } : {}) } });
+    return done(`${item.name}: ${dividers === 0 ? "sin divisiones" : `${dividers} división(es), ${dividers + 1} cuerpos`}${doors !== p.doors ? `; puertas ajustadas a ${doors}` : ""}.`);
+  }
+  if (/cajon|gaveta/.test(t)) {
+    const n = countOf(t, "cajones|cajon|gavetas?") ?? 1;
+    const drawers = /agrega|anade|suma|\bmas\b/.test(t) ? (p.drawers ?? 0) + n : DELETE.test(t) ? Math.max(0, (p.drawers ?? 0) - n) : n;
+    const drawerHeight = lengthAfter(t, "de alto|alto|altura");
+    updateItem(world, item.id, { params: { drawers, ...(drawerHeight ? { drawerHeight } : {}) } });
+    return done(`${item.name}: ${drawers === 0 ? "sin cajones" : `${drawers} cajón(es) de ${item.params.drawerHeight ?? 200} mm`}.`);
+  }
+  if (/\b(barra|tubo|colgar|colgador)\b/.test(t)) {
+    const hangingBar = !(DELETE.test(t) || /sin (barra|tubo)/.test(t));
+    updateItem(world, item.id, { params: { hangingBar } });
+    return done(`${item.name}: ${hangingBar ? "con barra de colgar y maletero" : "sin barra de colgar"}.`);
   }
 
   // Repisas y puertas
@@ -183,7 +215,7 @@ function itemCommand(world: World, sel: Extract<Selection, { kind: "item" }>, t:
   }
   if (/puerta/.test(t)) {
     const n = countOf(t, "puertas?");
-    const doors = (DELETE.test(t) && n === undefined ? 0 : Math.min(n ?? 1, 2)) as 0 | 1 | 2;
+    const doors = DELETE.test(t) && n === undefined ? 0 : n ?? 1;
     updateItem(world, item.id, { params: { doors } });
     return done(`${item.name}: ${doors === 0 ? "sin puertas" : `${doors} puerta(s)`}.`);
   }
@@ -232,7 +264,7 @@ function itemCommand(world: World, sel: Extract<Selection, { kind: "item" }>, t:
       return done(`${item.name}: ${label} ${value} mm${grow || shrink ? ` (antes ${grow ? value - L : value + L})` : ""}.`);
     }
   }
-  return unknown('En un mueble puedes: "ensancha 10 cm", "alto 1800", "muévelo 30 cm a la derecha", "pégalo a la izquierda", "agrega una repisa", "2 puertas", "súbelo 10 cm", "sin tornillos a la vista", "quítalo".');
+  return unknown('En un mueble puedes: "ensancha 10 cm", "alto 1800", "muévelo 30 cm a la derecha", "pégalo a la izquierda", "agrega una repisa", "2 divisiones", "3 cajones", "con barra de colgar", "2 puertas", "sin tornillos a la vista", "quítalo".');
 }
 
 function openingCommand(world: World, sel: Extract<Selection, { kind: "opening" }>, t: string): CommandResult {

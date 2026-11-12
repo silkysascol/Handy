@@ -31,8 +31,8 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 async function loadWorld(): Promise<void> {
   try {
     const r = await fetch("/api/world", { cache: "no-store" });
-    if (r.ok) { world = await r.json(); apiAvailable = true; lastSaved = JSON.stringify(world); return; }
-    if (r.status === 404 && r.headers.get("content-type")?.includes("json")) apiAvailable = true;
+    if (r.status === 200) { world = await r.json(); apiAvailable = true; lastSaved = JSON.stringify(world); return; }
+    if (r.status === 204 && r.headers.get("x-handy-world") === "none") apiAvailable = true;
   } catch { /* sin servidor local: se usa el navegador */ }
   try {
     const raw = localStorage.getItem(LS_KEY);
@@ -96,7 +96,7 @@ scene.add(content);
 
 const unitBox = new THREE.BoxGeometry(1, 1, 1);
 const unitEdges = new THREE.EdgesGeometry(unitBox);
-const COLORS = { wall: 0xcfd3d6, floor: 0x8f9396, ceramic: 0xd9cdb8, porcelain: 0xbfc3c4, board: 0xece9e2, back: 0xdedad2, door: 0xb98a5a, window: 0x7fc4d9, opening: 0x9a6b3f, accent: 0xe8933a };
+const COLORS = { wall: 0xcfd3d6, floor: 0x8f9396, ceramic: 0xd9cdb8, porcelain: 0xbfc3c4, board: 0xece9e2, back: 0xdedad2, door: 0xb98a5a, window: 0x7fc4d9, opening: 0x9a6b3f, metal: 0xa7adb3, accent: 0xe8933a };
 const M = 0.001;
 type Pick = THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial>;
 let pickables: Pick[] = [];
@@ -161,14 +161,20 @@ function buildScene() {
       const group = new THREE.Group();
       group.position.set(tr.position[0] * M, tr.position[1] * M, tr.position[2] * M);
       group.rotation.y = (tr.rotationY * Math.PI) / 180;
-      for (const p of itemModel(item).panels) {
+      const model = itemModel(item);
+      for (const p of model.panels) {
         for (const u of panelInstances(p)) {
           const b = panelBox(p, u.placement);
           if (!b) continue;
-          const color = p.id === "door" ? COLORS.door : p.id === "back" ? COLORS.back : COLORS.board;
+          const color = p.id === "door" || p.id === "drawer-front" ? COLORS.door : p.id === "back" || p.id === "drawer-bottom" ? COLORS.back : COLORS.board;
           const m = box(b, color, { sel: { kind: "item", itemId: item.id } });
           group.add(m); pickables.push(m);
         }
+      }
+      for (const f of model.fixtures ?? []) {
+        const m = box(f.box, COLORS.metal, { sel: { kind: "item", itemId: item.id } });
+        m.material.metalness = 0.6; m.material.roughness = 0.35;
+        group.add(m); pickables.push(m);
       }
       content.add(group);
     }
@@ -298,9 +304,9 @@ const PLACEHOLDER: Record<Selection["kind"], string> = {
 const EXAMPLES: Record<Selection["kind"], string[]> = {
   world: ["cocina de 2,8 x 2,4 m", "habitación Estudio de 3 x 3 x 2,6 m"],
   room: ["piso de porcelanato 60 x 60", "piso de cerámica 45 x 45 trabado", "junta 3", "quita el piso", "alto 2,6 m", "ancho 4 m"],
-  wall: ["pon una puerta de 80 x 205 a 2 m de la izquierda", "ventana de 120 x 100 centrada, antepecho 110", "armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas", "alacena de 900 x 700 x 350 a 1,5 m del piso con 2 puertas", "grosor 20 cm"],
+  wall: ["pon una puerta de 80 x 205 a 2 m de la izquierda", "ventana de 120 x 100 centrada, antepecho 110", "armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas", "closet de 180 x 220 x 60 con 2 divisiones, barra y 3 cajones", "cajonera de 80 x 90 x 50", "alacena de 900 x 700 x 350 a 1,5 m del piso con 2 puertas", "grosor 20 cm"],
   opening: ["muévela 20 cm a la derecha", "a 1 m de la izquierda", "90 x 210", "céntrala", "quítala"],
-  item: ["ensancha 10 cm", "alto 1800", "muévelo 30 cm a la derecha", "pégalo a la izquierda", "agrega una repisa", "una puerta", "sin tornillos a la vista", "quítalo"],
+  item: ["ensancha 10 cm", "alto 1800", "muévelo 30 cm a la derecha", "agrega una repisa", "2 divisiones", "3 cajones", "con barra de colgar", "2 puertas", "sin tornillos a la vista", "quítalo"],
 };
 
 // ---------- Paneles ----------
@@ -363,7 +369,7 @@ function renderProps() {
     const i = world.items.find((x) => x.id === s.itemId)!;
     const p = i.params;
     body = kv("Ancho × alto × fondo", `${fmt(p.width)} × ${fmt(p.height)} × ${fmt(p.depth)}`) + kv("Muro", WALL_NAMES[i.wall]) + kv("Desde la izquierda", `${fmt(i.offset)} mm`) + kv("Del piso", `${fmt(i.elevation)} mm`) +
-      kv("Puertas", String(p.doors ?? 0)) + kv("Repisas", String(p.shelves ?? 0)) + kv("Zócalo", p.plinthHeight ? `${fmt(p.plinthHeight)} mm` : "no") + kv("Unión", p.joinery === "minifix" || p.joinery === "dowel" ? `${p.joinery} · sin tornillos a la vista` : p.joinery ?? "confirmat");
+      kv("Puertas", String(p.doors ?? 0)) + kv("Repisas", String(p.shelves ?? 0)) + (p.dividers ? kv("Divisiones", `${p.dividers} · ${p.dividers + 1} cuerpos`) : "") + (p.drawers ? kv("Cajones", `${p.drawers} de ${fmt(p.drawerHeight ?? 200)} mm`) : "") + (p.hangingBar ? kv("Barra de colgar", "sí, con maletero") : "") + kv("Zócalo", p.plinthHeight ? `${fmt(p.plinthHeight)} mm` : "no") + kv("Unión", p.joinery === "minifix" || p.joinery === "dowel" ? `${p.joinery} · sin tornillos a la vista` : p.joinery ?? "confirmat");
   }
   const mine = issues.filter((x) => (s.kind === "item" && x.itemId === s.itemId) || s.kind === "world" || ((s.kind === "room" || s.kind === "wall") && x.roomId === s.roomId));
   props.innerHTML =

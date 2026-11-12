@@ -29,16 +29,16 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [x] Pruebas de navegador en el repo (`pnpm e2e`): 12 casos de extremo a extremo con servidor y mundo temporales. `pnpm check` corre todo.
 - [x] Plano de corte real: piezas acomodadas en tableros con ancho de disco, refilado y veta; despiece imprimible y CSV para la tienda (botón Despiece, `world_cutplan`). La cotización usa esos tableros, no un porcentaje.
 - [x] Pisos: baldosas dibujadas en la habitación, piezas enteras y cortes, cajas según la tienda, pega por formato y material, boquilla, guardaescobas; sumado al precio del mundo (`world_floor_plan`).
+- [x] Más muebles con el mismo generador: divisiones verticales (cuerpos iguales), cajones con correderas (frente visible o interiores tras puertas), barra de colgar con maletero, puertas de 2 por cuerpo. Con eso salen closets, cajoneras y bibliotecas con divisiones. Reglas nuevas: barra larga, closet poco profundo, cajón ancho.
 - [ ] **Cargar la casa real del autor** y anotar lo que falte.
 - [ ] Habitaciones no rectangulares (polígonos), niveles y puertas entre habitaciones; importar RoomPlan/LiDAR.
 - [ ] Arrastrar con el mouse para mover y estirar, además de las órdenes; cotas visibles en la vista; muebles sueltos no pegados a un muro.
 - [ ] Más vocabulario en el intérprete según lo que el autor escriba y no se entienda (registro de órdenes no entendidas).
-- [ ] Más cosas que colocar: closet con divisiones, cajonera, marcos de tubo, piso con despiece.
+- [ ] Más cosas que colocar: marcos de tubo, muebles sueltos (mesa, cama), cajones en cualquier cuerpo.
 - [ ] Despiece lineal de perfiles de acero; validar el despiece de tableros con el operario de la tienda.
 
 ## M1a · "Mi primer mueble": un flujo completo
 
-- [ ] Generadores: closet con divisiones y barra, estantería/biblioteca; cajonera después.
 - [ ] Sistema de unión según herramientas del usuario: minifix con perforación en la tienda (exportar archivo de perforado), minifix o tarugos con plantilla imprimible (Objetos), encaje sin perforar. "Sin tornillos a la vista" predeterminado.
 - [ ] Despiece en el **formato exacto** que reciben Madecentro y Homecenter (veta, cantos por lado, tolerancias): ir a la tienda y validarlo con el operario de la sierra antes de más 3D.
 - [ ] Presupuesto completo: tableros enteros por formato, cantos, herrajes, reserva, con tienda y fecha visibles; renglones editables para lo que el motor no cotiza.

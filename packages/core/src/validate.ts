@@ -21,7 +21,7 @@ export function validateFurniture(model: FurnitureModel): Issue[] {
 
   for (const p of model.panels) {
     // Techo y piso van fijos a los costados y al fondo; la regla de pandeo aplica a las repisas sueltas.
-    if (p.id === "shelf") {
+    if (p.id === "shelf" || p.id === "shelf-top" || p.id === "shelf-fixed") {
       const limit = SHELF_SPAN_LIMITS[p.thickness] ?? 800;
       if (p.height > limit) {
         issues.push({
@@ -50,6 +50,18 @@ export function validateFurniture(model: FurnitureModel): Issue[] {
         });
       }
     }
+  }
+
+  const params = (model.meta?.params ?? {}) as { hangingBar?: boolean };
+  const rod = model.fixtures?.find((f) => f.kind === "rod");
+  if (rod) {
+    const span = rod.box.max[0] - rod.box.min[0];
+    if (span > 1000) issues.push({ level: "warning", code: "rod-span", message: `Barra de colgar de ${span} mm: sobre 1000 mm se dobla con la ropa. Agrega un soporte central o una división.` });
+    if (params.hangingBar && model.dims.depth < 550) issues.push({ level: "warning", code: "closet-shallow", message: `Fondo de ${model.dims.depth} mm: para colgar ropa de frente se necesitan 550 a 600 mm; con menos, los ganchos chocan con las puertas.` });
+  }
+  const front = model.panels.find((p) => p.id === "drawer-front");
+  if (front && front.height > 900) {
+    issues.push({ level: "warning", code: "drawer-wide", panelId: front.id, message: `Frente de cajón de ${front.height} mm: sobre 900 mm la corredera de 30 kg queda corta y el fondo se hunde. Divide el cuerpo o usa correderas de 45 kg.` });
   }
 
   if (model.dims.depth > 650) {

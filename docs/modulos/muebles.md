@@ -12,11 +12,10 @@ Diseñar el mueble de forma paramétrica, ver la lista de corte (o de ladrillos)
 
 | Generador | Estado | Parámetros principales |
 | --- | --- | --- |
-| Gabinete caja | hecho | ancho, alto, prof., repisas, puertas (0–2), zócalo, unión, espesor |
-| Cajonera | pendiente | cantidad y alto de cajones, correderas (telescópica, oculta, soft-close), frentes |
+| Gabinete, closet, cajonera, biblioteca | hecho, un solo generador | ancho, alto, prof., repisas, puertas, divisiones, cajones y su alto, barra de colgar, zócalo, unión, espesor |
+| Correderas ocultas y soft-close | pendiente | hoy solo telescópica de 250 a 550 mm |
 | Módulo cocina bajo/alto | pendiente | 600 prof. bajo / 350 alto, zócalo 100–150, cubierta |
-| Closet | pendiente | divisiones, barra de colgar, cajoneras internas, puertas corredizas |
-| Biblioteca / estantería | pendiente | módulos repetidos, trasera, refuerzos |
+| Puertas corredizas de closet | pendiente | solape, cantidad de hojas, riel |
 | Escritorio / mesa | pendiente | cubierta, patas o costados, pasacables |
 | Cama / banca | pendiente | bastidor de madera maciza, listones |
 

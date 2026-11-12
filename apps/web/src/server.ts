@@ -2,7 +2,7 @@
 /**
  * Servidor local de Handy: sirve el visor ya construido (dist/) y expone el mundo del usuario,
  * el mismo archivo que lee y escribe el servidor MCP. Así lo que hace la IA aparece en vivo en el visor.
- *   GET  /api/world   → el mundo (404 si aún no existe)
+ *   GET  /api/world   → el mundo (204 si aún no existe)
  *   PUT  /api/world   → guarda el mundo
  *   GET  /api/events  → Server-Sent Events: avisa cuando el archivo cambia
  */
@@ -23,7 +23,8 @@ watchFile(worldPath, { interval: 400 }, () => { for (const c of clients) c.write
 createServer((req, res) => {
   const url = new URL(req.url ?? "/", "http://localhost");
   if (url.pathname === "/api/world" && req.method === "GET") {
-    if (!existsSync(worldPath)) { res.writeHead(404, { "content-type": "application/json" }).end(JSON.stringify({ error: "sin mundo", path: worldPath })); return; }
+    // Sin mundo todavía: 204, que no es un error. El visor crea uno de arranque.
+    if (!existsSync(worldPath)) { res.writeHead(204, { "x-handy-world": "none" }).end(); return; }
     res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }).end(readFileSync(worldPath));
     return;
   }

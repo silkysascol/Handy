@@ -31,7 +31,7 @@ export async function startHandy({ demo = true } = {}) {
   server.stderr.on("data", (d) => { log += d; });
   const url = `http://127.0.0.1:${port}`;
   for (let i = 0; i < 60; i++) {
-    try { const r = await fetch(`${url}/api/world`); if (r.status === 200 || r.status === 404) break; } catch { /* aún no escucha */ }
+    try { const r = await fetch(`${url}/api/world`); if (r.status === 200 || r.status === 204) break; } catch { /* aún no escucha */ }
     await new Promise((r) => setTimeout(r, 250));
     if (i === 59) throw new Error(`El servidor no arrancó:\n${log}`);
   }

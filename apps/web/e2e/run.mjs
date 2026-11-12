@@ -98,6 +98,22 @@ test("exporta a Blender un glTF válido en estructura", async ({ h }) => {
   assert.ok(gltf.nodes.some((n) => n.name === "Dormitorio"));
 });
 
+test("closet con divisiones, barra y cajones desde una frase, y se edita por partes", async ({ h, app }) => {
+  await h.pick("Muro sur", 0);
+  const msg = await h.say("closet de 180 x 220 x 60 con 2 divisiones, barra y 3 cajones, pegado a la derecha");
+  assert.match(msg, /Closet de 1800 x 2200 x 600 mm/);
+  const closet = () => app.readWorld().items.find((i) => i.id === "closet");
+  assert.deepEqual({ dividers: closet().params.dividers, drawers: closet().params.drawers, bar: closet().params.hangingBar }, { dividers: 2, drawers: 3, bar: true });
+  const props = await h.page.textContent("#props");
+  assert.match(props, /Divisiones2 · 3 cuerpos/);
+  assert.match(props, /Cajones3 de 200 mm/);
+  assert.match(await h.say("agrega un cajón"), /4 cajón/);
+  assert.match(await h.say("quita la barra"), /sin barra/);
+  assert.ok(closet(), "quitar la barra no debe borrar el mueble");
+  assert.match(await h.say("3 puertas"), /2 por cuerpo/);
+  assert.match(await h.say("6 puertas"), /6 puerta/);
+});
+
 test("orden sobre una habitación: piso con cajas, pega y boquilla, sumado al precio", async ({ h, app }) => {
   const before = await h.page.textContent("#price-total");
   await h.pick("Cocina");

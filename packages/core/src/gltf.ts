@@ -17,6 +17,7 @@ const PALETTE: Record<string, [number, number, number]> = {
   white: [0.93, 0.92, 0.89],
   hdf: [0.88, 0.87, 0.84],
   wood: [0.72, 0.54, 0.35],
+  metal: [0.62, 0.64, 0.66],
 };
 
 function base64(bytes: Uint8Array): string {
@@ -134,6 +135,7 @@ export function exportGltf(world: World): string {
           parts.push(boxNode(units.length > 1 ? `${p.name} ${i + 1}` : p.name, box, materialKey(p.materialId), { handy: { panelId: p.id, lengthMm: p.height, widthMm: p.width, thicknessMm: p.thickness, materialId: p.materialId, edges: p.edgeBanding } }));
         });
       }
+      for (const f of model.fixtures ?? []) parts.push(boxNode(f.name, f.box, "metal", { handy: { fixtureId: f.id, kind: f.kind } }));
       const half = (tr.rotationY * Math.PI) / 360;
       itemNodes.push(add({
         name: item.name,
