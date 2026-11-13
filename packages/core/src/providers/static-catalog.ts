@@ -11,6 +11,8 @@ export interface StaticCatalog {
   region: string;
   currency: string;
   updatedAt: string;
+  /** Precios de muestra, no reales. */
+  example?: boolean;
   items: StaticCatalogEntry[];
 }
 
@@ -22,8 +24,10 @@ export class StaticCatalogProvider implements PriceProvider {
   readonly id: string;
   readonly name: string;
   readonly region: string;
+  readonly example?: boolean;
 
   constructor(private readonly catalog: StaticCatalog) {
+    this.example = catalog.example;
     this.id = catalog.id;
     this.name = catalog.name;
     this.region = catalog.region;

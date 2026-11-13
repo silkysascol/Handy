@@ -16,7 +16,7 @@ describe("Handy MCP server", () => {
     await client.connect(clientT);
 
     const tools = await client.listTools();
-    expect(tools.tools.map((t) => t.name).filter((n) => !n.startsWith("world_")).sort()).toEqual(["check_collisions", "cutlist", "design_cabinet", "search_prices"]);
+    expect(tools.tools.map((t) => t.name).filter((n) => !n.startsWith("world_")).sort()).toEqual(["check_collisions", "cutlist", "design_cabinet", "price_list", "price_remove", "price_set", "prices_needed", "search_prices"]);
 
     const res = await client.callTool({ name: "design_cabinet", arguments: { width: 800, height: 2000, depth: 500, shelves: 3, doors: 2 } });
     const text = (res.content as Array<{ type: string; text: string }>)[0].text;
@@ -114,7 +114,35 @@ describe("Handy MCP server", () => {
     expect(readFileSync(assembly.data.html, "utf8")).toContain('<section class="step">');
     expect((await call("world_assembly", { itemId: "no-existe" })).isError).toBe(true);
 
+    // Precios reales: la IA ve qué falta, anota lo que encontró y el presupuesto deja el catálogo de ejemplo.
+    expect(withFloor.text).toContain("CATÁLOGO DE EJEMPLO");
+    const needed = await call("prices_needed");
+    expect(needed.data.pending).toBe(needed.data.rows.length);
+    const board = needed.data.rows.find((r: { category: string }) => r.category === "board");
+    const set = await call("price_set", { key: board.key, name: "Melamina blanca 18 mm 1830x2440", store: "Madecentro", price: 185000, url: "https://example.test/melamina" });
+    expect(set.text).toMatch(/Anotado: Melamina blanca 18 mm 1830x2440 a 185000 COP por tablero en Madecentro/);
+    expect(existsSync(join(dir, "precios.json"))).toBe(true);
+    const tile = needed.data.rows.find((r: { category: string }) => r.category === "tile");
+    await call("price_set", { key: tile.key, name: "Porcelanato 60x60", store: "Homecenter", price: 89900, packSize: 4 });
+    const real = await call("world_quote");
+    expect(real.data.currency).toBe("COP");
+    expect(real.data.ownPrices).toBe(true);
+    expect(real.text).toContain("precios propios del usuario");
+    expect(real.text).toContain("Por tienda: ");
+    expect(real.data.missingCount).toBe(real.data.lines.length - 2);
+    const after = await call("prices_needed", { onlyMissing: true });
+    expect(after.data.pending).toBe(needed.data.pending - 2);
+    expect(after.data.rows.some((r: { key: string }) => r.key === board.key || r.key === tile.key)).toBe(false);
+    expect((await call("price_set", { key: "melamina", name: "x", store: "y", price: 1 })).isError).toBe(true);
+    expect((await call("price_set", { key: board.key, name: "x", store: "y", price: 1, currency: "USD" })).isError).toBe(true);
+    const listed = await call("price_list");
+    expect(listed.data.entries).toHaveLength(2);
+    await call("price_remove", { id: listed.data.entries[0].id });
+    await call("price_remove", { id: listed.data.entries[1].id });
+    expect((await call("world_quote")).data.currency).toBe("USD");
+
     const exported = await call("world_export_gltf");
+
     expect(existsSync(exported.data.path)).toBe(true);
     expect(JSON.parse(readFileSync(exported.data.path, "utf8")).asset.version).toBe("2.0");
     await client.close();

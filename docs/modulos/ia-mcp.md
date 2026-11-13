@@ -15,7 +15,9 @@ Que cualquier IA (Claude Desktop, Claude Code, Cursor, agentes locales con Ollam
 | `search_prices` | categoría, texto, espesor, acabado | ofertas de los proveedores configurados |
 | `check_collisions` | gabinete + obstáculos (cajas con nombre) | choques al abrir puertas y cajones, con ángulo o recorrido |
 
-Variable `HANDY_CATALOG` para apuntar a un catálogo propio.
+Variable `HANDY_CATALOG` para apuntar a un catálogo propio. Los precios propios del usuario viven en `precios.json` junto al mundo, o donde indique `HANDY_PRICES`.
+
+Flujo de precios reales: `prices_needed` → la IA busca cada renglón en las tiendas del usuario con sus propias herramientas de búsqueda → `price_set` con tienda y enlace → `world_quote`. La IA solo anota precios que vio en la página de la tienda o que el usuario le dio; nunca estimados.
 
 ### Herramientas del mundo
 
@@ -37,6 +39,9 @@ El mundo vive en `~/.handy/mundo.world.json` o donde indique `HANDY_WORLD`. La I
 | `world_quote` | Cotización de todo el mundo: muebles (tableros según plano de corte) y pisos. |
 | `world_cutplan` | Acomoda las piezas en tableros y escribe el despiece imprimible y el CSV. |
 | `world_assembly` | Pasos de armado de un mueble, con piezas, herrajes y herramientas por paso; escribe el manual imprimible con dibujos. |
+| `prices_needed` | Renglones del presupuesto con su clave y el precio que tienen hoy: falta, viejo o al día. Es la lista de compras que la IA debe ir a buscar. |
+| `price_set` | Anota un precio visto en una tienda (nombre, tienda, valor, presentación, enlace, fecha) para la clave de un renglón. |
+| `price_list`, `price_remove` | Ver y borrar precios anotados. |
 | `world_floor_plan` | Cálculo del piso de una habitación: piezas, cajas, pega, boquilla, avisos. |
 | `world_export_gltf` | Escribe el `.gltf` para Blender. |
 

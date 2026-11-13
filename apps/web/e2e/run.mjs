@@ -5,7 +5,7 @@
  * Si Playwright no está instalado se omiten con un aviso, salvo E2E_REQUIRED=1.
  */
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadPlaywright, openPage, startHandy } from "./harness.mjs";
@@ -295,6 +295,56 @@ test("el despiece descarga un documento con lista de piezas y plano de corte", a
   assert.ok((await doc.locator("svg rect").count()) > 20);
   assert.ok((await doc.locator("tbody tr").count()) > 10);
   await doc.close();
+});
+
+test("precios propios: se anotan escribiendo, la IA los actualiza por archivo y el total deja el catálogo de ejemplo", async ({ h, app }) => {
+  const sub = () => h.page.textContent("#price-sub");
+  const total = () => h.page.textContent("#price-total");
+  assert.match(await sub(), /precios de ejemplo/);
+  assert.match(await total(), /^US\$ /);
+
+  const said = await h.say("precio melamina 18 blanco 185.000 en Madecentro");
+  assert.match(said, /Anotado: Melamina 18 mm Blanco a \$ 185\.000 por tablero en Madecentro\. Desde ahora/);
+  await h.page.waitForFunction(() => /tus precios/.test(document.getElementById("price-sub").textContent));
+  assert.match(await sub(), /COP · .*faltan \d+ precios · tus precios/);
+  assert.match(await total(), /^\$ \d/);
+  const sheets = (await h.page.evaluate(() => window.__handy.getQuote().lines.find((l) => l.category === "board" && !l.missing).qty));
+  assert.equal(await total(), `$ ${(185000 * sheets).toLocaleString("es-CO")}`);
+  const file = join(app.dir, "precios.json");
+  const saved = JSON.parse(readFileSync(file, "utf8"));
+  assert.equal(saved.entries.length, 1);
+  assert.deepEqual([saved.currency, saved.entries[0].store, saved.entries[0].price, saved.entries[0].attributes.thickness], ["COP", "Madecentro", 185000, 18]);
+
+  // La IA anota otro precio por MCP: llega solo al visor.
+  const hinge = await h.page.evaluate(() => window.__handy.getQuote().lines.find((l) => l.category === "hinge").need);
+  saved.entries.push({ id: "hinge-35-homecenter", category: "hinge", name: "Bisagra cazoleta 35 mm", store: "Homecenter", price: 4500, unit: "unit", seenAt: "2026-09-01", itemId: hinge.itemId, url: "https://example.test/bisagra" });
+  writeFileSync(file, JSON.stringify(saved, null, 2));
+  await h.page.waitForFunction(() => window.__handy.getPrices().entries.length === 2, null, { timeout: 5000 });
+  await h.page.waitForFunction(() => /Tu IA actualizó los precios/.test(document.getElementById("toast").textContent));
+
+  // El resumen dice dónde se compra cada cosa y cuáles precios están viejos.
+  await h.page.hover("#price");
+  await h.page.waitForFunction(() => /Por tienda/.test(document.getElementById("price-pop").textContent));
+  const pop = await h.page.textContent("#price-pop");
+  assert.match(pop, /Madecentro/);
+  assert.match(pop, /Homecenter · precio viejo/);
+  assert.match(pop, /sin precio/);
+  assert.match(pop, /1 con más de 30 días/);
+  await h.page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await h.page.click("#ask-prices");
+  await h.page.waitForFunction(() => /Copiado/.test(document.getElementById("toast").textContent));
+  const copied = await h.page.evaluate(() => navigator.clipboard.readText());
+  assert.match(copied, /prices_needed/);
+  assert.match(copied, /- Tapacanto|- Bisagra|- Excéntrica|- Tornillo/);
+  assert.doesNotMatch(copied, /- Melamina 18 mm Blanco/); // ya tiene precio al día
+  await h.page.mouse.move(5, 300);
+
+  assert.match(await h.say("¿cuánto cuesta?"), /Va en \$ [\d.]+, y faltan \d+ precios/);
+  assert.match(await h.say("precio lavavajillas 2.000.000"), /No encuentro ese renglón/);
+  assert.match(await h.say("quita el precio de la bisagra"), /Quité el precio/);
+  assert.match(await h.say("quita el precio de la melamina 18 blanco"), /Quité el precio/);
+  await h.page.waitForFunction(() => /precios de ejemplo/.test(document.getElementById("price-sub").textContent));
+  assert.match(await total(), /^US\$ /);
 });
 
 test("tema claro y oscuro cambian los tokens", async ({ h }) => {

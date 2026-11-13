@@ -106,11 +106,13 @@ Configuración para Claude Desktop o Claude Code (`claude mcp add handy -- pnpm 
 }
 ```
 
-Herramientas expuestas hoy: las del mundo (`world_create`, `world_describe`, `world_add_room`, `world_add_opening`, `world_free_runs`, `world_place_cabinet`, `world_place_frame`, `world_update_item`, `world_command`, `world_remove_item`, `world_check`, `world_quote`, `world_cutplan`, `world_assembly`, `world_floor_plan`, `world_export_gltf`) y las de mueble suelto (`design_cabinet`, `cutlist`, `search_prices`, `check_collisions`). Con `HANDY_WORLD` eliges el archivo de tu mundo. Ver [docs/modulos/ia-mcp.md](docs/modulos/ia-mcp.md).
+Herramientas expuestas hoy: las del mundo (`world_create`, `world_describe`, `world_add_room`, `world_add_opening`, `world_free_runs`, `world_place_cabinet`, `world_place_frame`, `world_update_item`, `world_command`, `world_remove_item`, `world_check`, `world_quote`, `world_cutplan`, `world_assembly`, `world_floor_plan`, `world_export_gltf`) las de precios (`prices_needed`, `price_set`, `price_list`, `price_remove`) y las de mueble suelto (`design_cabinet`, `cutlist`, `search_prices`, `check_collisions`). Con `HANDY_WORLD` eliges el archivo de tu mundo. Ver [docs/modulos/ia-mcp.md](docs/modulos/ia-mcp.md).
 
 ### Usar tus precios locales
 
-Copia `packages/core/data/catalog-ejemplo.json`, pon los precios de tu ferretería o distribuidor de tableros y pásalo con `--catalog` o la variable `HANDY_CATALOG`. Los adaptadores a tiendas reales se describen en [docs/modulos/cotizacion.md](docs/modulos/cotizacion.md).
+Handy arranca con un catálogo de ejemplo en dólares, con precios ficticios. Para tener precios reales, anótalos en la barra de órdenes: `precio melamina 18 blanco 185.000 en Madecentro`, `la bisagra vale 4.500 en Homecenter`. O pídeselos a tu IA: ella ve qué falta con `prices_needed`, los busca en tus tiendas y los anota con `price_set`, con tienda, enlace y fecha. Con el primer precio propio, el presupuesto deja el catálogo de ejemplo y marca como faltante lo que aún no tenga precio. Quedan en `precios.json`, junto a tu mundo.
+
+También puedes usar un catálogo completo: copia `packages/core/data/catalog-ejemplo.json`, pon los precios de tu ferretería o distribuidor de tableros y pásalo con `--catalog` o la variable `HANDY_CATALOG`. Los adaptadores a tiendas reales se describen en [docs/modulos/cotizacion.md](docs/modulos/cotizacion.md).
 
 ## Estructura del repositorio
 

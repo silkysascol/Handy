@@ -1,6 +1,7 @@
 import type { FurnitureModel } from "./model/index.js";
 import { buildCutlist, type Cutlist } from "./cutlist.js";
-import type { PriceOffer, PriceProvider } from "./providers/types.js";
+import { unitCost, type PriceOffer, type PriceProvider } from "./providers/types.js";
+import type { PriceNeed } from "./pricebook.js";
 import { planBars } from "./barcut.js";
 
 export interface QuoteLine {
@@ -13,6 +14,14 @@ export interface QuoteLine {
   offer?: PriceOffer;
   /** true si no se encontró precio y la línea queda en 0. */
   missing: boolean;
+  /** Qué precio hace falta para este renglón; con esto se anota uno propio que le sirva. */
+  need: PriceNeed;
+}
+
+/** Cuánto se compra y cuánto cuesta, según la oferta venga por unidad o por paquete (caja, rollo). */
+export function purchase(count: number, offer?: PriceOffer): { qty: number; unit: PriceOffer["unit"] | undefined; total: number } {
+  const qty = offer?.unit === "pack" && offer.packSize ? Math.ceil(count / offer.packSize) : count;
+  return { qty, unit: offer?.unit, total: (offer?.price ?? 0) * qty };
 }
 
 export interface Quote {
@@ -27,7 +36,7 @@ export interface Quote {
 
 async function bestOffer(providers: PriceProvider[], query: Parameters<PriceProvider["search"]>[0]): Promise<PriceOffer | undefined> {
   const results = await Promise.all(providers.map((p) => p.search(query).catch(() => [] as PriceOffer[])));
-  return results.flat().sort((a, b) => a.price - b.price)[0];
+  return results.flat().sort((a, b) => unitCost(a) - unitCost(b))[0];
 }
 
 /**
@@ -59,23 +68,26 @@ export async function buildQuote(model: FurnitureModel, providers: PriceProvider
       total: (offer?.price ?? 0) * m.sheetsEstimate,
       offer,
       missing: !offer,
+      need: { category: "board", unit: "sheet", attributes: { thickness: m.thickness, ...(mat?.finish ? { finish: mat.finish } : {}) } },
     });
   }
 
   for (const [edgeId, meters] of Object.entries(cutlist.edgeBandMeters)) {
     const mat = model.materials.find((x) => x.id === edgeId);
-    const qty = Math.ceil(meters * 1.1);
     const offer = await bestOffer(providers, { category: "edgeband", finish: mat?.finish, region: opts.region });
     note(offer);
+    // Por metro, o por rollo si así lo vende la tienda.
+    const buy = purchase(Math.ceil(meters * 1.1), offer);
     lines.push({
       description: mat?.name ?? edgeId,
       category: "edgeband",
-      qty,
-      unit: "meter",
+      qty: buy.qty,
+      unit: buy.unit ?? "meter",
       unitPrice: offer?.price ?? 0,
-      total: (offer?.price ?? 0) * qty,
+      total: buy.total,
       offer,
       missing: !offer,
+      need: { category: "edgeband", unit: "meter", ...(mat?.finish ? { attributes: { finish: mat.finish } } : {}) },
     });
   }
 
@@ -85,23 +97,24 @@ export async function buildQuote(model: FurnitureModel, providers: PriceProvider
     for (const t of planBars(model.bars).totals) {
       const offer = offers.filter((o) => o.attributes?.profileId === t.profileId).sort((a, b) => a.price - b.price)[0];
       note(offer);
-      lines.push({ description: `${t.profileName} · barra de 6 m`, category: "steel-profile", qty: t.bars, unit: "unit", unitPrice: offer?.price ?? 0, total: (offer?.price ?? 0) * t.bars, offer, missing: !offer });
+      lines.push({ description: `${t.profileName} · barra de 6 m`, category: "steel-profile", qty: t.bars, unit: "unit", unitPrice: offer?.price ?? 0, total: (offer?.price ?? 0) * t.bars, offer, missing: !offer, need: { category: "steel-profile", unit: "unit", attributes: { profileId: t.profileId } } });
     }
   }
 
   for (const h of model.hardware) {
-    const offer = await bestOffer(providers, { category: h.category, text: undefined, region: opts.region });
+    const offer = await bestOffer(providers, { category: h.category, text: undefined, region: opts.region, itemId: h.id });
     note(offer);
-    const packs = offer?.unit === "pack" && offer.packSize ? Math.ceil(h.qty / offer.packSize) : h.qty;
+    const buy = purchase(h.qty, offer);
     lines.push({
       description: h.name,
       category: h.category,
-      qty: packs,
-      unit: offer?.unit ?? "unit",
+      qty: buy.qty,
+      unit: buy.unit ?? "unit",
       unitPrice: offer?.price ?? 0,
-      total: (offer?.price ?? 0) * packs,
+      total: buy.total,
       offer,
       missing: !offer,
+      need: { category: h.category, unit: "unit", itemId: h.id },
     });
   }
 

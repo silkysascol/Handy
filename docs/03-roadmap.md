@@ -26,7 +26,7 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [x] Herramientas MCP `world_*` para que la IA cree, consulte, coloque, revise, cotice y exporte.
 - [x] Intérprete de órdenes en español acotado a la selección (`runCommand`) y funciones para modificar habitaciones, aberturas y muebles con validación.
 - [x] Visor web: clic para seleccionar muro, abertura, mueble o habitación; barra de órdenes; precio en la esquina; avisos; deshacer; importar y exportar; tema claro y oscuro; actualización en vivo cuando la IA cambia el mundo.
-- [x] Pruebas de navegador en el repo (`pnpm e2e`): 21 casos de extremo a extremo con servidor y mundo temporales. `pnpm check` corre todo.
+- [x] Pruebas de navegador en el repo (`pnpm e2e`): 22 casos de extremo a extremo con servidor y mundo temporales. `pnpm check` corre todo.
 - [x] Plano de corte real: piezas acomodadas en tableros con ancho de disco, refilado y veta; despiece imprimible y CSV para la tienda (botón Despiece, `world_cutplan`). La cotización usa esos tableros, no un porcentaje.
 - [x] Pisos: baldosas dibujadas en la habitación, piezas enteras y cortes, cajas según la tienda, pega por formato y material, boquilla, guardaescobas; sumado al precio del mundo (`world_floor_plan`).
 - [x] Más muebles con el mismo generador: divisiones verticales (cuerpos iguales), cajones con correderas (frente visible o interiores tras puertas), barra de colgar con maletero, puertas de 2 por cuerpo. Con eso salen closets, cajoneras y bibliotecas con divisiones. Reglas nuevas: barra larga, closet poco profundo, cajón ancho.
@@ -34,6 +34,7 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [x] Cotas sobre la vista (ancho, alto y espacios a cada lado de lo seleccionado) y manejo con el mouse: arrastrar un mueble o una abertura por su muro con imán a bordes y vecinos, manijas para ancho y alto, flechas para ajustes de 10 y 100 mm, Esc para cancelar.
 - [x] Habitaciones contiguas: una habitación se pega a otra por un punto cardinal y comparten el muro (se dibuja y se exporta una sola vez). Una puerta en el muro compartido se guarda una vez y cuenta para las dos: abre el hueco, bloquea tramos libres y avisa si un mueble la tapa, desde cualquiera de los dos lados. La vista se reencuadra sola y hay botón "Ver todo".
 - [x] Instrucciones de armado: manual imprimible por mueble con inventario de piezas con letra, herrajes repartidos por paso y un dibujo isométrico de líneas por paso (botón Armado, "¿cómo se arma?", `world_assembly`). Tableros y tubo.
+- [x] Precios reales con libro de precios propio (`precios.json`): se anotan escribiendo ("precio melamina 18 blanco 185.000 en Madecentro") o los anota la IA del usuario por MCP (`prices_needed`, `price_set`), con tienda, enlace y fecha. El presupuesto deja el catálogo de ejemplo, marca faltantes y precios viejos, compra por caja o rollo y suma por tienda.
 - [ ] **Cargar la casa real del autor** y anotar lo que falte.
 - [ ] Habitaciones no rectangulares (en L, con columnas o muros inclinados), niveles; importar RoomPlan/LiDAR. Hoy una L se arma con dos rectángulos unidos por un paso.
 - [ ] Muebles sueltos no pegados a un muro; arrastrar de un muro a otro; manija de fondo.

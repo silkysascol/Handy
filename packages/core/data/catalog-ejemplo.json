@@ -4,6 +4,7 @@
   "region": "XX",
   "currency": "USD",
   "updatedAt": "2026-11-05",
+  "example": true,
   "items": [
     {
       "sku": "MEL-18-BLA",

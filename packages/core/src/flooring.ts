@@ -1,5 +1,6 @@
 import type { Millimeters } from "./model/index.js";
 import type { PriceOffer, PriceProvider } from "./providers/types.js";
+import type { PriceNeed } from "./pricebook.js";
 import type { Room } from "./world.js";
 
 /**
@@ -140,14 +141,16 @@ export function planFloor(room: Pick<Room, "width" | "depth" | "openings">, spec
   };
 }
 
-export interface FloorQuoteLine { description: string; category: string; qty: number; unit: PriceOffer["unit"]; unitPrice: number; total: number; offer?: PriceOffer; missing: boolean }
+export interface FloorQuoteLine { description: string; category: string; qty: number; unit: PriceOffer["unit"]; unitPrice: number; total: number; offer?: PriceOffer; missing: boolean; need: PriceNeed }
 
 /** Líneas de cotización de un piso: cajas, sacos de pega y boquilla. Lo que no tiene precio queda marcado. */
 export async function quoteFloor(roomName: string, spec: FloorSpec, plan: FloorPlan, providers: PriceProvider[]): Promise<FloorQuoteLine[]> {
   const search = async (category: string) => (await Promise.all(providers.map((p) => p.search({ category }).catch(() => [] as PriceOffer[])))).flat();
   const sizeOf = (o: PriceOffer) => [Number(o.attributes?.width), Number(o.attributes?.length)].sort((a, b) => a - b).join("x");
   const wanted = [spec.tileWidth, spec.tileLength].sort((a, b) => a - b).join("x");
-  const tile = (await search("tile")).filter((o) => o.attributes?.material === spec.material && sizeOf(o) === wanted).sort((a, b) => a.price - b.price)[0];
+  // Entre tiendas se compara el precio por pieza: las cajas no traen lo mismo.
+  const perPiece = (o: PriceOffer) => o.price / (Number(o.attributes?.piecesPerBox) || plan.piecesPerBox);
+  const tile = (await search("tile")).filter((o) => o.attributes?.material === spec.material && sizeOf(o) === wanted).sort((a, b) => perPiece(a) - perPiece(b))[0];
   const flexible = plan.adhesive.type !== "estándar";
   const adhesive = (await search("tile-adhesive")).filter((o) => Boolean(o.attributes?.flexible) === flexible).sort((a, b) => a.price - b.price)[0];
   const grout = (await search("grout")).sort((a, b) => a.price - b.price)[0];
@@ -155,10 +158,10 @@ export async function quoteFloor(roomName: string, spec: FloorSpec, plan: FloorP
   const perBox = Number(tile?.attributes?.piecesPerBox) || plan.piecesPerBox;
   const boxes = Math.ceil(plan.tilesToBuy / perBox);
   const kind = spec.material === "porcelain" ? "Porcelanato" : "Cerámica";
-  const line = (description: string, category: string, qty: number, unit: PriceOffer["unit"], offer?: PriceOffer): FloorQuoteLine => ({ description, category, qty, unit, unitPrice: offer?.price ?? 0, total: (offer?.price ?? 0) * qty, offer, missing: !offer });
+  const line = (description: string, need: PriceNeed, qty: number, offer?: PriceOffer): FloorQuoteLine => ({ description, category: need.category, qty, unit: need.unit, unitPrice: offer?.price ?? 0, total: (offer?.price ?? 0) * qty, offer, missing: !offer, need });
   return [
-    line(`${roomName} · ${kind} ${spec.tileWidth / 10} x ${spec.tileLength / 10} cm (caja de ${perBox})`, "tile", boxes, "pack", tile),
-    line(`${roomName} · Pega ${plan.adhesive.type} 25 kg`, "tile-adhesive", plan.adhesive.bags25, "unit", adhesive),
-    line(`${roomName} · Boquilla 2 kg`, "grout", plan.grout.bags2, "unit", grout),
+    line(`${roomName} · ${kind} ${spec.tileWidth / 10} x ${spec.tileLength / 10} cm (caja de ${perBox})`, { category: "tile", unit: "pack", attributes: { material: spec.material, width: Math.min(spec.tileWidth, spec.tileLength), length: Math.max(spec.tileWidth, spec.tileLength) } }, boxes, tile),
+    line(`${roomName} · Pega ${plan.adhesive.type} 25 kg`, { category: "tile-adhesive", unit: "unit", attributes: { flexible } }, plan.adhesive.bags25, adhesive),
+    line(`${roomName} · Boquilla 2 kg`, { category: "grout", unit: "unit" }, plan.grout.bags2, grout),
   ];
 }

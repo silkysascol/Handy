@@ -4,7 +4,9 @@
  * el mismo archivo que lee y escribe el servidor MCP. Así lo que hace la IA aparece en vivo en el visor.
  *   GET  /api/world   → el mundo (204 si aún no existe)
  *   PUT  /api/world   → guarda el mundo
- *   GET  /api/events  → Server-Sent Events: avisa cuando el archivo cambia
+ *   GET  /api/prices  → el libro de precios propio (204 si aún no existe)
+ *   PUT  /api/prices  → guarda el libro de precios
+ *   GET  /api/events  → Server-Sent Events: avisa cuando cambia el mundo ("changed") o los precios ("prices")
  */
 import { createServer } from "node:http";
 import { existsSync, mkdirSync, readFileSync, statSync, watchFile, writeFileSync } from "node:fs";
@@ -13,12 +15,14 @@ import { dirname, extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const worldPath = resolve(process.env.HANDY_WORLD ?? join(homedir(), ".handy", "mundo.world.json"));
+const pricesPath = resolve(process.env.HANDY_PRICES ?? join(dirname(worldPath), "precios.json"));
 const dist = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
 const port = Number(process.env.PORT ?? 5174);
 const MIME: Record<string, string> = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png", ".woff2": "font/woff2" };
 
 const clients = new Set<import("node:http").ServerResponse>();
 watchFile(worldPath, { interval: 400 }, () => { for (const c of clients) c.write(`data: changed\n\n`); });
+watchFile(pricesPath, { interval: 400 }, () => { for (const c of clients) c.write(`data: prices\n\n`); });
 
 createServer((req, res) => {
   const url = new URL(req.url ?? "/", "http://localhost");
@@ -44,6 +48,27 @@ createServer((req, res) => {
     });
     return;
   }
+  if (url.pathname === "/api/prices" && req.method === "GET") {
+    if (!existsSync(pricesPath)) { res.writeHead(204, { "x-handy-prices": "none" }).end(); return; }
+    res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }).end(readFileSync(pricesPath));
+    return;
+  }
+  if (url.pathname === "/api/prices" && req.method === "PUT") {
+    const chunks: Buffer[] = [];
+    req.on("data", (c: Buffer) => chunks.push(c));
+    req.on("end", () => {
+      try {
+        const book = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+        if (book?.version !== 1 || typeof book.currency !== "string" || !Array.isArray(book.entries)) throw new Error("No es un libro de precios de Handy");
+        mkdirSync(dirname(pricesPath), { recursive: true });
+        writeFileSync(pricesPath, JSON.stringify(book, null, 2) + "\n");
+        res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ ok: true, path: pricesPath }));
+      } catch (e) {
+        res.writeHead(400, { "content-type": "application/json" }).end(JSON.stringify({ error: (e as Error).message }));
+      }
+    });
+    return;
+  }
   if (url.pathname === "/api/events") {
     res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-store", connection: "keep-alive" });
     res.write(`data: hello\n\n`);
@@ -62,6 +87,6 @@ createServer((req, res) => {
 }).listen(port, function (this: import("node:net").Server) {
   // Con PORT=0 el sistema asigna un puerto libre; se informa el real.
   const actual = (this.address() as import("node:net").AddressInfo).port;
-  console.log(`Handy en http://localhost:${actual}  ·  mundo: ${worldPath}`);
+  console.log(`Handy en http://localhost:${actual}  ·  mundo: ${worldPath}  ·  precios: ${pricesPath}`);
   if (!existsSync(join(dist, "index.html"))) console.log("Aviso: falta construir el visor. Ejecuta: pnpm --filter @handy/web build");
 });

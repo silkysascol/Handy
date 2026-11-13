@@ -12,6 +12,8 @@ export interface ProductQuery {
   finish?: string;
   /** Código de país ISO-3166 (CL, CO, AR, MX, ES, ...) o región de tienda. */
   region?: string;
+  /** Id del herraje concreto, para proveedores que tienen precio por herraje y no solo por categoría. */
+  itemId?: string;
 }
 
 export interface PriceOffer {
@@ -26,7 +28,7 @@ export interface PriceOffer {
   url?: string;
   /** ISO 8601. Las cotizaciones muestran la antigüedad del precio. */
   fetchedAt: string;
-  attributes?: Record<string, string | number | undefined>;
+  attributes?: Record<string, string | number | boolean | undefined>;
   stock?: "in-stock" | "low" | "out" | "unknown";
 }
 
@@ -38,5 +40,10 @@ export interface PriceProvider {
   id: string;
   name: string;
   region: string;
+  /** Catálogo de muestra con precios ficticios: se deja de usar cuando el usuario tiene precios propios. */
+  example?: boolean;
   search(query: ProductQuery): Promise<PriceOffer[]>;
 }
+
+/** Costo por unidad de conteo, para comparar ofertas por paquete con ofertas por unidad. */
+export const unitCost = (o: PriceOffer): number => (o.unit === "pack" && o.packSize ? o.price / o.packSize : o.price);

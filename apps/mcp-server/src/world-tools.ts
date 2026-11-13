@@ -6,10 +6,19 @@ import { z } from "zod";
 import {
   addOpening,
   addRoom,
+  activeProviders,
   assemblyHtml,
   attachRoom,
   buildAssemblyPlan,
   buildCutPlan,
+  createPriceBook,
+  isPriceBook,
+  needKey,
+  parseNeedKey,
+  priceAgeDays,
+  removePrice,
+  setPrice,
+  type PriceBook,
   cutlistCsv,
   cutSheetHtml,
   checkWorld,
@@ -49,10 +58,30 @@ export class WorldStore {
   }
 }
 
+/** Dónde viven los precios propios: junto al mundo, o donde diga HANDY_PRICES. */
+export class PriceStore {
+  constructor(readonly path: string) {}
+  static beside(world: WorldStore): PriceStore { return new PriceStore(resolve(process.env.HANDY_PRICES ?? join(dirname(world.path), "precios.json"))); }
+  load(): PriceBook {
+    if (!existsSync(this.path)) return createPriceBook();
+    const book: unknown = JSON.parse(readFileSync(this.path, "utf8"));
+    if (!isPriceBook(book)) throw new Error(`${this.path} no es un libro de precios de Handy.`);
+    return book;
+  }
+  save(book: PriceBook): void {
+    book.updatedAt = new Date().toISOString();
+    mkdirSync(dirname(this.path), { recursive: true });
+    writeFileSync(this.path, JSON.stringify(book, null, 2) + "\n");
+  }
+}
+
+const today = () => new Date().toISOString().slice(0, 10);
+const UNIT: Record<string, string> = { sheet: "tablero", meter: "metro", unit: "unidad", pack: "caja" };
+
 const wall = z.enum(["north", "east", "south", "west"]).describe("Muro: north, east, south o west");
 const text = (t: string, structuredContent?: Record<string, unknown>) => ({ content: [{ type: "text" as const, text: t }], ...(structuredContent ? { structuredContent } : {}) });
 
-export function registerWorldTools(server: McpServer, providers: PriceProvider[], store: WorldStore = new WorldStore()): void {
+export function registerWorldTools(server: McpServer, providers: PriceProvider[], store: WorldStore = new WorldStore(), prices: PriceStore = PriceStore.beside(store)): void {
   server.registerTool(
     "world_create",
     {
@@ -297,17 +326,102 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
     "world_quote",
     {
       title: "Cotizar el mundo",
-      description: "Cotiza todo el mundo: muebles (tableros según plano de corte, tapacanto, herrajes) y pisos (cajas, pega, boquilla), o solo los muebles indicados. Los precios vienen del catálogo; nunca los inventes ni los ajustes.",
+      description: "Cotiza todo el mundo: muebles (tableros según plano de corte, tapacanto, herrajes, perfiles) y pisos (cajas, pega, boquilla), o solo los muebles indicados. Usa los precios propios del usuario si existen (prices_needed, price_set); si no, un catálogo de ejemplo con precios ficticios. Nunca inventes ni ajustes precios: lo que falte, búscalo y anótalo.",
       inputSchema: { itemIds: z.array(z.string()).optional() },
     },
     async ({ itemIds }) => {
       const world = store.load();
-      const quote = await quoteWorld(world, providers, itemIds);
+      const book = prices.load();
+      const quote = await quoteWorld(world, activeProviders(book, providers), itemIds, { today: today() });
       const lines = quote.lines.map((l) => `${l.description}: ${l.qty} ${l.unit} x ${l.unitPrice} = ${Number(l.total.toFixed(2))}${l.missing ? " (SIN PRECIO)" : ""}${l.offer ? ` · ${l.offer.store} · ${l.offer.fetchedAt}` : ""}`);
+      const source = book.entries.length ? "precios propios del usuario" : "CATÁLOGO DE EJEMPLO, precios ficticios: sirve para comparar opciones, no para comprar";
+      const stores = book.entries.length && quote.byStore.length > 1 ? [`Por tienda: ${quote.byStore.map((s) => `${s.store} ${s.total}`).join(" · ")}`] : [];
       return text(
-        [`Cotización: ${quote.subtotal} ${quote.currency} (muebles ${quote.groups.furniture}, pisos ${quote.groups.floors})${quote.missingCount ? ` · INCOMPLETA: ${quote.missingCount} ítems sin precio` : ""}`, ...lines].join("\n"),
-        { currency: quote.currency, subtotal: quote.subtotal, groups: quote.groups, missingCount: quote.missingCount, lines: quote.lines },
+        [`Cotización: ${quote.subtotal} ${quote.currency} (muebles ${quote.groups.furniture}, pisos ${quote.groups.floors})${quote.missingCount ? ` · INCOMPLETA: ${quote.missingCount} ítems sin precio` : ""} · ${source}${quote.staleCount ? ` · ${quote.staleCount} precios con más de 30 días` : ""}`, ...lines, ...stores].join("\n"),
+        { currency: quote.currency, subtotal: quote.subtotal, groups: quote.groups, missingCount: quote.missingCount, staleCount: quote.staleCount, byStore: quote.byStore, ownPrices: book.entries.length > 0, lines: quote.lines },
       );
+    },
+  );
+
+  server.registerTool(
+    "prices_needed",
+    {
+      title: "Qué precios hacen falta",
+      description: "Lista los renglones del presupuesto del mundo con lo que hay que comprar, su clave (key) y el precio que tienen hoy: tienda, fecha y si está viejo. Úsala antes de buscar precios: busca cada renglón en las tiendas del usuario (por ejemplo Homecenter y Madecentro) con tus propias herramientas de búsqueda y anota lo que encuentres con price_set, pasando la key tal cual.",
+      inputSchema: { onlyMissing: z.boolean().default(false).describe("true = solo los que no tienen precio propio o lo tienen viejo") },
+    },
+    async ({ onlyMissing }) => {
+      const world = store.load();
+      const book = prices.load();
+      const quote = await quoteWorld(world, activeProviders(book, providers), undefined, { today: today() });
+      const seen = new Map<string, { key: string; description: string; category: string; qty: number; countedBy: string; status: string; store?: string; price?: number; seenAt?: string; ageDays?: number; url?: string }>();
+      for (const l of quote.lines) {
+        const key = needKey(l.need);
+        const own = !!l.offer && book.entries.some((e) => e.id === l.offer!.sku);
+        const age = own ? priceAgeDays(l.offer!.fetchedAt, today()) : undefined;
+        const status = !own ? "falta" : age! > 30 ? "viejo" : "al día";
+        const prev = seen.get(key);
+        if (prev) { prev.qty += l.qty; continue; }
+        seen.set(key, { key, description: l.description, category: l.category, qty: l.qty, countedBy: UNIT[l.need.unit], status, ...(own ? { store: l.offer!.store, price: l.offer!.price, seenAt: l.offer!.fetchedAt, ageDays: age, url: l.offer!.url } : {}) });
+      }
+      const all = [...seen.values()];
+      const rows = onlyMissing ? all.filter((r) => r.status !== "al día") : all;
+      const pending = all.filter((r) => r.status !== "al día").length;
+      return text(
+        [`${all.length} renglones; ${pending} sin precio propio al día. Moneda del libro: ${book.currency}.`, ...rows.map((r) => `[${r.status}] ${r.description} · se cuenta por ${r.countedBy}${r.store ? ` · ${r.price} en ${r.store} (${r.seenAt})` : ""}\n  key: ${r.key}`), "Anota cada precio con price_set { key, name, store, price, url }. Si la tienda lo vende por caja, rollo o paquete, pasa packSize con lo que trae."].join("\n"),
+        { currency: book.currency, pending, rows },
+      );
+    },
+  );
+
+  server.registerTool(
+    "price_set",
+    {
+      title: "Anotar un precio visto en una tienda",
+      description: "Guarda en el libro de precios del usuario el precio de un renglón, tal como se vio en la tienda: nombre del producto, tienda, valor, enlace y fecha. La key sale de prices_needed. Anota solo precios que hayas visto de verdad en la página de la tienda o que el usuario te haya dado; nunca estimados. Con el primer precio propio, el presupuesto deja de usar el catálogo de ejemplo.",
+      inputSchema: {
+        key: z.string().describe("Clave del renglón, copiada de prices_needed"),
+        name: z.string().describe("Nombre del producto como aparece en la tienda"),
+        store: z.string().describe("Tienda: Homecenter, Madecentro, ferretería del barrio..."),
+        price: z.number().positive().describe("Precio de la presentación que vende la tienda, en la moneda del libro, sin separadores"),
+        packSize: z.number().positive().optional().describe("Si se vende por caja, rollo o paquete: cuántas unidades, piezas o metros trae"),
+        url: z.string().url().optional().describe("Enlace al producto"),
+        seenAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Día en que se vio el precio (AAAA-MM-DD). Por defecto, hoy"),
+        currency: z.string().length(3).optional().describe("Moneda del libro (por defecto COP). Solo se puede cambiar mientras el libro está vacío"),
+      },
+    },
+    async ({ key, name, store: shop, price, packSize, url, seenAt, currency }) => {
+      const book = prices.load();
+      if (currency && currency.toUpperCase() !== book.currency) {
+        if (book.entries.length) throw new Error(`El libro ya tiene precios en ${book.currency}; no se mezclan monedas.`);
+        book.currency = currency.toUpperCase();
+      }
+      const need = parseNeedKey(key);
+      const entry = setPrice(book, need, { name, store: shop, price, packSize, url, seenAt: seenAt ?? today() });
+      prices.save(book);
+      const per = entry.unit === "pack" ? `${need.unit === "pack" ? "caja" : "paquete"}${packSize ? ` de ${packSize}` : ""}` : UNIT[entry.unit];
+      return text(`Anotado: ${entry.name} a ${entry.price} ${book.currency} por ${per} en ${entry.store} (${entry.seenAt}). Guardado en ${prices.path}.`, { entry, path: prices.path });
+    },
+  );
+
+  server.registerTool(
+    "price_list",
+    { title: "Ver los precios anotados", description: "Todos los precios propios del usuario: producto, tienda, valor, presentación, fecha y enlace.", inputSchema: {} },
+    async () => {
+      const book = prices.load();
+      if (!book.entries.length) return text(`Aún no hay precios propios en ${prices.path}. El presupuesto usa el catálogo de ejemplo.`, { currency: book.currency, entries: [] });
+      return text([`${book.entries.length} precios en ${book.currency}:`, ...book.entries.map((e) => `${e.id}: ${e.name} · ${e.price} por ${e.unit === "pack" ? `paquete${e.packSize ? ` de ${e.packSize}` : ""}` : UNIT[e.unit]} · ${e.store} · ${e.seenAt}${priceAgeDays(e.seenAt, today()) > 30 ? " (viejo)" : ""}${e.url ? ` · ${e.url}` : ""}`)].join("\n"), { currency: book.currency, entries: book.entries });
+    },
+  );
+
+  server.registerTool(
+    "price_remove",
+    { title: "Borrar un precio anotado", description: "Quita un precio del libro del usuario por su id (ver price_list).", inputSchema: { id: z.string() } },
+    async ({ id }) => {
+      const book = prices.load();
+      const gone = removePrice(book, id);
+      prices.save(book);
+      return text(`Quité el precio de ${gone.name} en ${gone.store}.${book.entries.length ? "" : " Ya no quedan precios propios: el presupuesto vuelve al catálogo de ejemplo."}`, { removed: gone });
     },
   );
 

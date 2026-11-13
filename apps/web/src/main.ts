@@ -1,9 +1,9 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
-  adjacentWall, assemblyHtml, buildAssemblyPlan, effectiveOpenings, checkWorld, createWorld, cutSheetHtml, dimensionsFor, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld, snapAlongWall, updateItem, updateOpening, wallCoord, wallPoint, itemBox,
+  activeProviders, adjacentWall, assemblyHtml, buildAssemblyPlan, createPriceBook, effectiveOpenings, isPriceBook, isPriceCommand, needKey, priceAgeDays, runPriceCommand, checkWorld, createWorld, cutSheetHtml, dimensionsFor, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld, snapAlongWall, updateItem, updateOpening, wallCoord, wallPoint, itemBox,
   runCommand, StaticCatalogProvider, wallBoxes, wallLength, wallRects, wallRectToBox, WALL_NAMES,
-  type AABB, type DimLine, type Room, type Selection, type StaticCatalog, type WallSide, type World, type WorldIssue, type WorldQuote,
+  type AABB, type DimLine, type PriceBook, type Room, type Selection, type StaticCatalog, type WallSide, type World, type WorldIssue, type WorldQuote,
 } from "@handy/core";
 import catalogJson from "@handy/core/data/catalog-ejemplo.json";
 
@@ -43,6 +43,35 @@ async function loadWorld(): Promise<void> {
   if (apiAvailable) await saveWorld();
 }
 
+// ---------- Precios propios: lo que tú o tu IA vieron en la tienda ----------
+
+const PRICES_KEY = "handy.prices";
+let book: PriceBook = createPriceBook();
+let lastSavedBook = "";
+const today = () => new Date().toISOString().slice(0, 10);
+
+async function loadPrices(): Promise<void> {
+  try {
+    if (apiAvailable) {
+      const r = await fetch("/api/prices", { cache: "no-store" });
+      if (r.status === 200) { const b = await r.json(); if (isPriceBook(b)) { book = b; lastSavedBook = JSON.stringify(book); } }
+      return;
+    }
+    const raw = localStorage.getItem(PRICES_KEY);
+    if (raw) { const b = JSON.parse(raw); if (isPriceBook(b)) book = b; }
+  } catch { /* sin precios propios todavía */ }
+}
+
+async function savePrices(): Promise<void> {
+  book.updatedAt = new Date().toISOString();
+  const body = JSON.stringify(book);
+  lastSavedBook = body;
+  try { localStorage.setItem(PRICES_KEY, body); } catch { /* sin almacenamiento */ }
+  if (apiAvailable) {
+    try { await fetch("/api/prices", { method: "PUT", headers: { "content-type": "application/json" }, body }); } catch { setSync("sin conexión con el archivo"); }
+  }
+}
+
 const ownSaves: string[] = [];
 async function saveWorld(): Promise<void> {
   world.updatedAt = new Date().toISOString();
@@ -64,6 +93,17 @@ function listenForExternalChanges() {
   setSync("archivo local · en vivo");
   const es = new EventSource("/api/events");
   es.onmessage = async (e) => {
+    if (e.data === "prices") {
+      const r = await fetch("/api/prices", { cache: "no-store" });
+      if (r.status !== 200) return;
+      const incoming = await r.json();
+      if (!isPriceBook(incoming) || JSON.stringify(incoming) === lastSavedBook) return;
+      book = incoming;
+      lastSavedBook = JSON.stringify(book);
+      void renderPrice();
+      toast("Tu IA actualizó los precios.");
+      return;
+    }
     if (e.data !== "changed") return;
     const r = await fetch("/api/world", { cache: "no-store" });
     if (!r.ok) return;
@@ -626,17 +666,45 @@ async function renderPrice() {
   const run = ++quoteRun;
   const hasFloor = world.rooms.some((r) => r.floor);
   if (!world.items.length && !hasFloor) { $("price-total").textContent = "—"; $("price-sub").textContent = "sin muebles ni pisos todavía"; $("price-pop").innerHTML = `<span class="muted">Coloca un mueble o define un piso para ver su costo.</span>`; return; }
-  const q: WorldQuote = await quoteWorld(world, providers);
+  const own = book.entries.length > 0;
+  const q: WorldQuote = await quoteWorld(world, activeProviders(book, providers), undefined, { today: today() });
   if (run !== quoteRun) return;
   lastQuote = q;
   renderProps();
-  $("price-total").textContent = money(q.subtotal, q.currency);
+  const cur = q.currency === "?" ? book.currency : q.currency;
+  $("price-total").textContent = money(q.subtotal, cur);
   const parts = [world.items.length ? `${world.items.length} mueble(s)` : "", hasFloor ? `${world.rooms.filter((r) => r.floor).length} piso(s)` : ""].filter(Boolean).join(" + ");
-  $("price-sub").textContent = `${q.currency} · ${parts}${q.missingCount ? ` · faltan ${q.missingCount} precios` : ""} · ${(catalogJson as StaticCatalog).name}`;
+  $("price-sub").textContent = `${cur} · ${parts}${q.missingCount ? ` · faltan ${q.missingCount} precios` : ""} · ${own ? "tus precios" : "precios de ejemplo"}`;
+  const old = (l: WorldQuote["lines"][number]) => own && l.offer && priceAgeDays(l.offer.fetchedAt, today()) > 30;
+  const where = (l: WorldQuote["lines"][number]) => (own && l.offer ? `<small class="muted"> · ${esc(l.offer.store)}${old(l) ? " · precio viejo" : ""}</small>` : "");
   $("price-pop").innerHTML =
-    (q.groups.furniture && q.groups.floors ? `<span class="pl"><strong>Muebles</strong><span class="num">${money(q.groups.furniture, q.currency)}</span></span><span class="pl"><strong>Pisos</strong><span class="num">${money(q.groups.floors, q.currency)}</span></span>` : "") +
-    q.lines.map((l) => `<span class="pl${l.missing ? " missing" : ""}"><span>${esc(l.description)} × ${l.qty}</span><span class="num">${l.missing ? "sin precio" : money(l.total, q.currency)}</span></span>`).join("") +
-    `<span class="muted">Precios del ${esc(q.oldestPrice ?? "catálogo")}. Tableros según el plano de corte; pisos con reserva incluida.</span>`;
+    (q.groups.furniture && q.groups.floors ? `<span class="pl"><strong>Muebles</strong><span class="num">${money(q.groups.furniture, cur)}</span></span><span class="pl"><strong>Pisos</strong><span class="num">${money(q.groups.floors, cur)}</span></span>` : "") +
+    q.lines.map((l) => `<span class="pl${l.missing ? " missing" : ""}"><span>${esc(l.description)} × ${l.qty}${where(l)}</span><span class="num">${l.missing ? "sin precio" : money(l.total, cur)}</span></span>`).join("") +
+    (own && q.byStore.length > 1 ? `<span class="pl stores"><strong>Por tienda</strong><span></span></span>` + q.byStore.map((s) => `<span class="pl"><span>${esc(s.store)} · ${s.lines} renglón(es)</span><span class="num">${money(s.total, cur)}</span></span>`).join("") : "") +
+    (own
+      ? `<span class="muted">Tus precios${q.oldestPrice ? `, el más viejo del ${esc(q.oldestPrice)}` : ""}.${q.staleCount ? ` ${q.staleCount} con más de 30 días: conviene revisarlos.` : ""}${q.missingCount ? ` Faltan ${q.missingCount}: el total aún no está completo.` : ""}</span>`
+      : `<span class="muted">Precios de ejemplo en dólares, no reales. Anota los tuyos: "precio melamina blanco 185.000 en Madecentro", o pídeselos a tu IA.</span>`) +
+    `<button type="button" class="btn" id="ask-prices">${q.missingCount || !own ? "Copiar lista de precios para mi IA" : "Pedir a mi IA que revise los precios"}</button>`;
+  $("ask-prices").onclick = () => {
+    const wanted = own ? q.lines.filter((l) => l.missing || old(l)) : q.lines;
+    const list = [...new Map((wanted.length ? wanted : q.lines).map((l) => [needKey(l.need), l])).values()].map((l) => `- ${l.description}`).join("\n");
+    void copyForAi(`En mi mundo de Handy "${world.name}" necesito precios reales de hoy. Usa prices_needed para ver las claves, búscalos en Homecenter y Madecentro (Colombia) y anótalos con price_set, con tienda y enlace:\n${list}`);
+  };
+}
+
+/** Anota o borra un precio propio escrito en la barra de órdenes. */
+async function applyPriceCommand(text: string): Promise<boolean> {
+  // "¿cuánto cuesta?" es una pregunta, no un precio que anotar.
+  if (/cu[aá]nto/i.test(text)) {
+    const q = lastQuote;
+    toast(q ? `Va en ${money(q.subtotal, q.currency === "?" ? book.currency : q.currency)}${q.missingCount ? `, y faltan ${q.missingCount} precios por anotar` : ""}. Pasa el mouse por el precio para ver el detalle.` : "Aún no hay nada que cotizar.");
+    return true;
+  }
+  const lines = (lastQuote ?? (await quoteWorld(world, activeProviders(book, providers), undefined, { today: today() }))).lines;
+  const result = runPriceCommand(book, lines, text, today(), (n) => money(n, book.currency));
+  if (result.ok) { await savePrices(); await renderPrice(); }
+  toast(result.message, !result.ok);
+  return result.ok;
 }
 
 function refresh() {
@@ -656,9 +724,20 @@ function toast(message: string, bad = false, aiPrompt?: string) {
   const el = $("toast");
   el.className = `show${bad ? " bad" : ""}`;
   el.innerHTML = esc(message) + (aiPrompt ? `<button type="button" class="btn" id="copy-ai">Copiar para mi IA</button>` : "");
-  if (aiPrompt) $("copy-ai").onclick = () => { void navigator.clipboard?.writeText(aiPrompt); toast("Copiado. Pégalo en tu IA conectada a Handy."); };
+  if (aiPrompt) $("copy-ai").onclick = () => { void copyForAi(aiPrompt); };
   window.clearTimeout(toastTimer);
   toastTimer = window.setTimeout(() => { el.className = ""; }, aiPrompt ? 12000 : 5000);
+}
+
+/** Copia un texto para pegarlo en la IA; si el navegador no deja, lo muestra para copiarlo a mano. */
+async function copyForAi(textToCopy: string): Promise<void> {
+  try {
+    if (!navigator.clipboard) throw new Error("sin portapapeles");
+    await navigator.clipboard.writeText(textToCopy);
+    toast("Copiado. Pégalo en tu IA conectada a Handy.");
+  } catch {
+    window.prompt("Tu navegador no dejó copiar. Copia este texto y pégalo en tu IA:", textToCopy);
+  }
 }
 
 /** Aplica una orden sobre la selección actual, igual si viene de la barra o del teclado. */
@@ -666,6 +745,8 @@ async function applyCommand(text: string, quiet = false): Promise<boolean> {
   const before = JSON.stringify(world);
   const footprint = () => JSON.stringify(world.rooms.map((r) => [r.origin, r.width, r.depth]));
   const shape = footprint();
+  // Los precios no cambian el mundo: van al libro de precios propio.
+  if (isPriceCommand(text)) return applyPriceCommand(text);
   // "¿cómo se arma?" no cambia el mundo: entrega el manual del mueble seleccionado.
   if (/\b(c[oó]mo\s+(se|lo|la)\s+arm|instrucciones|manual\s+de\s+armado|pasos\s+de\s+armado)/i.test(text)) return exportAssembly();
   const result = runCommand(world, selection, text);
@@ -775,6 +856,7 @@ try { const t = localStorage.getItem("handy.theme"); if (t && (THEMES as readonl
 $("theme").textContent = `Tema: ${app.dataset.theme === "auto" ? "auto" : app.dataset.theme === "dark" ? "oscuro" : "claro"}`;
 themeBackground();
 await loadWorld();
+await loadPrices();
 resize();
 refresh();
 frameWorld();
@@ -786,7 +868,7 @@ const toScreen = (v: THREE.Vector3) => {
   return { x: r.left + ((q.x + 1) / 2) * r.width, y: r.top + ((1 - q.y) / 2) * r.height };
 };
 (window as unknown as Record<string, unknown>).__handy = {
-  ready: true, getWorld: () => world, select, getSelection: () => selection,
+  ready: true, getWorld: () => world, select, getSelection: () => selection, getPrices: () => book, getQuote: () => lastQuote,
   /** Punto en pantalla del centro del frente de lo seleccionado, y de sus manijas. */
   selectionScreen: () => { const t = dragTarget(selection); if (!t) return null; const [x, y, z] = wallPoint(t.room, t.wall, t.offset + t.width / 2, t.base + t.height / 2, t.front); return toScreen(new THREE.Vector3(x * M, y * M, z * M)); },
   handleScreen: (kind: string) => { const h = handles.find((m) => m.userData.handle === kind); return h ? toScreen(h.getWorldPosition(new THREE.Vector3())) : null; },
