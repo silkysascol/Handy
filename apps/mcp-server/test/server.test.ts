@@ -112,6 +112,15 @@ describe("Handy MCP server", () => {
     expect(assembly.text).toContain("1. Une el piso y el techo al costado izquierdo [A, D, C");
     expect(assembly.data.steps.length).toBeGreaterThanOrEqual(4);
     expect(readFileSync(assembly.data.html, "utf8")).toContain('<section class="step">');
+    const guided = await call("world_assembly", { itemId, level: "guided" });
+    expect(guided.data.steps.length).toBeGreaterThan(assembly.data.steps.length);
+    expect(guided.text).toMatch(/a\) Extiende todas las piezas/);
+    expect(guided.text).toMatch(/Comprobar: /);
+    expect(readFileSync(guided.data.html, "utf8")).toContain("Plano de perforación");
+    const drilling = await call("world_drilling", { itemId });
+    expect(drilling.text).toMatch(/Costado izquierdo · cara de \d+ x \d+ mm/);
+    expect(drilling.text).toMatch(/línea a \d+ mm desde abajo; taladros a /);
+    expect(drilling.data.sheets.length).toBeGreaterThan(3);
     expect((await call("world_assembly", { itemId: "no-existe" })).isError).toBe(true);
 
     // Precios reales: la IA ve qué falta, anota lo que encontró y el presupuesto deja el catálogo de ejemplo.

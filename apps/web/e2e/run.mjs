@@ -254,7 +254,7 @@ test("flechas mueven 10 mm y con Mayús 100; Esc cancela un arrastre", async ({ 
   assert.equal(offset(), start - 90);
 });
 
-test("el manual de armado sale del mueble seleccionado, con un dibujo por paso", async ({ h }) => {
+test("armado paso a paso en 3D: niveles de detalle, piezas que entran, puntos de herraje y manual imprimible", async ({ h }) => {
   // Con varios muebles y nada seleccionado, pide escoger uno.
   await h.page.keyboard.press("Escape");
   await h.page.evaluate(() => window.__handy.select({ kind: "world" }));
@@ -264,22 +264,86 @@ test("el manual de armado sale del mueble seleccionado, con un dibujo por paso",
   }
   const item = (await h.world()).items.find((i) => i.kind !== "frame");
   await h.page.evaluate((id) => window.__handy.select({ kind: "item", itemId: id }), item.id);
-  const [download] = await Promise.all([h.page.waitForEvent("download"), h.page.click("#export-assembly")]);
-  assert.match(download.suggestedFilename(), new RegExp(`-armado-${item.id}\\.html$`));
+  await h.page.click("#export-assembly");
+  await h.page.waitForSelector("#asm canvas");
+  const st = () => h.page.evaluate(() => window.__handy.assembly().state());
+  const level = (id) => h.page.click(`.seg button[data-level="${id}"]`);
+
+  // Guiado: empieza reconociendo piezas, con el mueble entero a la vista.
+  await level("guided");
+  let s = await st();
+  assert.equal(s.level, "guided");
+  assert.equal(s.title, "Reconoce las piezas y los herrajes");
+  assert.ok(s.visible >= 6 && s.fresh.length === 0);
+  const guidedSteps = s.steps;
+  assert.equal(await h.page.locator("#asm-steps button").count(), guidedSteps);
+
+  // Siguiente: el piso llega al costado acostado, con sus tres herrajes señalados y las acciones con medidas.
+  await h.page.click("#asm-next");
+  s = await st();
+  assert.deepEqual([s.step, s.fresh, s.lying, s.points], [1, ["side-left", "bottom"], true, 3]);
+  assert.ok(s.actions >= 4);
+  const info = await h.page.textContent("#asm-info");
+  assert.match(info, /Paso 2 de \d+/);
+  assert.match(info, /en el costado izquierdo \(A\), en la cara derecha, sobre la línea a \d+ mm desde abajo/);
+  assert.match(info, /Antes de seguir/);
+  assert.equal(await h.page.locator(".asm-tag").count(), 2);
+  // La pieza llega animada y termina en su sitio.
+  await h.page.waitForFunction(() => window.__handy.assembly().state().progress === 1, null, { timeout: 6000 });
+  // El dibujo no está vacío: hay píxeles distintos al fondo.
+  const painted = await h.page.evaluate(() => {
+    const c = document.querySelector("#asm canvas"), probe = document.createElement("canvas");
+    probe.width = 160; probe.height = 100;
+    const g = probe.getContext("2d"); g.drawImage(c, 0, 0, 160, 100);
+    const d = g.getImageData(0, 0, 160, 100).data; const seen = new Set();
+    for (let i = 0; i < d.length; i += 4) seen.add(`${d[i]},${d[i + 1]},${d[i + 2]}`);
+    return seen.size;
+  });
+  assert.ok(painted > 3, `el lienzo del armado parece vacío (${painted} colores)`);
+
+  // Teclado: flechas para avanzar y volver; las teclas no llegan al visor de atrás.
+  const before = JSON.stringify(await h.world());
+  await h.page.keyboard.press("ArrowRight");
+  assert.equal((await st()).step, 2);
+  await h.page.keyboard.press("ArrowLeft");
+  assert.equal((await st()).step, 1);
+  await h.page.keyboard.press("Delete");
+  assert.equal(JSON.stringify(await h.world()), before);
+
+  // Cambiar de nivel conserva el punto del armado; el experto resume en pocas fases sin acciones.
+  await level("normal");
+  s = await st();
+  assert.ok(s.steps < guidedSteps);
+  assert.ok(s.fresh.includes("bottom"));
+  assert.equal(s.actions, 0);
+  await level("expert");
+  s = await st();
+  assert.equal(s.title, "Arma la caja");
+  assert.ok(s.steps <= 4);
+
+  // El manual imprimible sale al nivel elegido y trae el plano de perforación.
+  await level("guided");
+  const [download] = await Promise.all([h.page.waitForEvent("download"), h.page.click("#asm-print")]);
+  assert.match(download.suggestedFilename(), new RegExp(`-armado-${item.id}-guided\\.html$`));
   const html = readFileSync(await download.path(), "utf8");
-  assert.match(html, /Une el piso y el techo al costado izquierdo/);
   const doc = await h.page.context().newPage();
   await doc.setContent(html);
-  const steps = await doc.locator("section.step").count();
-  assert.ok(steps >= 4);
-  // Portada más un dibujo por cada paso que mueve piezas.
-  assert.ok((await doc.locator("svg").count()) >= 5);
-  assert.ok((await doc.locator("svg polygon").count()) > 60);
+  assert.equal(await doc.locator("section.step").count(), guidedSteps);
+  assert.ok((await doc.locator("ol.acts li").count()) > 20);
+  assert.ok((await doc.locator("section.drill svg").count()) >= 4);
+  assert.match(await doc.textContent("body"), /Plano de perforación/);
   assert.equal(await doc.locator("text=NaN").count(), 0);
   await doc.close();
-  // También se pide con palabras.
-  const [again] = await Promise.all([h.page.waitForEvent("download"), h.say("¿cómo se arma?")]);
-  assert.match(again.suggestedFilename(), /-armado-/);
+
+  // Llegar al final cierra; Esc también. Y se abre pidiéndolo con palabras.
+  await h.page.keyboard.press("Escape");
+  await h.page.waitForSelector("#asm", { state: "detached" });
+  assert.equal(await h.page.evaluate(() => window.__handy.assembly()), undefined);
+  await h.page.fill("#cmd-input", "¿cómo se arma?");
+  await h.page.keyboard.press("Enter");
+  await h.page.waitForSelector("#asm canvas");
+  await h.page.click("#asm-close");
+  await h.page.waitForSelector("#asm", { state: "detached" });
 });
 
 test("el despiece descarga un documento con lista de piezas y plano de corte", async ({ h }) => {

@@ -1,10 +1,11 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
-  activeProviders, adjacentWall, assemblyHtml, buildAssemblyPlan, createPriceBook, effectiveOpenings, isPriceBook, isPriceCommand, needKey, priceAgeDays, runPriceCommand, checkWorld, createWorld, cutSheetHtml, dimensionsFor, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld, snapAlongWall, updateItem, updateOpening, wallCoord, wallPoint, itemBox,
+  activeProviders, adjacentWall, createPriceBook, effectiveOpenings, isPriceBook, isPriceCommand, needKey, priceAgeDays, runPriceCommand, checkWorld, createWorld, cutSheetHtml, dimensionsFor, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld, snapAlongWall, updateItem, updateOpening, wallCoord, wallPoint, itemBox,
   runCommand, StaticCatalogProvider, wallBoxes, wallLength, wallRects, wallRectToBox, WALL_NAMES,
   type AABB, type DimLine, type PriceBook, type Room, type Selection, type StaticCatalog, type WallSide, type World, type WorldIssue, type WorldQuote,
 } from "@handy/core";
+import { openAssembly, type AssemblyHandle } from "./assembly-view.js";
 import catalogJson from "@handy/core/data/catalog-ejemplo.json";
 
 // ---------- Estado ----------
@@ -815,14 +816,16 @@ $("export-cut").onclick = () => {
   download(`${fileBase()}-despiece.html`, cutSheetHtml(mergedModel(world), world.name), "text/html");
   toast("Despiece listo: ábrelo e imprímelo para llevarlo a la tienda.");
 };
-/** Manual de armado del mueble seleccionado, o del único que haya. */
+/** Abre el armado paso a paso del mueble seleccionado, o del único que haya. */
+let assembly: AssemblyHandle | undefined;
 function exportAssembly(): boolean {
   const item = selection.kind === "item" ? world.items.find((i) => i.id === (selection as { itemId: string }).itemId) : world.items.length === 1 ? world.items[0] : undefined;
   if (!item) { toast(world.items.length ? "Haz clic en un mueble para ver cómo se arma." : "Aún no hay muebles que armar.", true); return false; }
-  const model = itemModel(item);
-  const plan = buildAssemblyPlan(model);
-  download(`${fileBase()}-armado-${item.id}.html`, assemblyHtml(model, item.name), "text/html");
-  toast(`Manual de armado de ${item.name}: ${plan.steps.length} pasos, unas ${Math.max(1, Math.round(plan.minutes / 30) / 2)} h. Ábrelo e imprímelo.`);
+  assembly?.close();
+  assembly = openAssembly(app, itemModel(item), item.name, (level, html) => {
+    download(`${fileBase()}-armado-${item.id}-${level}.html`, html, "text/html");
+    toast("Manual listo: ábrelo e imprímelo. Al final trae el plano de perforación de cada pieza.");
+  }, () => { assembly = undefined; });
   return true;
 }
 $("export-assembly").onclick = () => { exportAssembly(); };
@@ -868,7 +871,7 @@ const toScreen = (v: THREE.Vector3) => {
   return { x: r.left + ((q.x + 1) / 2) * r.width, y: r.top + ((1 - q.y) / 2) * r.height };
 };
 (window as unknown as Record<string, unknown>).__handy = {
-  ready: true, getWorld: () => world, select, getSelection: () => selection, getPrices: () => book, getQuote: () => lastQuote,
+  ready: true, getWorld: () => world, select, getSelection: () => selection, getPrices: () => book, getQuote: () => lastQuote, assembly: () => assembly,
   /** Punto en pantalla del centro del frente de lo seleccionado, y de sus manijas. */
   selectionScreen: () => { const t = dragTarget(selection); if (!t) return null; const [x, y, z] = wallPoint(t.room, t.wall, t.offset + t.width / 2, t.base + t.height / 2, t.front); return toScreen(new THREE.Vector3(x * M, y * M, z * M)); },
   handleScreen: (kind: string) => { const h = handles.find((m) => m.userData.handle === kind); return h ? toScreen(h.getWorldPosition(new THREE.Vector3())) : null; },

@@ -33,7 +33,9 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [x] Estructuras de tubo cuadrado: mesa y estantería con tablero opcional, soldadas o atornilladas; despiece lineal de barras de 6 m, peso, consumibles y precio; sección de perfiles en el despiece imprimible (`world_place_frame`).
 - [x] Cotas sobre la vista (ancho, alto y espacios a cada lado de lo seleccionado) y manejo con el mouse: arrastrar un mueble o una abertura por su muro con imán a bordes y vecinos, manijas para ancho y alto, flechas para ajustes de 10 y 100 mm, Esc para cancelar.
 - [x] Habitaciones contiguas: una habitación se pega a otra por un punto cardinal y comparten el muro (se dibuja y se exporta una sola vez). Una puerta en el muro compartido se guarda una vez y cuenta para las dos: abre el hueco, bloquea tramos libres y avisa si un mueble la tapa, desde cualquiera de los dos lados. La vista se reencuadra sola y hay botón "Ver todo".
-- [x] Instrucciones de armado: manual imprimible por mueble con inventario de piezas con letra, herrajes repartidos por paso y un dibujo isométrico de líneas por paso (botón Armado, "¿cómo se arma?", `world_assembly`). Tableros y tubo.
+- [x] Armado paso a paso en 3D dentro del visor (botón Armado, "¿cómo se arma?"): piezas que llegan animadas, puntos de herraje señalados, acciones con medidas y comprobaciones, en tres niveles (guiado, normal, experto). Manual imprimible al mismo nivel. Tableros y tubo (`world_assembly`).
+- [x] Uniones calculadas desde la geometría: de ahí salen la cantidad de herrajes, la posición de cada uno y el **plano de perforación** por pieza (`world_drilling`).
+- [x] Plano de corte que prueba 8 acomodos por material y se queda con el que usa menos tableros y deja el retal más grande; el retal se marca en el dibujo.
 - [x] Precios reales con libro de precios propio (`precios.json`): se anotan escribiendo ("precio melamina 18 blanco 185.000 en Madecentro") o los anota la IA del usuario por MCP (`prices_needed`, `price_set`), con tienda, enlace y fecha. El presupuesto deja el catálogo de ejemplo, marca faltantes y precios viejos, compra por caja o rollo y suma por tienda.
 - [ ] **Cargar la casa real del autor** y anotar lo que falte.
 - [ ] Habitaciones no rectangulares (en L, con columnas o muros inclinados), niveles; importar RoomPlan/LiDAR. Hoy una L se arma con dos rectángulos unidos por un paso.
@@ -44,7 +46,7 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 
 ## M1a · "Mi primer mueble": un flujo completo
 
-- [ ] Sistema de unión según herramientas del usuario: minifix con perforación en la tienda (exportar archivo de perforado), minifix o tarugos con plantilla imprimible (Objetos), encaje sin perforar. "Sin tornillos a la vista" predeterminado.
+- [ ] Sistema de unión según herramientas del usuario: el plano de perforación por pieza ya existe (M1); falta exportarlo en el formato de la tienda, la plantilla imprimible (Objetos) y el encaje sin perforar. "Sin tornillos a la vista" predeterminado.
 - [ ] Despiece en el **formato exacto** que reciben Madecentro y Homecenter (veta, cantos por lado, tolerancias): ir a la tienda y validarlo con el operario de la sierra antes de más 3D.
 - [ ] Presupuesto completo: tableros enteros por formato, cantos, herrajes, reserva, con tienda y fecha visibles; renglones editables para lo que el motor no cotiza.
 - [ ] Instrucciones de armado en PDF sin texto, con ampliaciones de herraje y pictogramas (el plan automático y el dibujo de líneas ya están en M1).

@@ -163,3 +163,13 @@ describe("comandos sobre aberturas y habitaciones", () => {
     expect(runCommand(w, { kind: "world" }, "hola")).toMatchObject({ understood: false });
   });
 });
+
+describe("zócalo al crear un mueble", () => {
+  it("sin unidad se lee en centímetros, no en metros", () => {
+    const w = createWorld("Casa");
+    const room = addRoom(w, { name: "Cuarto", width: 4000, depth: 3000, height: 2400 });
+    const r = runCommand(w, { kind: "wall", roomId: room.id, wall: "north" }, "closet de 180 x 220 x 60 con 2 divisiones, barra, 3 cajones, 6 puertas y zócalo de 8");
+    expect(r.ok, r.message).toBe(true);
+    expect((w.items[0].params as { plinthHeight: number }).plinthHeight).toBe(80);
+  });
+});

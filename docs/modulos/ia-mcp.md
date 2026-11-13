@@ -38,7 +38,8 @@ El mundo vive en `~/.handy/mundo.world.json` o donde indique `HANDY_WORLD`. La I
 | `world_check` | Revisa todo: solapes, aberturas tapadas, colisiones al abrir, reglas constructivas. |
 | `world_quote` | Cotización de todo el mundo: muebles (tableros según plano de corte) y pisos. |
 | `world_cutplan` | Acomoda las piezas en tableros y escribe el despiece imprimible y el CSV. |
-| `world_assembly` | Pasos de armado de un mueble, con piezas, herrajes y herramientas por paso; escribe el manual imprimible con dibujos. |
+| `world_assembly` | Pasos de armado de un mueble en tres niveles (`guided`, `normal`, `expert`), con acciones, medidas de cada herraje y comprobaciones; escribe el manual imprimible. |
+| `world_drilling` | Plano de perforación por pieza: herraje, diámetro, profundidad, cara o canto y distancias a los bordes. |
 | `prices_needed` | Renglones del presupuesto con su clave y el precio que tienen hoy: falta, viejo o al día. Es la lista de compras que la IA debe ir a buscar. |
 | `price_set` | Anota un precio visto en una tienda (nombre, tienda, valor, presentación, enlace, fecha) para la clave de un renglón. |
 | `price_list`, `price_remove` | Ver y borrar precios anotados. |

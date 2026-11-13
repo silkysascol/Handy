@@ -37,6 +37,8 @@ export interface SheetPlan {
   pieces: PlacedPiece[];
   /** Porcentaje del tablero ocupado por piezas. */
   usedPct: number;
+  /** El retal rectangular más grande que queda libre y sirve para otro proyecto. */
+  offcut?: { x: Millimeters; y: Millimeters; w: Millimeters; h: Millimeters };
 }
 
 export interface CutPlan {
@@ -47,6 +49,8 @@ export interface CutPlan {
   oversize: { panelId: string; name: string; width: Millimeters; height: Millimeters }[];
   kerf: Millimeters;
   trim: Millimeters;
+  /** Cuántos acomodos distintos se probaron por material antes de quedarse con el mejor. */
+  layoutsTried: number;
 }
 
 interface Piece { panelId: string; name: string; w: number; h: number; canRotate: boolean; rotated: boolean }
@@ -60,7 +64,51 @@ function canRotate(panel: Panel, material?: Material): boolean {
   return !WOODY.test(`${material?.finish ?? ""} ${material?.name ?? ""}`);
 }
 
-function packMaterial(pieces: Piece[], W: number, H: number, kerf: number): { sheets: PlacedPiece[][]; oversize: Piece[] } {
+type Packed = { sheets: PlacedPiece[][]; oversize: Piece[] };
+
+/** Órdenes de entrada que se prueban: cada uno llena distinto las franjas. */
+const ORDERS: ((a: Piece, b: Piece) => number)[] = [
+  (a, b) => b.h - a.h || b.w - a.w,
+  (a, b) => b.w - a.w || b.h - a.h,
+  (a, b) => b.w * b.h - a.w * a.h,
+  (a, b) => Math.max(b.w, b.h) - Math.max(a.w, a.h) || b.w * b.h - a.w * a.h,
+];
+
+/** El retal libre más grande de un tablero: la franja de arriba o la de la derecha, la que tenga más área. */
+function largestOffcut(placed: PlacedPiece[], W: number, H: number, kerf: number): { x: number; y: number; w: number; h: number } | undefined {
+  const maxY = Math.max(0, ...placed.map((p) => p.y + p.h)), maxX = Math.max(0, ...placed.map((p) => p.x + p.w));
+  const top = { x: 0, y: maxY + kerf, w: W, h: H - maxY - kerf }, right = { x: maxX + kerf, y: 0, w: W - maxX - kerf, h: H };
+  const best = top.w * Math.max(top.h, 0) >= right.h * Math.max(right.w, 0) ? top : right;
+  return best.w >= 150 && best.h >= 150 ? best : undefined;
+}
+
+/**
+ * Prueba varios acomodos (cuatro órdenes de entrada, con las franjas a lo ancho y a lo largo del tablero)
+ * y se queda con el que usa menos tableros; si empatan, con el que deja el retal más grande en el último.
+ * Todos son cortes de lado a lado, que es lo que hace una sierra de tableros.
+ */
+function bestPack(pieces: Piece[], W: number, H: number, kerf: number): Packed & { tried: number } {
+  let best: Packed | undefined, bestScore: number[] = [];
+  let tried = 0;
+  for (const across of [false, true]) for (const order of ORDERS) {
+    tried++;
+    let r: Packed;
+    if (!across) r = packMaterial(pieces, W, H, kerf, order);
+    else {
+      // Mismo algoritmo con el tablero acostado: las franjas quedan a lo largo.
+      const t = packMaterial(pieces.map((p) => ({ ...p, w: p.h, h: p.w })), H, W, kerf, order);
+      r = { sheets: t.sheets.map((sh) => sh.map((p) => ({ ...p, x: p.y, y: p.x, w: p.h, h: p.w }))), oversize: t.oversize.map((p) => ({ ...p, w: p.h, h: p.w })) };
+    }
+    const last = r.sheets[r.sheets.length - 1];
+    const off = last ? largestOffcut(last, W, H, kerf) : undefined;
+    const score = [r.oversize.length, r.sheets.length, -(off ? off.w * off.h : 0)];
+    const at = score.findIndex((v, i) => v !== bestScore[i]);
+    if (!best || (at >= 0 && score[at] < bestScore[at])) { best = r; bestScore = score; }
+  }
+  return { ...best!, tried };
+}
+
+function packMaterial(pieces: Piece[], W: number, H: number, kerf: number, order: (a: Piece, b: Piece) => number = ORDERS[0]): Packed {
   const oversize: Piece[] = [];
   const todo: Piece[] = [];
   for (const p of pieces) {
@@ -70,7 +118,7 @@ function packMaterial(pieces: Piece[], W: number, H: number, kerf: number): { sh
     const stand = p.canRotate && ((p.w > p.h && p.w <= H && p.h <= W) || !fits);
     todo.push(stand ? { ...p, w: p.h, h: p.w, rotated: true } : p);
   }
-  todo.sort((a, b) => b.h - a.h || b.w - a.w);
+  todo.sort(order);
 
   const sheets: { strips: Strip[]; usedH: number; placed: PlacedPiece[] }[] = [];
 
@@ -133,17 +181,19 @@ export function buildCutPlan(model: FurnitureModel, options: CutPlanOptions = {}
     groups.set(panel.materialId, g);
   }
 
-  const plan: CutPlan = { sheets: [], totals: [], oversize: [], kerf, trim };
+  const plan: CutPlan = { sheets: [], totals: [], oversize: [], kerf, trim, layoutsTried: 0 };
   for (const [materialId, g] of groups) {
     const sheet = g.material?.sheet ?? fallback;
     const W = sheet.width - 2 * trim, H = sheet.height - 2 * trim;
-    const { sheets, oversize } = packMaterial(g.pieces, W, H, kerf);
+    const { sheets, oversize, tried } = bestPack(g.pieces, W, H, kerf);
+    plan.layoutsTried = Math.max(plan.layoutsTried, tried);
     const name = g.material?.name ?? materialId;
     let usedTotal = 0;
     for (const pieces of sheets) {
       const used = pieces.reduce((a, p) => a + p.w * p.h, 0);
       usedTotal += used;
-      plan.sheets.push({ materialId, materialName: name, thickness: g.thickness, width: sheet.width, height: sheet.height, pieces: pieces.map((p) => ({ ...p, x: p.x + trim, y: p.y + trim })), usedPct: Math.round((used / (sheet.width * sheet.height)) * 100) });
+      const off = largestOffcut(pieces, W, H, kerf);
+      plan.sheets.push({ materialId, materialName: name, thickness: g.thickness, width: sheet.width, height: sheet.height, pieces: pieces.map((p) => ({ ...p, x: p.x + trim, y: p.y + trim })), usedPct: Math.round((used / (sheet.width * sheet.height)) * 100), ...(off ? { offcut: { x: off.x + trim, y: off.y + trim, w: off.w, h: off.h } } : {}) });
     }
     plan.totals.push({ materialId, materialName: name, thickness: g.thickness, sheets: sheets.length, usedPct: sheets.length ? Math.round((usedTotal / (sheets.length * sheet.width * sheet.height)) * 100) : 0 });
     plan.oversize.push(...oversize.map((p) => ({ panelId: p.panelId, name: p.name, width: p.w, height: p.h })));
@@ -168,6 +218,11 @@ export function cutPlanSvg(plan: CutPlan): string {
     body.push(`<text x="${pad}" y="${y + 31}" font-size="12" fill="#56606a">${s.width} x ${s.height} mm · ocupado ${s.usedPct} % · ${s.pieces.length} piezas</text>`);
     const top = y + 42;
     body.push(`<rect x="${pad}" y="${top}" width="${s.width * S}" height="${s.height * S}" fill="#efece4" stroke="#1b1f23" stroke-width="1.5"/>`);
+    if (s.offcut) {
+      const o = s.offcut, ox = pad + o.x * S, oy = top + (s.height - o.y - o.h) * S;
+      body.push(`<rect x="${ox.toFixed(1)}" y="${oy.toFixed(1)}" width="${(o.w * S).toFixed(1)}" height="${(o.h * S).toFixed(1)}" fill="none" stroke="#56606a" stroke-width="1" stroke-dasharray="6 4"/>`);
+      body.push(`<text x="${(ox + (o.w * S) / 2).toFixed(1)}" y="${(oy + (o.h * S) / 2 + 4).toFixed(1)}" font-size="11" text-anchor="middle" fill="#56606a">Retal ${o.w} x ${o.h}</text>`);
+    }
     // Orden de lectura: de arriba a abajo y de izquierda a derecha, como se ve en el dibujo.
     const ordered = [...s.pieces].sort((a, b) => b.y + b.h - (a.y + a.h) || a.x - b.x);
     ordered.forEach((p, i) => {

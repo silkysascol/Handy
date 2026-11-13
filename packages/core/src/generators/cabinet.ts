@@ -9,6 +9,7 @@ import type {
   PanelInstance,
   Placement,
 } from "../model/index.js";
+import { countStructuralFasteners, hingesPerDoor } from "../joints.js";
 
 export interface CabinetParams {
   width: Millimeters;
@@ -82,19 +83,10 @@ const DEFAULT_MATERIALS: Material[] = [
   },
 ];
 
-function hingesPerDoor(doorHeight: Millimeters): number {
-  if (doorHeight <= 900) return 2;
-  if (doorHeight <= 1600) return 3;
-  if (doorHeight <= 2000) return 4;
-  return 5;
-}
+
 
 /** Cantidad de uniones (cam/tornillo) por junta según la profundidad del mueble. */
-function fastenersPerJoint(depth: Millimeters): number {
-  if (depth <= 350) return 2;
-  if (depth <= 600) return 3;
-  return 4;
-}
+
 
 /**
  * Genera un mueble de caja: 2 costados, piso, techo y fondo ranurado, con divisiones verticales,
@@ -270,10 +262,8 @@ export function generateCabinet(params: CabinetParams): FurnitureModel {
     hardware.push({ id: "handle", name: "Tirador o manilla", qty: doors, category: "handle" });
   }
 
-  // Uniones estructurales: techo y piso con costados, zócalo, divisiones y entrepaño fijo.
-  const structuralJoints = 4 + (plinth > 0 ? 2 : 0) + 2 * dividers + (panels.some((p) => p.id === "shelf-fixed") ? 2 : 0) + (panels.find((p) => p.id === "shelf-top")?.qty ?? 0) * 2;
-  const perJoint = fastenersPerJoint(D);
-  const nFasteners = structuralJoints * perJoint;
+  // La cantidad sale de la geometría: cada canto que toca una cara, con herrajes según su largo.
+  const nFasteners = countStructuralFasteners(panels);
   switch (joinery) {
     case "confirmat":
       hardware.push({ id: "confirmat-7x50", name: "Tornillo confirmat 7 x 50 mm", qty: nFasteners, category: "confirmat" });

@@ -125,6 +125,13 @@ const DELETE = /\b(borra|borrar|borral[ao]|quita|quitar|quital[ao]|elimina|elimi
 const fail = (message: string): CommandResult => ({ ok: false, understood: true, message });
 const unknown = (hint: string): CommandResult => ({ ok: false, understood: false, message: `No entendí esa orden. ${hint}` });
 
+/** Alto de zócalo: sin unidad, hasta 20 son centímetros y lo demás milímetros (nadie hace un zócalo de metros). */
+function plinthFrom(t: string): number | undefined {
+  const bare = t.match(new RegExp(`zocalo(?: de| a)? ${NUM}(?![\\d.])(?! ?(?:mm|cm|m))`));
+  if (bare) { const n = Number(bare[1].replace(",", ".")); return n > 20 ? Math.round(n) : Math.round(n * 10); }
+  return lengthAfter(t, "zocalo");
+}
+
 export function runCommand(world: World, selection: Selection, text: string): CommandResult {
   const t = norm(text);
   if (!t) return unknown("Escribe qué quieres cambiar.");
@@ -174,7 +181,7 @@ function wallCommand(world: World, sel: Extract<Selection, { kind: "wall" }>, t:
         dividers: countOf(t, "divisiones|division|divisores|divisor") ?? 0,
         drawers: countOf(t, "cajones|cajon|gavetas?") ?? (/cajonera|comoda/.test(t) ? Math.max(1, Math.floor((height - 40) / 200)) : 0),
         hangingBar: /\b(barra|tubo|colgar|colgador)\b/.test(t) && !/sin (barra|tubo)/.test(t),
-        plinthHeight: lengthAfter(t, "zocalo") ?? 0,
+        plinthHeight: plinthFrom(t) ?? 0,
       },
     });
     return { ok: true, understood: true, select: { kind: "item", itemId: item.id }, message: `${item.name} de ${width} x ${height} x ${depth} mm en el ${WALL_NAMES[sel.wall]}, ${describeAnchor(anchor, offset)}${elevation ? `, a ${elevation} mm del piso` : ""}.` };

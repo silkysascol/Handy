@@ -28,7 +28,7 @@ writeFileSync(join(out, "apartamento-demo.gltf"), exportGltf(w));
 writeFileSync(join(out, "apartamento-demo-despiece.html"), cutSheetHtml(mergedModel(w), w.name));
 // Manual de armado del primer mueble de tablero, como ejemplo.
 const sample = w.items.find((i) => i.kind !== "frame");
-if (sample) writeFileSync(join(out, "apartamento-demo-armado.html"), assemblyHtml(itemModel(sample), sample.name));
+if (sample) writeFileSync(join(out, "apartamento-demo-armado.html"), assemblyHtml(itemModel(sample), sample.name, "guided"));
 console.log(describeWorld(w));
 console.log("\nRevisión:");
 const issues = checkWorld(w);

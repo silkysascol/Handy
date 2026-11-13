@@ -17,3 +17,4 @@ export * from "./generators/frame.js";
 export * from "./dimensions.js";
 export * from "./assembly.js";
 export * from "./pricebook.js";
+export * from "./joints.js";

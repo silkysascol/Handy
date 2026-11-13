@@ -12,6 +12,7 @@ import {
   buildAssemblyPlan,
   buildCutPlan,
   createPriceBook,
+  drillSheets,
   isPriceBook,
   needKey,
   parseNeedKey,
@@ -448,7 +449,31 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
     "world_assembly",
     {
       title: "Instrucciones de armado",
-      description: "Pasos para armar un mueble del mundo, en orden: qué piezas entran en cada paso, con qué herrajes y herramientas, y cuánto tarda. Escribe además un manual imprimible (HTML) con un dibujo por paso, al estilo de los muebles para armar.",
+      description: "Pasos para armar un mueble del mundo, en orden: qué piezas entran en cada paso, con qué herrajes y herramientas, dónde va cada herraje (con medidas) y qué comprobar. Tres niveles: guided (una pieza por paso, cada acción escrita; para quien nunca ha armado), normal y expert (solo orden y cantidades). Escribe además un manual imprimible (HTML) con un dibujo por paso y el plano de perforación de cada pieza. En el visor, el botón Armado lo muestra en 3D paso a paso.",
+      inputSchema: { itemId: z.string(), level: z.enum(["guided", "normal", "expert"]).default("normal").describe("Nivel de detalle") },
+    },
+    async ({ itemId, level }) => {
+      const world = store.load();
+      const item = world.items.find((i) => i.id === itemId);
+      if (!item) throw new Error(`No hay ningún mueble con id "${itemId}". Muebles: ${world.items.map((i) => i.id).join(", ") || "ninguno"}.`);
+      const model = itemModel(item);
+      const plan = buildAssemblyPlan(model, level);
+      const base = store.path.replace(/(\.world)?\.json$/, "");
+      mkdirSync(dirname(base), { recursive: true });
+      const html = `${base}-armado-${item.id}-${level}.html`;
+      writeFileSync(html, assemblyHtml(model, item.name, level));
+      const letter = new Map(plan.parts.map((p) => [p.id, p.letter]));
+      const lines = plan.steps.map((s) => [`${s.n}. ${s.title}${s.partIds.length ? ` [${s.partIds.map((id) => letter.get(id)).join(", ")}]` : ""}. ${s.text}${s.hardware.length ? ` Herrajes: ${s.hardware.map((h) => `${h.qty} × ${h.name}`).join("; ")}.` : ""}`, ...s.actions.map((a, i) => `   ${String.fromCharCode(97 + (i % 26))}) ${a}`), ...s.checks.map((c) => `   Comprobar: ${c}`)].join("\n"));
+      const parts = plan.parts.map((p) => `${p.letter} ${p.name} × ${p.qty} (${p.size})`).join("; ");
+      return text([`Armado de ${item.name}: ${plan.steps.length} pasos, unos ${plan.minutes} min. Nivel ${level}.`, `Piezas: ${parts}.`, `Herramientas: ${plan.tools.join(", ") || "ninguna especial"}.`, ...lines, `Manual imprimible en ${html}`].join("\n"), { ...plan, html });
+    },
+  );
+
+  server.registerTool(
+    "world_drilling",
+    {
+      title: "Plano de perforación",
+      description: "Dónde va cada perforación de un mueble de tablero, pieza por pieza: qué herraje, diámetro, profundidad, en qué cara o canto y a qué distancia de cada borde. Sirve para pedir las piezas perforadas en la tienda o para marcar en casa. Sale de las mismas uniones con las que se cuentan los herrajes.",
       inputSchema: { itemId: z.string() },
     },
     async ({ itemId }) => {
@@ -456,15 +481,9 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
       const item = world.items.find((i) => i.id === itemId);
       if (!item) throw new Error(`No hay ningún mueble con id "${itemId}". Muebles: ${world.items.map((i) => i.id).join(", ") || "ninguno"}.`);
       const model = itemModel(item);
-      const plan = buildAssemblyPlan(model);
-      const base = store.path.replace(/(\.world)?\.json$/, "");
-      mkdirSync(dirname(base), { recursive: true });
-      const html = `${base}-armado-${item.id}.html`;
-      writeFileSync(html, assemblyHtml(model, item.name));
-      const letter = new Map(plan.parts.map((p) => [p.id, p.letter]));
-      const lines = plan.steps.map((s) => `${s.n}. ${s.title}${s.partIds.length ? ` [${s.partIds.map((id) => letter.get(id)).join(", ")}]` : ""}. ${s.text}${s.hardware.length ? ` Herrajes: ${s.hardware.map((h) => `${h.qty} × ${h.name}`).join("; ")}.` : ""}`);
-      const parts = plan.parts.map((p) => `${p.letter} ${p.name} × ${p.qty} (${p.size})`).join("; ");
-      return text([`Armado de ${item.name}: ${plan.steps.length} pasos, unos ${plan.minutes} min.`, `Piezas: ${parts}.`, `Herramientas: ${plan.tools.join(", ") || "ninguna especial"}.`, ...lines, `Manual imprimible en ${html}`].join("\n"), { ...plan, html });
+      if (model.bars?.length) throw new Error(`${item.name} es una estructura de tubo: no lleva plano de perforación de tableros.`);
+      const sheets = drillSheets(model);
+      return text([`Perforaciones de ${item.name} (unión ${model.joinery}): ${sheets.length} planos.`, ...sheets.map((d) => [`${d.name}${d.copies > 1 ? ` × ${d.copies} iguales` : ""} · cara de ${d.width} x ${d.height} mm`, ...d.lines.map((l) => `  ${l}`)].join("\n"))].join("\n"), { sheets: sheets.map(({ marks, ...rest }) => ({ ...rest, holes: marks.length })) });
     },
   );
 
