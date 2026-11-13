@@ -6,6 +6,7 @@ import { z } from "zod";
 import {
   addOpening,
   addRoom,
+  attachRoom,
   buildCutPlan,
   cutlistCsv,
   cutSheetHtml,
@@ -82,7 +83,7 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
     "world_add_room",
     {
       title: "Agregar habitación",
-      description: "Agrega una habitación rectangular. width es el largo de los muros norte y sur (eje X), depth el de este y oeste (eje Z). origin ubica la esquina interior noroeste en el plano de la casa. Medidas en mm.",
+      description: "Agrega una habitación rectangular, suelta o pegada a otra con attachTo y side (comparten muro). width es el largo de los muros norte y sur (eje X), depth el de este y oeste (eje Z). origin ubica la esquina interior noroeste en el plano de la casa. Medidas en mm.",
       inputSchema: {
         name: z.string(),
         width: z.number().int().min(500).max(30000),
@@ -91,13 +92,17 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
         wallThickness: z.number().int().min(50).max(600).default(150).describe("Grosor de los cuatro muros; luego se puede afinar por muro"),
         originX: z.number().int().default(0),
         originZ: z.number().int().default(0),
+        attachTo: z.string().optional().describe("Id de una habitación existente a la que se pega la nueva, compartiendo muro. Si viene, se ignoran originX y originZ."),
+        side: wall.optional().describe("Con attachTo: lado de la habitación existente donde queda la nueva"),
+        shift: z.number().int().default(0).describe("Con attachTo: desplazamiento a lo largo del muro compartido, desde su extremo oeste o norte"),
       },
     },
-    async ({ name, width, depth, height, wallThickness, originX, originZ }) => {
+    async ({ name, width, depth, height, wallThickness, originX, originZ, attachTo, side, shift }) => {
       const world = store.load();
-      const room = addRoom(world, { name, width, depth, height, wallThickness, origin: [originX, originZ] });
+      if (attachTo && !side) throw new Error("Con attachTo indica también side (north, east, south o west).");
+      const room = attachTo ? attachRoom(world, { name, width, depth, height, wallThickness, to: attachTo, side: side!, shift }) : addRoom(world, { name, width, depth, height, wallThickness, origin: [originX, originZ] });
       store.save(world);
-      return text(`Habitación "${room.name}" (id: ${room.id}) agregada: ${width} x ${depth} x ${height} mm.`, { room });
+      return text(`Habitación "${room.name}" (id: ${room.id}) agregada: ${width} x ${depth} x ${height} mm${attachTo ? `, pegada al ${WALL_NAMES[side!]} de ${attachTo}; las puertas entre las dos se ponen en ese muro` : ""}.`, { room });
     },
   );
 

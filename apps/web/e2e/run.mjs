@@ -85,6 +85,25 @@ test("un cambio externo al archivo (la IA por MCP) aparece solo", async ({ h, ap
   assert.equal(await h.page.locator(".node", { hasText: "Estante IA" }).count(), 1);
 });
 
+test("habitaciones contiguas: comparten muro y la puerta entre ellas se ve desde las dos", async ({ h, app }) => {
+  await h.page.evaluate("window.__handy.select({ kind: 'world' })");
+  assert.match(await h.say("baño de 1,5 x 2,2 al sur de la cocina"), /Baño: 1500 x 2200 x 2400 mm, al sur de Cocina, compartiendo su muro sur/);
+  const bano = () => app.readWorld().rooms.find((r) => r.id === "bano");
+  assert.equal(bano().wallThickness.north, 0);
+  assert.equal(await h.page.locator(".node", { hasText: "Muro norte · con Cocina" }).count(), 1);
+  // La vista se reencuadra sola: el baño nuevo queda dentro de la pantalla.
+  await h.page.evaluate("window.__handy.select({ kind: 'room', roomId: 'bano' })");
+  const labels = await h.page.locator("#dims .dim").evaluateAll((els) => els.filter((e) => e.style.display !== "none").length);
+  assert.ok(labels >= 2, "las cotas del baño deberían verse en pantalla");
+  await h.pick("Muro norte · con Cocina");
+  assert.match(await h.page.textContent("#props"), /Compartido conCocina/);
+  assert.match(await h.say("puerta de 70 x 205 a 30 cm de la derecha"), /Puerta de 700 x 2050 mm en el muro norte, a 500 mm de la izquierda/);
+  assert.equal(bano().openings.length, 1);
+  // Desde la cocina, el mismo muro pierde ese tramo: antes ofrecía de 0 a 1.800 y ahora la puerta empieza en 1.600.
+  await h.pick("Muro sur · con Baño");
+  assert.match(await h.page.textContent("#props"), /Tramos libres0–1\.600/);
+});
+
 test("sin nada seleccionado se crea una habitación", async ({ h }) => {
   await h.page.evaluate("window.__handy.select({ kind: 'world' })");
   assert.match(await h.say("estudio de 3 x 2,5 m"), /Estudio: 3000 x 2500/);

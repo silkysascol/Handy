@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
-  checkWorld, createWorld, cutSheetHtml, dimensionsFor, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld, snapAlongWall, updateItem, updateOpening, wallCoord, wallPoint, itemBox,
+  adjacentWall, effectiveOpenings, checkWorld, createWorld, cutSheetHtml, dimensionsFor, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld, snapAlongWall, updateItem, updateOpening, wallCoord, wallPoint, itemBox,
   runCommand, StaticCatalogProvider, wallBoxes, wallLength, wallRects, wallRectToBox, WALL_NAMES,
   type AABB, type DimLine, type Room, type Selection, type StaticCatalog, type WallSide, type World, type WorldIssue, type WorldQuote,
 } from "@handy/core";
@@ -135,18 +135,23 @@ function buildScene() {
     }
 
     for (const wall of SIDES) {
-      for (const r of wallRects(room, wall)) {
-        const m = box(wallRectToBox(room, wall, r), COLORS.wall, { sel: { kind: "wall", roomId: room.id, wall }, ghostSides: [wall], roomId: room.id });
+      // Un muro compartido lo dibuja su dueña; de este lado no tiene grosor.
+      if (room.wallThickness[wall] <= 0) continue;
+      const shared = !!adjacentWall(world, room, wall);
+      const openings = effectiveOpenings(world, room, wall);
+      for (const r of wallRects(room, wall, openings)) {
+        // Los muros compartidos no se atenúan: son la pared del fondo de la habitación vecina.
+        const m = box(wallRectToBox(room, wall, r), COLORS.wall, { sel: { kind: "wall", roomId: room.id, wall }, ...(shared ? {} : { ghostSides: [wall] }), roomId: room.id });
         content.add(m); pickables.push(m);
       }
-      for (const o of room.openings.filter((x) => x.wall === wall)) {
+      for (const o of openings) {
         const full = wallRectToBox(room, wall, { u0: o.offset, u1: o.offset + o.width, y0: o.sill, y1: o.sill + o.height });
         // Hoja delgada en el centro del muro: hace visible y seleccionable la abertura.
         const axis = wall === "north" || wall === "south" ? 2 : 0;
         const mid = (full.min[axis] + full.max[axis]) / 2;
         const leaf: AABB = { min: [...full.min] as AABB["min"], max: [...full.max] as AABB["max"] };
         leaf.min[axis] = mid - 15; leaf.max[axis] = mid + 15;
-        const m = box(leaf, o.type === "window" ? COLORS.window : COLORS.opening, { sel: { kind: "opening", roomId: room.id, openingId: o.id }, ghostSides: [wall], roomId: room.id }, { opacity: o.type === "window" ? 0.45 : o.type === "door" ? 0.75 : 0.2 });
+        const m = box(leaf, o.type === "window" ? COLORS.window : COLORS.opening, { sel: { kind: "opening", roomId: o.ownerRoomId, openingId: o.id }, ...(shared ? {} : { ghostSides: [wall] }), roomId: room.id }, { opacity: o.type === "window" ? 0.45 : o.type === "door" ? 0.75 : 0.2 });
         content.add(m); pickables.push(m);
       }
     }
@@ -154,7 +159,7 @@ function buildScene() {
       ["north", "west", ox - t.west, ox, oz - t.north, oz], ["north", "east", ox + room.width, ox + room.width + t.east, oz - t.north, oz],
       ["south", "west", ox - t.west, ox, oz + room.depth, oz + room.depth + t.south], ["south", "east", ox + room.width, ox + room.width + t.east, oz + room.depth, oz + room.depth + t.south],
     ];
-    for (const [a, b, x0, x1, z0, z1] of corners) content.add(box({ min: [x0, 0, z0], max: [x1, room.height, z1] }, COLORS.wall, { ghostSides: [a, b], roomId: room.id }));
+    for (const [a, b, x0, x1, z0, z1] of corners) if (x1 > x0 && z1 > z0) content.add(box({ min: [x0, 0, z0], max: [x1, room.height, z1] }, COLORS.wall, { ghostSides: [a, b], roomId: room.id }));
 
     for (const item of world.items.filter((i) => i.roomId === room.id)) {
       const tr = itemTransform(room, item);
@@ -191,9 +196,18 @@ function buildScene() {
 
 const sameSel = (a: Selection | undefined, b: Selection) => !!a && JSON.stringify(a) === JSON.stringify(b);
 
+/** La misma pared vista desde la habitación vecina, si la selección es un muro compartido. */
+function sharedAlias(sel: Selection): Selection | null {
+  if (sel.kind !== "wall") return null;
+  const room = world.rooms.find((r) => r.id === sel.roomId);
+  const adj = room && adjacentWall(world, room, sel.wall);
+  return adj ? { kind: "wall", roomId: adj.room.id, wall: adj.wall } : null;
+}
+
 function applyHighlight() {
+  const alias = sharedAlias(selection);
   for (const m of pickables) {
-    const selected = sameSel(m.userData.sel as Selection | undefined, selection);
+    const selected = sameSel(m.userData.sel as Selection | undefined, selection) || (!!alias && sameSel(m.userData.sel as Selection | undefined, alias));
     m.material.color.setHex(selected ? COLORS.accent : (m.userData.baseColor as number));
     m.material.emissive.setHex(selected ? 0x4a2a08 : 0x000000);
   }
@@ -228,7 +242,7 @@ function frameWorld() {
   const b = new THREE.Box3().setFromObject(content);
   if (b.isEmpty()) { camera.position.set(4, 5, 6); controls.target.set(0, 0, 0); return; }
   const c = b.getCenter(new THREE.Vector3()), size = b.getSize(new THREE.Vector3());
-  const d = Math.max(size.x, size.z) * 1.15 + 2;
+  const d = Math.max(size.x, size.z) * 1.3 + 2;
   controls.target.set(c.x, 0.8, c.z);
   camera.position.set(c.x - d * 0.25, d * 0.95, c.z + d * 0.85);
 }
@@ -420,7 +434,15 @@ window.addEventListener("pointerup", async (e) => {
   raycaster.setFromCamera(pointerNdc(e), camera);
   if (raycaster.intersectObjects(handles, false)[0]) return;
   const hit = raycaster.intersectObjects(pickables.filter((m) => !m.userData.ghost), false)[0];
-  select((hit?.object.userData.sel as Selection | undefined) ?? { kind: "world" });
+  let picked = (hit?.object.userData.sel as Selection | undefined) ?? { kind: "world" as const };
+  if (picked.kind === "wall") {
+    // Un muro compartido se toma del lado desde el que se está mirando, para que izquierda y derecha coincidan con lo que se ve.
+    const wallSel = picked;
+    const room = world.rooms.find((r) => r.id === wallSel.roomId);
+    const adj = room && adjacentWall(world, room, wallSel.wall);
+    if (room && adj && wallCoord(room, wallSel.wall, camera.position.x / M, camera.position.z / M).inset < 0) picked = { kind: "wall", roomId: adj.room.id, wall: adj.wall };
+  }
+  select(picked);
   $<HTMLInputElement>("cmd-input").focus();
 });
 
@@ -479,7 +501,7 @@ const PLACEHOLDER: Record<Selection["kind"], string> = {
 };
 
 const EXAMPLES: Record<Selection["kind"], string[]> = {
-  world: ["cocina de 2,8 x 2,4 m", "habitación Estudio de 3 x 3 x 2,6 m"],
+  world: ["cocina de 2,8 x 2,4 m", "baño de 1,5 x 2,2 al este de la cocina", "estudio de 3 x 3 al sur de la sala desplazado 50 cm"],
   room: ["piso de porcelanato 60 x 60", "piso de cerámica 45 x 45 trabado", "junta 3", "quita el piso", "alto 2,6 m", "ancho 4 m"],
   wall: ["pon una puerta de 80 x 205 a 2 m de la izquierda", "ventana de 120 x 100 centrada, antepecho 110", "armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas", "closet de 180 x 220 x 60 con 2 divisiones, barra y 3 cajones", "cajonera de 80 x 90 x 50", "mesa de tubo de 120 x 75 x 60", "estantería metálica de 100 x 200 x 40 con 5 niveles", "alacena de 900 x 700 x 350 a 1,5 m del piso con 2 puertas", "grosor 20 cm"],
   opening: ["muévela 20 cm a la derecha", "a 1 m de la izquierda", "90 x 210", "céntrala", "quítala"],
@@ -499,7 +521,8 @@ function renderTree() {
   for (const room of world.rooms) {
     html += node(room.name, `${fmt(room.width)} × ${fmt(room.depth)}`, 0, { kind: "room", roomId: room.id });
     for (const wall of SIDES) {
-      html += node(cap(WALL_NAMES[wall]), fmt(wallLength(room, wall)), 1, { kind: "wall", roomId: room.id, wall });
+      const adj = adjacentWall(world, room, wall);
+      html += node(cap(WALL_NAMES[wall]) + (adj ? ` · con ${adj.room.name}` : ""), fmt(wallLength(room, wall)), 1, { kind: "wall", roomId: room.id, wall });
       for (const o of room.openings.filter((x) => x.wall === wall)) html += node(o.type === "window" ? "Ventana" : o.type === "door" ? "Puerta" : "Paso", `${fmt(o.width)} × ${fmt(o.height)}`, 2, { kind: "opening", roomId: room.id, openingId: o.id });
       for (const i of world.items.filter((x) => x.roomId === room.id && x.wall === wall)) html += node(i.name, `${fmt(i.params.width)} × ${fmt(i.params.height)}`, 2, { kind: "item", itemId: i.id });
     }
@@ -538,7 +561,9 @@ function renderProps() {
   } else if (s.kind === "wall") {
     const r = world.rooms.find((x) => x.id === s.roomId)!;
     const runs = freeWallRuns(world, r.id, { height: 900, minLength: 200 }).filter((x) => x.wall === s.wall);
-    body = kv("Largo", `${fmt(wallLength(r, s.wall))} mm`) + kv("Grosor", `${fmt(r.wallThickness[s.wall])} mm`) + kv("Altura", `${fmt(r.height)} mm`) + kv("Izquierda", `esquina con el ${WALL_NAMES[LEFT_OF[s.wall]]}`) +
+    const adj = adjacentWall(world, r, s.wall);
+    const thickness = r.wallThickness[s.wall] > 0 || !adj ? `${fmt(r.wallThickness[s.wall])} mm` : `${fmt(adj.room.wallThickness[adj.wall])} mm · es de ${adj.room.name}`;
+    body = kv("Largo", `${fmt(wallLength(r, s.wall))} mm`) + kv("Grosor", thickness) + (adj ? kv("Compartido con", adj.room.name) : "") + kv("Altura", `${fmt(r.height)} mm`) + kv("Izquierda", `esquina con el ${WALL_NAMES[LEFT_OF[s.wall]]}`) +
       kv("Tramos libres", runs.map((x) => `${fmt(x.from)}–${fmt(x.to)}`).join(" · ") || "ninguno") + `<p class="note">Las distancias se miden desde la izquierda mirando el muro desde dentro de la habitación.</p>`;
   } else if (s.kind === "opening") {
     const r = world.rooms.find((x) => x.id === s.roomId)!;
@@ -633,12 +658,16 @@ function toast(message: string, bad = false, aiPrompt?: string) {
 /** Aplica una orden sobre la selección actual, igual si viene de la barra o del teclado. */
 async function applyCommand(text: string, quiet = false): Promise<boolean> {
   const before = JSON.stringify(world);
+  const footprint = () => JSON.stringify(world.rooms.map((r) => [r.origin, r.width, r.depth]));
+  const shape = footprint();
   const result = runCommand(world, selection, text);
   if (result.ok) {
     history.push(before);
     if (result.select !== undefined) selection = result.select ?? { kind: "world" };
     await saveWorld();
     refresh();
+    // Si la casa cambió de tamaño o forma, se vuelve a encuadrar para que no quede fuera de la vista.
+    if (footprint() !== shape) frameWorld();
     toast(result.message);
     return true;
   }
@@ -679,6 +708,7 @@ async function undo() {
   toast("Deshecho.");
 }
 $("undo").onclick = () => void undo();
+$("frame").onclick = () => frameWorld();
 window.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "z" && document.activeElement?.id !== "cmd-input") { e.preventDefault(); void undo(); } });
 
 function download(name: string, text: string, type: string) {

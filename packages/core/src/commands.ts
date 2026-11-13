@@ -3,7 +3,7 @@ import { defaultFloorSpec, planFloor, type FloorSpec } from "./flooring.js";
 import type { FrameOptions } from "./generators/frame.js";
 import { profileBySide } from "./profiles.js";
 import {
-  addOpening, addRoom, getRoom, itemModel, placeCabinet, removeItem, removeOpening, updateItem, updateOpening, updateRoom,
+  addOpening, addRoom, attachRoom, getRoom, itemModel, placeCabinet, removeItem, removeOpening, updateItem, updateOpening, updateRoom,
   wallLength, WALL_NAMES, type WallSide, type World,
 } from "./world.js";
 
@@ -134,7 +134,7 @@ export function runCommand(world: World, selection: Selection, text: string): Co
       case "item": return itemCommand(world, selection, t);
       case "opening": return openingCommand(world, selection, t);
       case "room": return roomCommand(world, selection, t);
-      case "world": return worldCommand(world, t);
+      case "world": return worldCommand(world, t, text);
     }
   } catch (e) {
     return fail((e as Error).message);
@@ -377,11 +377,36 @@ function roomCommand(world: World, sel: Extract<Selection, { kind: "room" }>, t:
   return unknown('En una habitación puedes: "piso de porcelanato 60 x 60", "piso de cerámica 45 x 45 trabado", "junta 2", "3,6 x 3,2 m", "alto 2,6 m", "grosor 15 cm". Para puertas, ventanas y muebles, selecciona el muro.');
 }
 
-function worldCommand(world: World, t: string): CommandResult {
+/** Nombre de la habitación tal como lo escribió el usuario (con tildes y eñes), sin las palabras de relleno. */
+function roomNameFrom(raw: string): string {
+  const FILLER = /^(agrega|anade|crea|nuev[ao]|pon|un|una|habitacion|cuarto|pieza|recinto|espacio|llamad[ao]|de|del|la|el)$/;
+  const STOP = /^(al|a|hacia|en|norte|sur|este|oriente|oeste|occidente|derecha|izquierda|arriba|abajo|junto|pegad[ao]|lado)$/;
+  const words: string[] = [];
+  for (const w of raw.trim().split(/\s+/)) {
+    const n = norm(w).replace(/[^a-z0-9]/g, "");
+    if (/\d/.test(n) || STOP.test(n)) break;
+    if (n && !FILLER.test(n)) words.push(w.replace(/[,.;:]/g, ""));
+  }
+  const name = words.join(" ");
+  return name ? name.charAt(0).toUpperCase() + name.slice(1) : "";
+}
+
+function worldCommand(world: World, t: string, raw: string): CommandResult {
   const dims = parseDims(t);
-  if (!dims) return unknown('Sin nada seleccionado puedes crear una habitación: "cocina de 2,8 x 2,4 m" o "habitación Estudio de 3 x 3 x 2,6 m". Para lo demás, haz clic en un muro, un mueble o una abertura.');
-  const before = t.slice(0, t.search(/\d/)).replace(/\b(agrega|anade|crea|nuev[ao]|pon|un|una|habitacion|cuarto|pieza|recinto|espacio|llamad[ao]|de|del|la|el)\b/g, " ").replace(/\s+/g, " ").trim();
-  const name = before ? before.charAt(0).toUpperCase() + before.slice(1) : `Habitación ${world.rooms.length + 1}`;
+  if (!dims) return unknown('Sin nada seleccionado puedes crear una habitación: "cocina de 2,8 x 2,4 m", "baño de 1,5 x 2,2 al este de la cocina" o "habitación Estudio de 3 x 3 x 2,6 m". Para lo demás, haz clic en un muro, un mueble o una abertura.');
+  const name = roomNameFrom(raw) || `Habitación ${world.rooms.length + 1}`;
+  // "cocina de 2,8 x 2,4 al este de la sala": comparte muro con una habitación existente.
+  const rel = t.match(/\b(?:al|a la|hacia el|en el) (norte|sur|este|oriente|oeste|occidente|derecha|izquierda)(?: de(?:l| la| el)?)? ([a-z][a-z0-9 ]*?)(?=,|$| desplazad[ao]| corrid[ao]| de \d)/) ?? t.match(/\b(arriba|abajo|junto|pegad[ao]|al lado)(?: de| a)(?:l| la| el)? ([a-z][a-z0-9 ]*?)(?=,|$| desplazad[ao]| corrid[ao]| de \d)/);
+  if (rel) {
+    const side: WallSide = /norte|arriba/.test(rel[1]) ? "north" : /sur|abajo/.test(rel[1]) ? "south" : /oeste|occidente|izquierda/.test(rel[1]) ? "west" : "east";
+    const wanted = rel[2].trim();
+    const base = world.rooms.find((r) => norm(r.name) === wanted) ?? world.rooms.find((r) => norm(r.name).includes(wanted) || wanted.includes(norm(r.name)));
+    if (!base) return fail(`No encuentro la habitación "${rel[2].trim()}". Tienes: ${world.rooms.map((r) => r.name).join(", ") || "ninguna"}.`);
+    const shift = lengthAfter(t, "desplazad[ao]|corrid[ao]") ?? 0;
+    const roomName = roomNameFrom(raw) || `Habitación ${world.rooms.length + 1}`;
+    const room = attachRoom(world, { name: roomName, width: dims[0], depth: dims[1], height: dims[2] ?? base.height, to: base.id, side, shift });
+    return { ok: true, understood: true, select: { kind: "room", roomId: room.id }, message: `${room.name}: ${room.width} x ${room.depth} x ${room.height} mm, al ${WALL_NAMES[side].replace("muro ", "")} de ${base.name}, compartiendo su ${WALL_NAMES[side]}.` };
+  }
   // La nueva habitación se ubica a la derecha de las existentes, dejando el grosor de ambos muros.
   const right = world.rooms.reduce((x, r) => Math.max(x, r.origin[0] + r.width + r.wallThickness.east), -150);
   const room = addRoom(world, { name, width: dims[0], depth: dims[1], height: dims[2] ?? 2400, origin: [world.rooms.length ? right + 150 : 0, 0] });

@@ -62,7 +62,11 @@ Abre http://localhost:5174. Verás tu mundo en 3D. **Haz clic en un muro, un mue
 | un mueble | `ensancha 10 cm` · `muévelo 30 cm a la derecha` · `agrega una repisa` · `2 divisiones` · `3 cajones` · `con barra de colgar` · `sin tornillos a la vista` · `quítalo` |
 | una puerta o ventana | `muévela 20 cm a la derecha` · `90 x 210` · `céntrala` · `quítala` |
 | una habitación | `piso de porcelanato 60 x 60` · `piso de cerámica 45 x 45 trabado` · `junta 3` · `alto 2,6 m` |
-| nada | `cocina de 2,8 x 2,4 m` |
+| nada | `cocina de 2,8 x 2,4 m` · `baño de 1,5 x 2,2 al este de la cocina` · `alcoba de 3,2 x 3 al sur de la sala desplazada 50 cm` |
+
+Las habitaciones se pegan unas a otras por punto cardinal y comparten el muro. Una puerta puesta en ese muro vale para los dos lados; se toma del lado desde el que estás mirando, para que izquierda y derecha coincidan con lo que ves.
+
+![Casa de cuatro habitaciones](docs/mocks/visor-casa.png)
 
 También puedes usar el mouse: **arrastra** lo seleccionado para moverlo por su muro (se imanta a esquinas, puertas y muebles vecinos), tira de los **cuadros naranjas** para cambiar ancho y alto, y usa las **flechas** para ajustes de 10 mm, o 100 con Mayús. Las medidas de lo seleccionado se ven sobre la vista.
 

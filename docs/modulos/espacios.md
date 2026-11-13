@@ -1,5 +1,7 @@
 # Sección: Espacios
 
+> Hecho hasta ahora: habitaciones rectangulares con grosor por muro, puertas, ventanas y pasos; habitaciones contiguas que comparten muro (`attachRoom`, `adjacentWall`, `effectiveOpenings`); pisos; cotas y arrastre en el visor. Pendiente: formas no rectangulares, niveles, eléctrica, sanitaria, sol e importación de escaneos.
+
 Primera entrada del menú. Enfocada en **interfaz y medidas** para crear apartamentos, cuartos y casas: dibujar el mapa del lugar, definir grosor de muros, aberturas, puntos eléctricos, y traer habitaciones escaneadas.
 
 ## Objetivo

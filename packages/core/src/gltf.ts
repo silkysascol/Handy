@@ -1,6 +1,6 @@
 import type { AABB } from "./collision.js";
 import { panelBox, panelInstances } from "./collision.js";
-import { itemModel, itemTransform, wallLength, WALL_NAMES, type Room, type WallSide, type World } from "./world.js";
+import { effectiveOpenings, itemModel, itemTransform, wallLength, WALL_NAMES, type Opening, type Room, type WallSide, type World } from "./world.js";
 
 /**
  * Exporta el mundo a glTF 2.0 (un solo archivo .gltf con el buffer embebido) para abrirlo en Blender,
@@ -59,9 +59,9 @@ function materialKey(materialId: string): string {
 }
 
 /** Rectángulos macizos de un muro (u a lo largo del muro, y en altura) descontando puertas y ventanas. */
-export function wallRects(room: Room, wall: WallSide): { u0: number; u1: number; y0: number; y1: number }[] {
+export function wallRects(room: Room, wall: WallSide, openings: Opening[] = room.openings.filter((o) => o.wall === wall)): { u0: number; u1: number; y0: number; y1: number }[] {
   const len = wallLength(room, wall), H = room.height;
-  const ops = room.openings.filter((o) => o.wall === wall).sort((a, b) => a.offset - b.offset);
+  const ops = [...openings].sort((a, b) => a.offset - b.offset);
   const rects: { u0: number; u1: number; y0: number; y1: number }[] = [];
   let cursor = 0;
   for (const o of ops) {
@@ -110,10 +110,11 @@ export function exportGltf(world: World): string {
     const t = room.wallThickness;
     const wallNodes: number[] = [];
     for (const wall of ["north", "east", "south", "west"] as WallSide[]) {
-      wallRects(room, wall).forEach((r, i) => wallNodes.push(boxNode(`${WALL_NAMES[wall]} ${i + 1}`, wallRectToBox(room, wall, r), "wall", { handy: { wall, thicknessMm: t[wall] } })));
+      if (t[wall] <= 0) continue; // muro compartido: lo dibuja la habitación dueña
+      wallRects(room, wall, effectiveOpenings(world, room, wall)).forEach((r, i) => wallNodes.push(boxNode(`${WALL_NAMES[wall]} ${i + 1}`, wallRectToBox(room, wall, r), "wall", { handy: { wall, thicknessMm: t[wall] } })));
     }
     // Esquinas: prolongan los muros norte y sur sobre el grosor de este y oeste.
-    const corner = (name: string, x0: number, x1: number, z0: number, z1: number) => wallNodes.push(boxNode(name, { min: [x0, 0, z0], max: [x1, room.height, z1] }, "wall"));
+    const corner = (name: string, x0: number, x1: number, z0: number, z1: number) => x1 > x0 && z1 > z0 && wallNodes.push(boxNode(name, { min: [x0, 0, z0], max: [x1, room.height, z1] }, "wall"));
     corner("esquina noroeste", ox - t.west, ox, oz - t.north, oz);
     corner("esquina noreste", ox + room.width, ox + room.width + t.east, oz - t.north, oz);
     corner("esquina suroeste", ox - t.west, ox, oz + room.depth, oz + room.depth + t.south);

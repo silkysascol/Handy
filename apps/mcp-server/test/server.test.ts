@@ -47,6 +47,14 @@ describe("Handy MCP server", () => {
     await call("world_add_room", { name: "Dormitorio", width: 3600, depth: 3200 });
     await call("world_add_opening", { roomId: "dormitorio", wall: "south", type: "door", offset: 200, width: 800, height: 2050 });
 
+    const attached = await call("world_add_room", { name: "Baño", width: 1500, depth: 2200, attachTo: "dormitorio", side: "east" });
+    expect(attached.data.room).toMatchObject({ id: "bano", origin: [3600 + 150, 0] });
+    expect(attached.data.room.wallThickness.west).toBe(0);
+    // A 10 cm de la derecha del muro oeste del baño: del lado del dormitorio queda de 100 a 800 de su muro este.
+    await call("world_command", { roomId: "bano", wall: "west", text: "puerta de 70 x 205 a 10 cm de la derecha" });
+    expect((await call("world_describe")).text).toMatch(/muro este \(east\): largo 3200, grosor 150, compartido con Baño \(su muro oeste\); puerta 700x2050 en 100–800/);
+    expect((await call("world_add_room", { name: "X", width: 1500, depth: 2200, attachTo: "dormitorio" })).isError).toBe(true);
+
     const runs = await call("world_free_runs", { roomId: "dormitorio", height: 2000 });
     expect(runs.text).toContain("muro sur: 1000–3600");
 

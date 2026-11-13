@@ -107,6 +107,90 @@ export function addRoom(world: World, input: RoomInput): Room {
 
 export const wallLength = (room: Room, wall: WallSide): Millimeters => (wall === "north" || wall === "south" ? room.width : room.depth);
 
+export const OPPOSITE: Record<WallSide, WallSide> = { north: "south", south: "north", east: "west", west: "east" };
+
+/** Coordenada de la cara interior de un muro sobre su eje perpendicular, y su tramo a lo largo del otro eje. */
+function wallFace(room: Room, wall: WallSide): { at: number; from: number; to: number } {
+  const [ox, oz] = room.origin;
+  switch (wall) {
+    case "north": return { at: oz, from: ox, to: ox + room.width };
+    case "south": return { at: oz + room.depth, from: ox, to: ox + room.width };
+    case "west": return { at: ox, from: oz, to: oz + room.depth };
+    case "east": return { at: ox + room.width, from: oz, to: oz + room.depth };
+  }
+}
+
+/**
+ * La habitación vecina con la que un muro se comparte, si la hay: sus caras interiores quedan separadas
+ * exactamente por el grosor del muro (uno de los dos lados puede tener grosor 0 porque el muro es del otro).
+ */
+export function adjacentWall(world: World, room: Room, wall: WallSide): { room: Room; wall: WallSide } | null {
+  const mine = wallFace(room, wall);
+  const outward = wall === "north" || wall === "west" ? -1 : 1;
+  for (const other of world.rooms) {
+    if (other.id === room.id) continue;
+    const theirs = wallFace(other, OPPOSITE[wall]);
+    const gap = (theirs.at - mine.at) * outward;
+    const thickness = room.wallThickness[wall] + other.wallThickness[OPPOSITE[wall]];
+    if (thickness <= 0 || Math.abs(gap - thickness) > 5) continue;
+    if (Math.min(mine.to, theirs.to) - Math.max(mine.from, theirs.from) < 100) continue;
+    return { room: other, wall: OPPOSITE[wall] };
+  }
+  return null;
+}
+
+export type EffectiveOpening = Opening & { ownerRoomId: string };
+
+/**
+ * Aberturas que atraviesan un muro: las propias y las que la habitación vecina tiene en la cara opuesta
+ * del mismo muro, llevadas a las distancias de este lado. Una puerta entre dos cuartos se guarda una sola vez.
+ */
+export function effectiveOpenings(world: World, room: Room, wall: WallSide): EffectiveOpening[] {
+  const out: EffectiveOpening[] = room.openings.filter((o) => o.wall === wall).map((o) => ({ ...o, ownerRoomId: room.id }));
+  const adj = adjacentWall(world, room, wall);
+  if (!adj) return out;
+  const len = wallLength(room, wall);
+  const mineStart = wallFace(room, wall).from, theirStart = wallFace(adj.room, adj.wall).from;
+  for (const o of adj.room.openings) {
+    if (o.wall !== adj.wall) continue;
+    // Posición absoluta de la abertura a lo largo del eje del muro, vista desde la vecina.
+    const reversedThere = adj.wall === "south" || adj.wall === "west";
+    const absFrom = reversedThere ? theirStart + wallLength(adj.room, adj.wall) - o.offset - o.width : theirStart + o.offset;
+    const reversedHere = wall === "south" || wall === "west";
+    const here = reversedHere ? mineStart + len - (absFrom + o.width) : absFrom - mineStart;
+    const from = Math.max(0, here), to = Math.min(len, here + o.width);
+    if (to - from < 100) continue;
+    out.push({ ...o, wall, offset: Math.round(from), width: Math.round(to - from), ownerRoomId: adj.room.id });
+  }
+  return out;
+}
+
+export interface AttachInput extends Omit<RoomInput, "origin"> {
+  /** Habitación existente a la que se pega la nueva. */
+  to: string;
+  /** Lado de la habitación existente donde queda la nueva. */
+  side: WallSide;
+  /** Desplazamiento a lo largo del muro compartido, desde su inicio (oeste o norte). */
+  shift?: Millimeters;
+}
+
+/** Agrega una habitación pegada a otra: comparten el muro, que sigue siendo de la habitación existente. */
+export function attachRoom(world: World, input: AttachInput): Room {
+  const base = getRoom(world, input.to);
+  const { to: _to, side, shift = 0, ...rest } = input;
+  const t = base.wallThickness[side];
+  if (t <= 0) throw new Error(`El ${WALL_NAMES[side]} de ${base.name} ya es compartido con otra habitación.`);
+  const [bx, bz] = base.origin;
+  const origin: [number, number] =
+    side === "east" ? [bx + base.width + t, bz + shift] :
+    side === "west" ? [bx - t - input.width, bz + shift] :
+    side === "south" ? [bx + shift, bz + base.depth + t] :
+    [bx + shift, bz - t - input.depth];
+  const requested = rest.wallThickness;
+  const thick = (w: WallSide) => (typeof requested === "number" ? requested : requested?.[w] ?? 150);
+  return addRoom(world, { ...rest, origin, wallThickness: { north: thick("north"), east: thick("east"), south: thick("south"), west: thick("west"), [OPPOSITE[side]]: 0 } });
+}
+
 export function getRoom(world: World, roomId: string): Room {
   const room = world.rooms.find((r) => r.id === roomId);
   if (!room) throw new Error(`No existe la habitación "${roomId}". Disponibles: ${world.rooms.map((r) => r.id).join(", ") || "ninguna"}.`);
@@ -344,8 +428,7 @@ export function freeWallRuns(world: World, roomId: string, opts: { height?: Mill
   for (const wall of ["north", "east", "south", "west"] as WallSide[]) {
     const len = wallLength(room, wall);
     const blocked: [number, number][] = [];
-    for (const o of room.openings) {
-      if (o.wall !== wall) continue;
+    for (const o of effectiveOpenings(world, room, wall)) {
       const blocks = o.type !== "window" ? elevation < o.sill + o.height : top > o.sill && elevation < o.sill + o.height;
       if (blocks) blocked.push([o.offset, o.offset + o.width]);
     }
@@ -383,6 +466,12 @@ export function checkWorld(world: World): WorldIssue[] {
   for (const room of world.rooms) {
     const items = world.items.filter((i) => i.roomId === room.id);
     const walls = wallBoxes(room);
+    // Un muro compartido no tiene grosor de este lado: el obstáculo real es el muro de la vecina.
+    const solidWall = (w: WallSide): AABB => {
+      if (room.wallThickness[w] > 0) return walls[w];
+      const adj = adjacentWall(world, room, w);
+      return adj ? wallBoxes(adj.room)[adj.wall] : walls[w];
+    };
     const boxes = new Map(items.map((i) => [i.id, itemBox(room, i)]));
 
     for (let a = 0; a < items.length; a++) for (let b = a + 1; b < items.length; b++) {
@@ -394,8 +483,8 @@ export function checkWorld(world: World): WorldIssue[] {
     for (const item of items) {
       const box = boxes.get(item.id)!;
       const [s0, s1] = spanOnWall(room, item.wall, box);
-      for (const o of room.openings) {
-        if (o.wall !== item.wall || s1 <= o.offset || s0 >= o.offset + o.width) continue;
+      for (const o of effectiveOpenings(world, room, item.wall)) {
+        if (s1 <= o.offset || s0 >= o.offset + o.width) continue;
         const vertical = box.max[1] > o.sill && box.min[1] < o.sill + o.height;
         if (!vertical) continue;
         issues.push({
@@ -408,7 +497,7 @@ export function checkWorld(world: World): WorldIssue[] {
 
       const t = itemTransform(room, item);
       const obstacles: Obstacle[] = [
-        ...(Object.keys(walls) as WallSide[]).map((w) => ({ id: `wall-${w}`, name: WALL_NAMES[w], box: worldToLocal(walls[w], t) })),
+        ...(Object.keys(walls) as WallSide[]).map((w) => ({ id: `wall-${w}`, name: WALL_NAMES[w], box: worldToLocal(solidWall(w), t) })),
         ...items.filter((o) => o.id !== item.id).map((o) => ({ id: o.id, name: o.name, box: worldToLocal(boxes.get(o.id)!, t) })),
       ];
       const model = itemModel(item);
@@ -453,8 +542,9 @@ export function describeWorld(world: World): string {
   for (const room of world.rooms) {
     lines.push(`\n## ${room.name} (id: ${room.id}) · ${room.width} x ${room.depth} x ${room.height} alto · ${m2(room.width, room.depth)} m²`);
     for (const wall of ["north", "east", "south", "west"] as WallSide[]) {
-      const ops = room.openings.filter((o) => o.wall === wall).map((o) => `${o.type === "door" ? "puerta" : o.type === "window" ? "ventana" : "paso"} ${o.width}x${o.height} en ${o.offset}–${o.offset + o.width}${o.sill ? `, antepecho ${o.sill}` : ""}`);
-      lines.push(`- ${WALL_NAMES[wall]} (${wall}): largo ${wallLength(room, wall)}, grosor ${room.wallThickness[wall]}${ops.length ? `; ${ops.join("; ")}` : ""}`);
+      const ops = effectiveOpenings(world, room, wall).map((o) => `${o.type === "door" ? "puerta" : o.type === "window" ? "ventana" : "paso"} ${o.width}x${o.height} en ${o.offset}–${o.offset + o.width}${o.sill ? `, antepecho ${o.sill}` : ""}${o.ownerRoomId !== room.id ? ` (id ${o.id}, guardada en ${o.ownerRoomId})` : ""}`);
+      const adj = adjacentWall(world, room, wall);
+      lines.push(`- ${WALL_NAMES[wall]} (${wall}): largo ${wallLength(room, wall)}, grosor ${room.wallThickness[wall]}${adj ? `, compartido con ${adj.room.name} (su ${WALL_NAMES[adj.wall]})` : ""}${ops.length ? `; ${ops.join("; ")}` : ""}`);
     }
     const items = world.items.filter((i) => i.roomId === room.id);
     if (items.length) lines.push("Muebles:");

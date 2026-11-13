@@ -25,7 +25,7 @@ El mundo vive en `~/.handy/mundo.world.json` o donde indique `HANDY_WORLD`. La I
 | --- | --- |
 | `world_create` | Crea el mundo. No sobrescribe uno existente sin `overwrite: true`. |
 | `world_describe` | Estado completo en texto: habitaciones, muros, aberturas, muebles y tramos libres. |
-| `world_add_room` | Habitación rectangular con medidas, altura, grosor de muros y posición en el plano. |
+| `world_add_room` | Habitación rectangular, suelta o pegada a otra con `attachTo` y `side` (comparten muro). |
 | `world_add_opening` | Puerta, ventana o paso en un muro. |
 | `world_free_runs` | Tramos de muro donde cabe un mueble de cierta altura. |
 | `world_place_cabinet` | Coloca un gabinete contra un muro y devuelve los avisos que provoca. |

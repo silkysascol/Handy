@@ -32,8 +32,9 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [x] Más muebles con el mismo generador: divisiones verticales (cuerpos iguales), cajones con correderas (frente visible o interiores tras puertas), barra de colgar con maletero, puertas de 2 por cuerpo. Con eso salen closets, cajoneras y bibliotecas con divisiones. Reglas nuevas: barra larga, closet poco profundo, cajón ancho.
 - [x] Estructuras de tubo cuadrado: mesa y estantería con tablero opcional, soldadas o atornilladas; despiece lineal de barras de 6 m, peso, consumibles y precio; sección de perfiles en el despiece imprimible (`world_place_frame`).
 - [x] Cotas sobre la vista (ancho, alto y espacios a cada lado de lo seleccionado) y manejo con el mouse: arrastrar un mueble o una abertura por su muro con imán a bordes y vecinos, manijas para ancho y alto, flechas para ajustes de 10 y 100 mm, Esc para cancelar.
+- [x] Habitaciones contiguas: una habitación se pega a otra por un punto cardinal y comparten el muro (se dibuja y se exporta una sola vez). Una puerta en el muro compartido se guarda una vez y cuenta para las dos: abre el hueco, bloquea tramos libres y avisa si un mueble la tapa, desde cualquiera de los dos lados. La vista se reencuadra sola y hay botón "Ver todo".
 - [ ] **Cargar la casa real del autor** y anotar lo que falte.
-- [ ] Habitaciones no rectangulares (polígonos), niveles y puertas entre habitaciones; importar RoomPlan/LiDAR.
+- [ ] Habitaciones no rectangulares (en L, con columnas o muros inclinados), niveles; importar RoomPlan/LiDAR. Hoy una L se arma con dos rectángulos unidos por un paso.
 - [ ] Muebles sueltos no pegados a un muro; arrastrar de un muro a otro; manija de fondo.
 - [ ] Más vocabulario en el intérprete según lo que el autor escriba y no se entienda (registro de órdenes no entendidas).
 - [ ] Más cosas que colocar: muebles sueltos en medio del cuarto (mesa, cama), cajones en cualquier cuerpo.
