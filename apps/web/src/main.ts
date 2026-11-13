@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
-  adjacentWall, effectiveOpenings, checkWorld, createWorld, cutSheetHtml, dimensionsFor, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld, snapAlongWall, updateItem, updateOpening, wallCoord, wallPoint, itemBox,
+  adjacentWall, assemblyHtml, buildAssemblyPlan, effectiveOpenings, checkWorld, createWorld, cutSheetHtml, dimensionsFor, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld, snapAlongWall, updateItem, updateOpening, wallCoord, wallPoint, itemBox,
   runCommand, StaticCatalogProvider, wallBoxes, wallLength, wallRects, wallRectToBox, WALL_NAMES,
   type AABB, type DimLine, type Room, type Selection, type StaticCatalog, type WallSide, type World, type WorldIssue, type WorldQuote,
 } from "@handy/core";
@@ -43,10 +43,14 @@ async function loadWorld(): Promise<void> {
   if (apiAvailable) await saveWorld();
 }
 
+const ownSaves: string[] = [];
 async function saveWorld(): Promise<void> {
   world.updatedAt = new Date().toISOString();
   const body = JSON.stringify(world);
   lastSaved = body;
+  // El archivo avisa de cada guardado, también de los propios: se recuerdan para no tomarlos por cambios de fuera.
+  ownSaves.push(body);
+  if (ownSaves.length > 30) ownSaves.shift();
   try { localStorage.setItem(LS_KEY, body); } catch { /* sin almacenamiento */ }
   if (apiAvailable) {
     try { await fetch("/api/world", { method: "PUT", headers: { "content-type": "application/json" }, body }); } catch { setSync("sin conexión con el archivo"); }
@@ -65,7 +69,9 @@ function listenForExternalChanges() {
     if (!r.ok) return;
     const text = await r.text();
     const incoming = JSON.parse(text) as World;
-    if (JSON.stringify(incoming) === lastSaved) return;
+    // Con dos órdenes seguidas puede llegar el eco de la primera cuando ya se guardó la segunda: no es un cambio externo.
+    const echo = JSON.stringify(incoming);
+    if (echo === lastSaved || ownSaves.includes(echo)) return;
     history.push(JSON.stringify(world));
     world = incoming;
     lastSaved = JSON.stringify(world);
@@ -497,7 +503,7 @@ const PLACEHOLDER: Record<Selection["kind"], string> = {
   room: '"piso de porcelanato 60 x 60" · "alto 2,6 m" · "ancho 4 m"',
   wall: '"pon una puerta de 80 x 205 a 2 m de la izquierda" · "armario de 800 x 2000 x 500 con 2 puertas"',
   opening: '"muévela 20 cm a la derecha" · "90 x 210" · "quítala"',
-  item: '"ensancha 10 cm" · "agrega una repisa" · "muévelo 30 cm a la derecha" · "quítalo"',
+  item: '"ensancha 10 cm" · "agrega una repisa" · "muévelo 30 cm a la derecha" · "¿cómo se arma?"',
 };
 
 const EXAMPLES: Record<Selection["kind"], string[]> = {
@@ -660,6 +666,8 @@ async function applyCommand(text: string, quiet = false): Promise<boolean> {
   const before = JSON.stringify(world);
   const footprint = () => JSON.stringify(world.rooms.map((r) => [r.origin, r.width, r.depth]));
   const shape = footprint();
+  // "¿cómo se arma?" no cambia el mundo: entrega el manual del mueble seleccionado.
+  if (/\b(c[oó]mo\s+(se|lo|la)\s+arm|instrucciones|manual\s+de\s+armado|pasos\s+de\s+armado)/i.test(text)) return exportAssembly();
   const result = runCommand(world, selection, text);
   if (result.ok) {
     history.push(before);
@@ -726,6 +734,17 @@ $("export-cut").onclick = () => {
   download(`${fileBase()}-despiece.html`, cutSheetHtml(mergedModel(world), world.name), "text/html");
   toast("Despiece listo: ábrelo e imprímelo para llevarlo a la tienda.");
 };
+/** Manual de armado del mueble seleccionado, o del único que haya. */
+function exportAssembly(): boolean {
+  const item = selection.kind === "item" ? world.items.find((i) => i.id === (selection as { itemId: string }).itemId) : world.items.length === 1 ? world.items[0] : undefined;
+  if (!item) { toast(world.items.length ? "Haz clic en un mueble para ver cómo se arma." : "Aún no hay muebles que armar.", true); return false; }
+  const model = itemModel(item);
+  const plan = buildAssemblyPlan(model);
+  download(`${fileBase()}-armado-${item.id}.html`, assemblyHtml(model, item.name), "text/html");
+  toast(`Manual de armado de ${item.name}: ${plan.steps.length} pasos, unas ${Math.max(1, Math.round(plan.minutes / 30) / 2)} h. Ábrelo e imprímelo.`);
+  return true;
+}
+$("export-assembly").onclick = () => { exportAssembly(); };
 $("import").onclick = () => $<HTMLInputElement>("file").click();
 $<HTMLInputElement>("file").onchange = async (e) => {
   const f = (e.target as HTMLInputElement).files?.[0];

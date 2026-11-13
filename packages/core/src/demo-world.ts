@@ -3,7 +3,7 @@
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { addOpening, addRoom, checkWorld, createWorld, cutSheetHtml, describeWorld, exportGltf, mergedModel, placeCabinet } from "./index.js";
+import { addOpening, addRoom, assemblyHtml, checkWorld, createWorld, cutSheetHtml, describeWorld, exportGltf, itemModel, mergedModel, placeCabinet } from "./index.js";
 
 const out = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "docs", "ejemplos");
 const w = createWorld("Apartamento demo");
@@ -26,6 +26,9 @@ w.updatedAt = "2026-11-10";
 writeFileSync(join(out, "apartamento-demo.world.json"), JSON.stringify(w, null, 2) + "\n");
 writeFileSync(join(out, "apartamento-demo.gltf"), exportGltf(w));
 writeFileSync(join(out, "apartamento-demo-despiece.html"), cutSheetHtml(mergedModel(w), w.name));
+// Manual de armado del primer mueble de tablero, como ejemplo.
+const sample = w.items.find((i) => i.kind !== "frame");
+if (sample) writeFileSync(join(out, "apartamento-demo-armado.html"), assemblyHtml(itemModel(sample), sample.name));
 console.log(describeWorld(w));
 console.log("\nRevisión:");
 const issues = checkWorld(w);

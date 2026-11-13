@@ -76,6 +76,8 @@ Cada cambio se valida (si no cabe, no se aplica y te dice por qué), actualiza e
 
 El botón **Despiece** entrega un documento imprimible para la tienda: cuántos tableros comprar, la lista de piezas con sus cantos y el plano de corte tablero por tablero. Hay un ejemplo en `docs/ejemplos/apartamento-demo-despiece.html`.
 
+El botón **Armado** entrega el manual del mueble seleccionado: piezas con letra, herrajes y un dibujo por paso, como en los muebles para armar. También sale escribiendo "¿cómo se arma?". Ejemplo en `docs/ejemplos/apartamento-demo-armado.html`.
+
 Para comprobar todo de una vez (compilar, tipos, pruebas del motor y pruebas en navegador real):
 
 ```bash
@@ -104,7 +106,7 @@ Configuración para Claude Desktop o Claude Code (`claude mcp add handy -- pnpm 
 }
 ```
 
-Herramientas expuestas hoy: las del mundo (`world_create`, `world_describe`, `world_add_room`, `world_add_opening`, `world_free_runs`, `world_place_cabinet`, `world_place_frame`, `world_update_item`, `world_command`, `world_remove_item`, `world_check`, `world_quote`, `world_cutplan`, `world_floor_plan`, `world_export_gltf`) y las de mueble suelto (`design_cabinet`, `cutlist`, `search_prices`, `check_collisions`). Con `HANDY_WORLD` eliges el archivo de tu mundo. Ver [docs/modulos/ia-mcp.md](docs/modulos/ia-mcp.md).
+Herramientas expuestas hoy: las del mundo (`world_create`, `world_describe`, `world_add_room`, `world_add_opening`, `world_free_runs`, `world_place_cabinet`, `world_place_frame`, `world_update_item`, `world_command`, `world_remove_item`, `world_check`, `world_quote`, `world_cutplan`, `world_assembly`, `world_floor_plan`, `world_export_gltf`) y las de mueble suelto (`design_cabinet`, `cutlist`, `search_prices`, `check_collisions`). Con `HANDY_WORLD` eliges el archivo de tu mundo. Ver [docs/modulos/ia-mcp.md](docs/modulos/ia-mcp.md).
 
 ### Usar tus precios locales
 

@@ -106,6 +106,14 @@ describe("Handy MCP server", () => {
     expect(readFileSync(cut.data.html, "utf8")).toContain("Plano de corte");
     expect(readFileSync(cut.data.csv, "utf8").split("\n")[0]).toContain("Pieza;Cantidad");
 
+    const itemId = (await call("world_describe")).data.world.items[0].id;
+    const assembly = await call("world_assembly", { itemId });
+    expect(assembly.text).toMatch(/^Armado de .+: \d+ pasos/);
+    expect(assembly.text).toContain("1. Une el piso y el techo al costado izquierdo [A, D, C");
+    expect(assembly.data.steps.length).toBeGreaterThanOrEqual(4);
+    expect(readFileSync(assembly.data.html, "utf8")).toContain('<section class="step">');
+    expect((await call("world_assembly", { itemId: "no-existe" })).isError).toBe(true);
+
     const exported = await call("world_export_gltf");
     expect(existsSync(exported.data.path)).toBe(true);
     expect(JSON.parse(readFileSync(exported.data.path, "utf8")).asset.version).toBe("2.0");

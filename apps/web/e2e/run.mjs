@@ -254,6 +254,34 @@ test("flechas mueven 10 mm y con Mayús 100; Esc cancela un arrastre", async ({ 
   assert.equal(offset(), start - 90);
 });
 
+test("el manual de armado sale del mueble seleccionado, con un dibujo por paso", async ({ h }) => {
+  // Con varios muebles y nada seleccionado, pide escoger uno.
+  await h.page.keyboard.press("Escape");
+  await h.page.evaluate(() => window.__handy.select({ kind: "world" }));
+  if ((await h.world()).items.length > 1) {
+    await h.page.click("#export-assembly");
+    await h.page.waitForFunction(() => /Haz clic en un mueble/.test(document.getElementById("toast").textContent));
+  }
+  const item = (await h.world()).items.find((i) => i.kind !== "frame");
+  await h.page.evaluate((id) => window.__handy.select({ kind: "item", itemId: id }), item.id);
+  const [download] = await Promise.all([h.page.waitForEvent("download"), h.page.click("#export-assembly")]);
+  assert.match(download.suggestedFilename(), new RegExp(`-armado-${item.id}\\.html$`));
+  const html = readFileSync(await download.path(), "utf8");
+  assert.match(html, /Une el piso y el techo al costado izquierdo/);
+  const doc = await h.page.context().newPage();
+  await doc.setContent(html);
+  const steps = await doc.locator("section.step").count();
+  assert.ok(steps >= 4);
+  // Portada más un dibujo por cada paso que mueve piezas.
+  assert.ok((await doc.locator("svg").count()) >= 5);
+  assert.ok((await doc.locator("svg polygon").count()) > 60);
+  assert.equal(await doc.locator("text=NaN").count(), 0);
+  await doc.close();
+  // También se pide con palabras.
+  const [again] = await Promise.all([h.page.waitForEvent("download"), h.say("¿cómo se arma?")]);
+  assert.match(again.suggestedFilename(), /-armado-/);
+});
+
 test("el despiece descarga un documento con lista de piezas y plano de corte", async ({ h }) => {
   const [download] = await Promise.all([h.page.waitForEvent("download"), h.page.click("#export-cut")]);
   assert.match(download.suggestedFilename(), /-despiece\.html$/);

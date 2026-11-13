@@ -36,6 +36,7 @@ El mundo vive en `~/.handy/mundo.world.json` o donde indique `HANDY_WORLD`. La I
 | `world_check` | Revisa todo: solapes, aberturas tapadas, colisiones al abrir, reglas constructivas. |
 | `world_quote` | Cotización de todo el mundo: muebles (tableros según plano de corte) y pisos. |
 | `world_cutplan` | Acomoda las piezas en tableros y escribe el despiece imprimible y el CSV. |
+| `world_assembly` | Pasos de armado de un mueble, con piezas, herrajes y herramientas por paso; escribe el manual imprimible con dibujos. |
 | `world_floor_plan` | Cálculo del piso de una habitación: piezas, cajas, pega, boquilla, avisos. |
 | `world_export_gltf` | Escribe el `.gltf` para Blender. |
 

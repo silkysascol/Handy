@@ -26,13 +26,14 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [x] Herramientas MCP `world_*` para que la IA cree, consulte, coloque, revise, cotice y exporte.
 - [x] Intérprete de órdenes en español acotado a la selección (`runCommand`) y funciones para modificar habitaciones, aberturas y muebles con validación.
 - [x] Visor web: clic para seleccionar muro, abertura, mueble o habitación; barra de órdenes; precio en la esquina; avisos; deshacer; importar y exportar; tema claro y oscuro; actualización en vivo cuando la IA cambia el mundo.
-- [x] Pruebas de navegador en el repo (`pnpm e2e`): 12 casos de extremo a extremo con servidor y mundo temporales. `pnpm check` corre todo.
+- [x] Pruebas de navegador en el repo (`pnpm e2e`): 21 casos de extremo a extremo con servidor y mundo temporales. `pnpm check` corre todo.
 - [x] Plano de corte real: piezas acomodadas en tableros con ancho de disco, refilado y veta; despiece imprimible y CSV para la tienda (botón Despiece, `world_cutplan`). La cotización usa esos tableros, no un porcentaje.
 - [x] Pisos: baldosas dibujadas en la habitación, piezas enteras y cortes, cajas según la tienda, pega por formato y material, boquilla, guardaescobas; sumado al precio del mundo (`world_floor_plan`).
 - [x] Más muebles con el mismo generador: divisiones verticales (cuerpos iguales), cajones con correderas (frente visible o interiores tras puertas), barra de colgar con maletero, puertas de 2 por cuerpo. Con eso salen closets, cajoneras y bibliotecas con divisiones. Reglas nuevas: barra larga, closet poco profundo, cajón ancho.
 - [x] Estructuras de tubo cuadrado: mesa y estantería con tablero opcional, soldadas o atornilladas; despiece lineal de barras de 6 m, peso, consumibles y precio; sección de perfiles en el despiece imprimible (`world_place_frame`).
 - [x] Cotas sobre la vista (ancho, alto y espacios a cada lado de lo seleccionado) y manejo con el mouse: arrastrar un mueble o una abertura por su muro con imán a bordes y vecinos, manijas para ancho y alto, flechas para ajustes de 10 y 100 mm, Esc para cancelar.
 - [x] Habitaciones contiguas: una habitación se pega a otra por un punto cardinal y comparten el muro (se dibuja y se exporta una sola vez). Una puerta en el muro compartido se guarda una vez y cuenta para las dos: abre el hueco, bloquea tramos libres y avisa si un mueble la tapa, desde cualquiera de los dos lados. La vista se reencuadra sola y hay botón "Ver todo".
+- [x] Instrucciones de armado: manual imprimible por mueble con inventario de piezas con letra, herrajes repartidos por paso y un dibujo isométrico de líneas por paso (botón Armado, "¿cómo se arma?", `world_assembly`). Tableros y tubo.
 - [ ] **Cargar la casa real del autor** y anotar lo que falte.
 - [ ] Habitaciones no rectangulares (en L, con columnas o muros inclinados), niveles; importar RoomPlan/LiDAR. Hoy una L se arma con dos rectángulos unidos por un paso.
 - [ ] Muebles sueltos no pegados a un muro; arrastrar de un muro a otro; manija de fondo.
@@ -45,7 +46,7 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [ ] Sistema de unión según herramientas del usuario: minifix con perforación en la tienda (exportar archivo de perforado), minifix o tarugos con plantilla imprimible (Objetos), encaje sin perforar. "Sin tornillos a la vista" predeterminado.
 - [ ] Despiece en el **formato exacto** que reciben Madecentro y Homecenter (veta, cantos por lado, tolerancias): ir a la tienda y validarlo con el operario de la sierra antes de más 3D.
 - [ ] Presupuesto completo: tableros enteros por formato, cantos, herrajes, reserva, con tienda y fecha visibles; renglones editables para lo que el motor no cotiza.
-- [ ] Instrucciones de armado en PDF sin texto (plan de ensamblaje automático, render de líneas).
+- [ ] Instrucciones de armado en PDF sin texto, con ampliaciones de herraje y pictogramas (el plan automático y el dibujo de líneas ya están en M1).
 - [ ] Web mínima que conecta lo anterior: medidas → diseño → despiece → presupuesto → PDF. Tema claro y oscuro con tokens.
 - [ ] Validación dura: sin validación verde del motor no hay lista de corte; la IA (del usuario, por MCP) elige entre opciones válidas y nunca inventa medidas.
 - [ ] Prueba real: el autor diseña, manda a cortar y arma un mueble propio con Handy de principio a fin, y anota cada fricción. Después, otras personas.
@@ -71,7 +72,7 @@ Ver `docs/modulos/metal.md`.
 - [ ] Visor 3D (react-three-fiber), piezas desde `placement`, animación de apertura por pieza.
 - [ ] Precio total en la esquina del visor con resumen al pasar el mouse; paneles plegables estilo Blender.
 - [ ] Selección por pieza y módulo, comandos acotados a la selección, vista aislada (`/`) y sección.
-- [ ] Instrucciones de armado: render de líneas, PDF sin texto y HTML animado.
+- [ ] Instrucciones de armado dentro del visor 3D, con animación (el manual imprimible ya está en M1).
 - [ ] Edición por arrastre de medidas (gizmos en caras) y panel de parámetros.
 - [ ] Cotización en vivo en el lateral, con tienda, fecha y faltantes.
 - [ ] Comandos en lenguaje natural ("ensancha 10 cm", "agrega una repisa") resueltos localmente o vía IA.

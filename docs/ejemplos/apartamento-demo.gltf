@@ -406,13 +406,13 @@
    "name": "Zócalo",
    "mesh": 2,
    "translation": [
-    0.058,
-    0.382,
+    0.4,
+    0.04,
     0.461
    ],
    "scale": [
-    0.08,
     0.764,
+    0.08,
     0.018
    ],
    "extras": {
@@ -768,13 +768,13 @@
    "name": "Zócalo",
    "mesh": 2,
    "translation": [
-    0.058,
-    0.382,
+    0.4,
+    0.04,
     0.461
    ],
    "scale": [
-    0.08,
     0.764,
+    0.08,
     0.018
    ],
    "extras": {
@@ -2487,6 +2487,19 @@
      "material": 4
     }
    ]
+  },
+  {
+   "name": "caja-metal",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 0,
+      "NORMAL": 1
+     },
+     "indices": 2,
+     "material": 5
+    }
+   ]
   }
  ],
  "materials": [
@@ -2549,6 +2562,19 @@
      0.72,
      0.54,
      0.35,
+     1
+    ],
+    "metallicFactor": 0,
+    "roughnessFactor": 0.7
+   }
+  },
+  {
+   "name": "metal",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0.62,
+     0.64,
+     0.66,
      1
     ],
     "metallicFactor": 0,
