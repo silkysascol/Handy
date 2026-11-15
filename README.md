@@ -84,6 +84,8 @@ Para comprobar todo de una vez (compilar, tipos, pruebas del motor y pruebas en 
 pnpm check
 ```
 
+Un mueble no tiene que ir pegado a un muro. Con la habitación seleccionada, "mesa de tubo de 120 x 75 x 60" o "isla de 180 x 90 x 60 con 4 cajones" lo pone en el centro. Con el mueble seleccionado: "sepáralo 60 cm", "en el centro del cuarto", "gíralo", "pásalo al muro sur", "pégalo al muro". Con el mouse, arrastrarlo hacia adentro lo despega; la tecla R lo gira. Handy avisa si queda un pasillo de menos de 60 cm o poco espacio frente a una puerta.
+
 Los números sin unidad se leen como se habla en obra: menos de 10 son metros, menos de 300 centímetros, el resto milímetros. La respuesta siempre repite la medida en mm.
 
 ### Conectar Handy a Claude (MCP)

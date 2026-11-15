@@ -123,6 +123,19 @@ describe("Handy MCP server", () => {
     expect(drilling.data.sheets.length).toBeGreaterThan(3);
     expect((await call("world_assembly", { itemId: "no-existe" })).isError).toBe(true);
 
+    // Muebles sueltos: una mesa en medio del cuarto, que la IA gira y acerca; con poco paso, avisa.
+    const island = await call("world_place_frame", { roomId: "dormitorio", wall: "north", offset: 1200, gap: 1300, type: "table", width: 1200, height: 750, depth: 600 });
+    expect(island.text).toMatch(/colocada suelta, a 1300 mm del muro norte/);
+    expect(island.data.item.gap).toBe(1300);
+    const turned = await call("world_update_item", { itemId: island.data.item.id, rotate: 1 });
+    expect(turned.data.item.wall).toBe("east");
+    const close = await call("world_update_item", { itemId: island.data.item.id, gap: 400 });
+    expect(close.text).toMatch(/, a 400 mm del muro este, de /);
+    expect(close.text).toMatch(/queda un paso de 400 mm/);
+    expect((await call("world_update_item", { itemId: island.data.item.id, gap: 9000 })).isError).toBe(true);
+    expect((await call("world_describe")).text).toMatch(/suelta, separada 400 del muro/);
+    await call("world_remove_item", { itemId: island.data.item.id });
+
     // Precios reales: la IA ve qué falta, anota lo que encontró y el presupuesto deja el catálogo de ejemplo.
     expect(withFloor.text).toContain("CATÁLOGO DE EJEMPLO");
     const needed = await call("prices_needed");

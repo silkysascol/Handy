@@ -18,6 +18,7 @@ import {
   parseNeedKey,
   priceAgeDays,
   removePrice,
+  rotateItem,
   setPrice,
   type PriceBook,
   cutlistCsv,
@@ -189,6 +190,7 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
         wall,
         offset: z.number().int().min(0).describe("Distancia en mm desde el extremo izquierdo del muro mirándolo desde dentro"),
         elevation: z.number().int().min(0).default(0).describe("0 = apoyado en el piso; p.ej. 1500 para un mueble alto de cocina"),
+        gap: z.number().int().min(0).default(0).describe("Separación en mm entre la espalda del mueble y el muro. 0 = pegado. Mayor que 0 = suelto en el cuarto (mesa, isla), mirando hacia donde mira ese muro"),
         name: z.string().optional(),
         width: z.number().int().min(100).max(3000),
         height: z.number().int().min(100).max(3000),
@@ -204,13 +206,13 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
         boardThickness: z.number().int().min(12).max(30).default(18),
       },
     },
-    async ({ roomId, wall: w, offset, elevation, name, ...params }) => {
+    async ({ roomId, wall: w, offset, elevation, gap, name, ...params }) => {
       const world = store.load();
-      const item = placeCabinet(world, { roomId, wall: w, offset, elevation, name, params });
+      const item = placeCabinet(world, { roomId, wall: w, offset, elevation, gap, name, params });
       store.save(world);
       const issues = checkWorld(world).filter((i) => i.itemId === item.id);
       return text(
-        [`${item.name} (id: ${item.id}) colocado en el ${WALL_NAMES[item.wall]} de ${offset} a ${offset + params.width} mm.`, ...issues.map((i) => `[${i.level}] ${i.message}`)].join("\n"),
+        [`${item.name} (id: ${item.id}) colocado ${gap ? `suelto, a ${gap} mm del` : "en el"} ${WALL_NAMES[item.wall]}, de ${offset} a ${offset + params.width} mm.`, ...issues.map((i) => `[${i.level}] ${i.message}`)].join("\n"),
         { item, issues },
       );
     },
@@ -225,6 +227,7 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
         roomId: z.string(),
         wall,
         offset: z.number().int().min(0),
+        gap: z.number().int().min(0).default(0).describe("Separación en mm entre la espalda del mueble y el muro. 0 = pegado. Mayor que 0 = suelto en el cuarto (mesa, isla), mirando hacia donde mira ese muro"),
         name: z.string().optional(),
         type: z.enum(["table", "shelving"]).describe("table = mesa o base; shelving = estantería"),
         width: z.number().int().min(100).max(6000),
@@ -236,14 +239,14 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
         joint: z.enum(["weld", "bolt"]).default("weld").describe("weld = soldada; bolt = atornillada con conectores, para quien no suelda"),
       },
     },
-    async ({ roomId, wall: w, offset, name, type, width, height, depth, profileId, levels, top, joint }) => {
+    async ({ roomId, wall: w, offset, gap, name, type, width, height, depth, profileId, levels, top, joint }) => {
       const world = store.load();
-      const item = placeCabinet(world, { roomId, wall: w, offset, name, params: { width, height, depth }, frame: { type, profileId, top, joint, ...(type === "shelving" ? { levels } : {}) } });
+      const item = placeCabinet(world, { roomId, wall: w, offset, gap, name, params: { width, height, depth }, frame: { type, profileId, top, joint, ...(type === "shelving" ? { levels } : {}) } });
       store.save(world);
       const issues = checkWorld(world).filter((i) => i.itemId === item.id);
       const plan = planBars(itemModel(item).bars ?? []);
       return text(
-        [`${item.name} (id: ${item.id}) colocada en el ${WALL_NAMES[item.wall]} de ${offset} a ${offset + width} mm.`, ...plan.totals.map((t) => `${t.bars} barra(s) de 6 m de ${t.profileName}: ${t.meters} m, ${t.kg} kg, sobra ${t.wastePct} %.`), ...issues.map((i) => `[${i.level}] ${i.message}`)].join("\n"),
+        [`${item.name} (id: ${item.id}) colocada ${gap ? `suelta, a ${gap} mm del` : "en el"} ${WALL_NAMES[item.wall]}, de ${offset} a ${offset + width} mm.`, ...plan.totals.map((t) => `${t.bars} barra(s) de 6 m de ${t.profileName}: ${t.meters} m, ${t.kg} kg, sobra ${t.wastePct} %.`), ...issues.map((i) => `[${i.level}] ${i.message}`)].join("\n"),
         { item, issues, bars: plan.totals },
       );
     },
@@ -271,6 +274,8 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
         wall: wall.optional(),
         offset: z.number().int().min(0).optional(),
         elevation: z.number().int().min(0).optional(),
+        gap: z.number().int().min(0).optional().describe("Separación del muro en mm; 0 lo pega al muro"),
+        rotate: z.number().int().min(1).max(3).optional().describe("Cuartos de vuelta a la derecha, sin moverlo de sitio (conserva el centro). Se aplica antes que los demás cambios"),
         width: z.number().int().min(100).max(3000).optional(),
         height: z.number().int().min(100).max(3000).optional(),
         depth: z.number().int().min(100).max(1000).optional(),
@@ -284,13 +289,14 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
         joinery: z.enum(["confirmat", "minifix", "dowel", "pocket-screw"]).optional(),
       },
     },
-    async ({ itemId, name, wall: w, offset, elevation, ...params }) => {
+    async ({ itemId, name, wall: w, offset, elevation, gap, rotate, ...params }) => {
       const world = store.load();
       const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined));
-      const item = updateItem(world, itemId, { ...(name !== undefined ? { name } : {}), ...(w ? { wall: w } : {}), ...(offset !== undefined ? { offset } : {}), ...(elevation !== undefined ? { elevation } : {}), params: clean });
+      if (rotate) rotateItem(world, itemId, rotate);
+      const item = updateItem(world, itemId, { ...(name !== undefined ? { name } : {}), ...(w ? { wall: w } : {}), ...(offset !== undefined ? { offset } : {}), ...(elevation !== undefined ? { elevation } : {}), ...(gap !== undefined ? { gap } : {}), params: clean });
       store.save(world);
       const issues = checkWorld(world).filter((i) => i.itemId === item.id);
-      return text([`${item.name}: ${item.params.width} x ${item.params.height} x ${item.params.depth} mm, en el ${WALL_NAMES[item.wall]} de ${item.offset} a ${item.offset + item.params.width}.`, ...issues.map((i) => `[${i.level}] ${i.message}`)].join("\n"), { item, issues });
+      return text([`${item.name}: ${item.params.width} x ${item.params.height} x ${item.params.depth} mm, ${item.gap ? `a ${item.gap} mm del` : "en el"} ${WALL_NAMES[item.wall]}, de ${item.offset} a ${item.offset + item.params.width}.`, ...issues.map((i) => `[${i.level}] ${i.message}`)].join("\n"), { item, issues });
     },
   );
 

@@ -72,3 +72,29 @@ Todo en mm enteros, Y arriba.
 - Orientación del norte en escaneos: pedir brújula o marcarla a mano.
 - Precisión LiDAR (±1–2 cm): avisar y dejar margen.
 - Práctica eléctrica por país (canalización por losa vs. por piso vs. por cielo falso) como dato configurable.
+
+## Muebles sueltos en el cuarto
+
+Un mueble se coloca siempre respecto a un muro: a cuánto queda de su extremo izquierdo (`offset`) y, si no va pegado, a cuánto queda su espalda del muro (`gap`). Sin `gap` va contra el muro. Con `gap` queda suelto, mirando hacia donde mira ese muro. Así una mesa, una isla o una estantería exenta usan las mismas órdenes, cotas y revisiones que un armario.
+
+| Quieres | Dices |
+| --- | --- |
+| Crear algo en el centro, con la habitación seleccionada | "mesa de tubo de 120 x 75 x 60", "isla de 180 x 90 x 60 con 4 cajones" |
+| Crearlo contra un muro, desde la habitación | "armario de 80 x 200 x 50 contra el muro sur" |
+| Crearlo separado, desde un muro | "mesa de tubo de 120 x 75 x 60 separada 80 cm", "... a 1 m del muro" |
+| Separarlo o juntarlo | "sepáralo 60 cm", "aléjalo 20 cm", "acércalo 20 cm", "pégalo al muro" |
+| Centrarlo | "en el centro del cuarto" |
+| Girarlo sin moverlo de sitio | "gíralo", "gíralo a la izquierda", "dale media vuelta" |
+| Llevarlo a otro muro | "pásalo al muro este" |
+
+Con el mouse: arrastrar de lado lo mueve por su muro; arrastrar hacia adentro lo despega. Un mueble pegado necesita un tirón de 20 cm para soltarse, y uno colgado no se suelta. Hay imán al muro, al centro del cuarto y al muro de enfrente. Las flechas arriba y abajo lo alejan o lo acercan; R lo gira. Las estructuras de tubo, que son huecas, se agarran por cualquier parte de su volumen.
+
+Al seleccionarlo, las cotas muestran también la distancia a su muro y al de enfrente.
+
+Revisiones nuevas en `checkWorld`:
+
+- `tight-passage`: entre un mueble suelto y un muro u otro mueble queda un paso de 150 a 600 mm. Lo mínimo para pasar son 600 y lo cómodo 800. Menos de 150 no se considera pasillo.
+- `door-clearance`: un mueble deja menos de 900 mm frente a una puerta o un paso.
+- `blocks-door` y `blocks-window` ahora miran los cuatro muros, no solo el del mueble: uno en esquina también puede tapar la puerta del muro vecino.
+
+Límites: los muebles miran a uno de los cuatro muros; no hay ángulos libres. No se modela el barrido de la hoja de las puertas del cuarto.

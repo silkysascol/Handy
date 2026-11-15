@@ -56,6 +56,11 @@ export interface PlacedItem {
   offset: Millimeters;
   /** Altura sobre el piso (0 = apoyado; >0 = mueble colgado). */
   elevation: Millimeters;
+  /**
+   * Separación entre la espalda del mueble y su muro. Sin ella, el mueble va pegado al muro.
+   * Con ella queda suelto en el cuarto (una mesa, una isla), mirando hacia donde mira ese muro.
+   */
+  gap?: Millimeters;
 }
 
 export interface World {
@@ -220,14 +225,15 @@ const rot = (deg: number, x: number, z: number): [number, number] => {
 };
 
 /** Posición en el mundo del origen local del mueble (esquina inferior izquierda trasera) y su giro. */
-export function itemTransform(room: Room, item: Pick<PlacedItem, "wall" | "offset" | "elevation">): { position: [number, number, number]; rotationY: 0 | 90 | 180 | 270 } {
+export function itemTransform(room: Room, item: Pick<PlacedItem, "wall" | "offset" | "elevation" | "gap">): { position: [number, number, number]; rotationY: 0 | 90 | 180 | 270 } {
   const [ox, oz] = room.origin;
   const { wall, offset, elevation } = item;
+  const gap = item.gap ?? 0;
   const position: [number, number, number] =
-    wall === "north" ? [ox + offset, elevation, oz] :
-    wall === "south" ? [ox + room.width - offset, elevation, oz + room.depth] :
-    wall === "east" ? [ox + room.width, elevation, oz + offset] :
-    [ox, elevation, oz + room.depth - offset];
+    wall === "north" ? [ox + offset, elevation, oz + gap] :
+    wall === "south" ? [ox + room.width - offset, elevation, oz + room.depth - gap] :
+    wall === "east" ? [ox + room.width - gap, elevation, oz + offset] :
+    [ox + gap, elevation, oz + room.depth - offset];
   return { position, rotationY: WALL_ROTATION[wall] };
 }
 
@@ -274,12 +280,25 @@ export function itemModel(item: Pick<PlacedItem, "kind" | "params" | "frame" | "
   return generateCabinet({ ...item.params, name: item.name });
 }
 
+/** Fondo total del mueble cerrado: puertas y frentes de cajón van por fuera de la caja. */
+export const frontDepth = (p: CabinetParams): Millimeters => p.depth + ((p.doors ?? 0) > 0 || (p.drawers ?? 0) > 0 ? (p.boardThickness ?? 18) : 0);
+
+/** Cuánto mide la habitación desde un muro hasta el de enfrente. */
+export const roomSpan = (room: Room, wall: WallSide): Millimeters => (wall === "north" || wall === "south" ? room.depth : room.width);
+
 /** Volumen cerrado del mueble (incluye el espesor de las puertas) en el mundo. */
 export function itemBox(room: Room, item: PlacedItem): AABB {
   const p = item.params;
-  // Puertas y frentes de cajón van por fuera de la caja.
-  const front = p.depth + ((p.doors ?? 0) > 0 || (p.drawers ?? 0) > 0 ? (p.boardThickness ?? 18) : 0);
-  return localToWorld({ min: [0, 0, 0], max: [p.width, p.height, front] }, itemTransform(room, item));
+  return localToWorld({ min: [0, 0, 0], max: [p.width, p.height, frontDepth(p)] }, itemTransform(room, item));
+}
+
+/** Comprueba que el mueble cabe a lo largo de su muro, en altura y hacia el interior del cuarto. */
+function assertFits(room: Room, it: Pick<PlacedItem, "wall" | "offset" | "elevation" | "gap" | "params">): void {
+  const len = wallLength(room, it.wall), gap = it.gap ?? 0;
+  if (it.offset < 0 || it.offset + it.params.width > len) throw new Error(`No cabe: ocuparía de ${it.offset} a ${it.offset + it.params.width} mm y el ${WALL_NAMES[it.wall]} mide ${len} mm.`);
+  if (it.elevation < 0 || it.elevation + it.params.height > room.height) throw new Error(`No cabe en altura: llegaría a ${it.elevation + it.params.height} mm y la habitación mide ${room.height} mm.`);
+  const reach = gap + frontDepth(it.params);
+  if (gap < 0 || reach > roomSpan(room, it.wall)) throw new Error(`No cabe: separado ${gap} mm del ${WALL_NAMES[it.wall]} llegaría a ${reach} mm y el cuarto mide ${roomSpan(room, it.wall)} mm en ese sentido.`);
 }
 
 // ---------- Colocar y consultar ----------
@@ -289,6 +308,8 @@ export interface PlaceInput {
   wall: WallSide;
   offset: Millimeters;
   elevation?: Millimeters;
+  /** Separación del muro, para muebles sueltos en el cuarto. */
+  gap?: Millimeters;
   name?: string;
   params: CabinetParams;
   /** Si viene, se coloca una estructura de tubo en vez de un mueble de tablero. */
@@ -298,16 +319,12 @@ export interface PlaceInput {
 /** Coloca un mueble de tablero o, con `frame`, una estructura de tubo, con la espalda contra un muro. */
 export function placeCabinet(world: World, input: PlaceInput): PlacedItem {
   const room = getRoom(world, input.roomId);
-  const len = wallLength(room, input.wall);
   const elevation = input.elevation ?? 0;
-  if (input.offset < 0 || input.offset + input.params.width > len) {
-    throw new Error(`No cabe: el mueble ocupa de ${input.offset} a ${input.offset + input.params.width} mm y el ${WALL_NAMES[input.wall]} mide ${len} mm.`);
-  }
-  if (elevation + input.params.height > room.height) throw new Error(`No cabe en altura: ${elevation + input.params.height} mm contra ${room.height} mm de la habitación.`);
+  assertFits(room, { wall: input.wall, offset: input.offset, elevation, gap: input.gap, params: input.params });
   const kind = input.frame ? "frame" : "cabinet";
   const name = input.name ?? (input.frame ? (input.frame.type === "shelving" ? "Estantería de tubo" : "Mesa de tubo") : `Gabinete ${input.params.width}`);
   itemModel({ kind, params: input.params, frame: input.frame, name }); // valida medidas
-  const item: PlacedItem = { id: uniqueId(slug(name), world.items.map((i) => i.id)), name, roomId: room.id, kind, params: input.params, ...(input.frame ? { frame: input.frame } : {}), wall: input.wall, offset: input.offset, elevation };
+  const item: PlacedItem = { id: uniqueId(slug(name), world.items.map((i) => i.id)), name, roomId: room.id, kind, params: input.params, ...(input.frame ? { frame: input.frame } : {}), wall: input.wall, offset: input.offset, elevation, ...(input.gap ? { gap: input.gap } : {}) };
   world.items.push(item);
   return item;
 }
@@ -317,6 +334,8 @@ export interface ItemPatch {
   wall?: WallSide;
   offset?: Millimeters;
   elevation?: Millimeters;
+  /** Separación del muro; 0 lo pega al muro. */
+  gap?: Millimeters;
   params?: Partial<CabinetParams>;
   frame?: Partial<FrameOptions>;
 }
@@ -329,14 +348,44 @@ export function updateItem(world: World, itemId: string, patch: ItemPatch): Plac
   const { frame: framePatch, params: paramsPatch, ...rest } = patch;
   const frame: FrameOptions | undefined = item.frame || framePatch ? { type: "table", ...item.frame, ...framePatch } : undefined;
   const next: PlacedItem = { ...item, ...rest, params: { ...item.params, ...paramsPatch }, ...(frame ? { frame } : {}) };
-  const len = wallLength(room, next.wall);
-  if (next.offset < 0 || next.offset + next.params.width > len) {
-    throw new Error(`No cabe: ocuparía de ${next.offset} a ${next.offset + next.params.width} mm y el ${WALL_NAMES[next.wall]} mide ${len} mm.`);
-  }
-  if (next.elevation < 0 || next.elevation + next.params.height > room.height) throw new Error(`No cabe en altura: llegaría a ${next.elevation + next.params.height} mm y la habitación mide ${room.height} mm.`);
+  assertFits(room, next);
   itemModel(next); // valida que el resultado se pueda construir
   Object.assign(item, next);
+  if (!item.gap) delete item.gap;
   return item;
+}
+
+/** Sentido de giro a la derecha visto desde arriba: el frente pasa de mirar al sur a mirar al oeste, y así. */
+const CLOCKWISE: Record<WallSide, WallSide> = { north: "east", east: "south", south: "west", west: "north" };
+
+/** Centro de la huella del mueble, visto desde un muro: a cuánto queda a lo largo del muro y a cuánto de él. */
+function centerFrom(room: Room, wall: WallSide, cx: number, cz: number): { along: number; away: number } {
+  const [ox, oz] = room.origin;
+  switch (wall) {
+    case "north": return { along: cx - ox, away: cz - oz };
+    case "south": return { along: ox + room.width - cx, away: oz + room.depth - cz };
+    case "east": return { along: cz - oz, away: ox + room.width - cx };
+    case "west": return { along: oz + room.depth - cz, away: cx - ox };
+  }
+}
+
+/**
+ * Gira el mueble cuartos de vuelta a la derecha sin moverlo de sitio: conserva el centro de su huella.
+ * Si girado se sale del cuarto, se corre lo justo para caber; si ni así cabe, lanza un error y no cambia nada.
+ */
+export function rotateItem(world: World, itemId: string, quarterTurns = 1): PlacedItem {
+  const item = world.items.find((i) => i.id === itemId);
+  if (!item) throw new Error(`No existe el mueble "${itemId}".`);
+  const room = getRoom(world, item.roomId);
+  const box = itemBox(room, item);
+  const cx = (box.min[0] + box.max[0]) / 2, cz = (box.min[2] + box.max[2]) / 2;
+  let wall = item.wall;
+  for (let i = 0; i < (((quarterTurns % 4) + 4) % 4); i++) wall = CLOCKWISE[wall];
+  const w = item.params.width, f = frontDepth(item.params);
+  if (w > wallLength(room, wall) || f > roomSpan(room, wall)) throw new Error(`${item.name} no cabe girado: mide ${w} x ${f} mm y el cuarto ${wallLength(room, wall)} x ${roomSpan(room, wall)} mm en ese sentido.`);
+  const c = centerFrom(room, wall, cx, cz);
+  const clamp = (v: number, max: number) => Math.round(Math.min(Math.max(v, 0), max));
+  return updateItem(world, itemId, { wall, offset: clamp(c.along - w / 2, wallLength(room, wall) - w), gap: clamp(c.away - f / 2, roomSpan(room, wall) - f) });
 }
 
 export function updateOpening(world: World, roomId: string, openingId: string, patch: Partial<Omit<Opening, "id" | "wall">>): Opening {
@@ -461,6 +510,9 @@ export interface WorldIssue {
 }
 
 /** Revisa todo el mundo: solapes entre muebles, aberturas tapadas, colisiones al abrir y reglas de cada mueble. */
+/** Ancho mínimo para pasar junto a un mueble, y hueco tan angosto que ya no cuenta como paso. */
+const MIN_PASSAGE = 600, DEAD_GAP = 150;
+
 export function checkWorld(world: World): WorldIssue[] {
   const issues: WorldIssue[] = [];
   for (const room of world.rooms) {
@@ -482,17 +534,37 @@ export function checkWorld(world: World): WorldIssue[] {
 
     for (const item of items) {
       const box = boxes.get(item.id)!;
-      const [s0, s1] = spanOnWall(room, item.wall, box);
-      for (const o of effectiveOpenings(world, room, item.wall)) {
-        if (s1 <= o.offset || s0 >= o.offset + o.width) continue;
-        const vertical = box.max[1] > o.sill && box.min[1] < o.sill + o.height;
-        if (!vertical) continue;
-        issues.push({
-          level: o.type === "window" ? "warning" : "error",
-          code: o.type === "window" ? "blocks-window" : "blocks-door",
-          itemId: item.id, roomId: room.id,
-          message: `${item.name} tapa ${o.type === "window" ? "la ventana" : o.type === "door" ? "la puerta" : "el paso"} del ${WALL_NAMES[o.wall]} en ${room.name}.`,
-        });
+      const free = (item.gap ?? 0) > 50;
+      // Se mira cada muro, no solo el del mueble: uno suelto, o uno en esquina, también puede quedar frente a una puerta.
+      for (const w of Object.keys(walls) as WallSide[]) {
+        const away = distanceToWall(room, w, box);
+        const [s0, s1] = spanOnWall(room, w, box);
+        for (const o of effectiveOpenings(world, room, w)) {
+          if (s1 <= o.offset || s0 >= o.offset + o.width) continue;
+          const vertical = box.max[1] > o.sill && box.min[1] < o.sill + o.height;
+          if (!vertical) continue;
+          const what = o.type === "window" ? "la ventana" : o.type === "door" ? "la puerta" : "el paso";
+          if (away <= 50) {
+            issues.push({ level: o.type === "window" ? "warning" : "error", code: o.type === "window" ? "blocks-window" : "blocks-door", itemId: item.id, roomId: room.id, message: `${item.name} tapa ${what} del ${WALL_NAMES[o.wall]} en ${room.name}.` });
+          } else if (o.type !== "window" && away < MIN_PASSAGE + 300) {
+            issues.push({ level: "warning", code: "door-clearance", itemId: item.id, roomId: room.id, message: `${item.name} deja solo ${Math.round(away)} mm frente a ${what} del ${WALL_NAMES[o.wall]} en ${room.name}. Para entrar cómodo hacen falta ${MIN_PASSAGE + 300} mm.` });
+          }
+        }
+        // Un mueble suelto deja pasillos a su alrededor: si son muy angostos no se puede pasar.
+        if (free && away >= DEAD_GAP && away < MIN_PASSAGE) {
+          issues.push({ level: "warning", code: "tight-passage", itemId: item.id, roomId: room.id, message: `Entre ${item.name} y el ${WALL_NAMES[w]} queda un paso de ${Math.round(away)} mm. Lo mínimo para pasar son ${MIN_PASSAGE} mm y lo cómodo 800.` });
+        }
+      }
+      if (free) {
+        for (const other of items) {
+          if (other.id === item.id || ((other.gap ?? 0) > 50 && other.id < item.id)) continue;
+          const b = boxes.get(other.id)!;
+          if (box.max[1] <= b.min[1] || b.max[1] <= box.min[1]) continue;
+          const sepX = Math.max(box.min[0] - b.max[0], b.min[0] - box.max[0]), sepZ = Math.max(box.min[2] - b.max[2], b.min[2] - box.max[2]);
+          // Solo cuenta si están frente a frente: se cruzan en un eje y los separa el otro.
+          const between = sepX < 0 && sepZ >= 0 ? sepZ : sepZ < 0 && sepX >= 0 ? sepX : -1;
+          if (between >= DEAD_GAP && between < MIN_PASSAGE) issues.push({ level: "warning", code: "tight-passage", itemId: item.id, roomId: room.id, message: `Entre ${item.name} y ${other.name} queda un paso de ${Math.round(between)} mm. Lo mínimo para pasar son ${MIN_PASSAGE} mm y lo cómodo 800.` });
+        }
       }
 
       const t = itemTransform(room, item);
@@ -552,10 +624,10 @@ export function describeWorld(world: World): string {
       const p = i.params;
       if (i.kind === "frame") {
         const meta = itemModel(i).meta as { profile: string; steelKg: number; joint: string };
-        lines.push(`- ${i.name} (id: ${i.id}): estructura de tubo ${p.width} x ${p.height} x ${p.depth}, en ${WALL_NAMES[i.wall]} de ${i.offset} a ${i.offset + p.width}; ${i.frame?.type === "shelving" ? `estantería de ${i.frame.levels ?? 4} niveles` : "mesa"}, perfil ${meta.profile}, ${meta.steelKg} kg de acero, ${meta.joint === "weld" ? "soldada" : "atornillada"}${i.frame?.top === false ? ", sin tablero" : ", con tablero"}`);
+        lines.push(`- ${i.name} (id: ${i.id}): estructura de tubo ${p.width} x ${p.height} x ${p.depth}, en ${WALL_NAMES[i.wall]} de ${i.offset} a ${i.offset + p.width}${i.gap ? `, suelta, separada ${i.gap} del muro` : ""}; ${i.frame?.type === "shelving" ? `estantería de ${i.frame.levels ?? 4} niveles` : "mesa"}, perfil ${meta.profile}, ${meta.steelKg} kg de acero, ${meta.joint === "weld" ? "soldada" : "atornillada"}${i.frame?.top === false ? ", sin tablero" : ", con tablero"}`);
         continue;
       }
-      lines.push(`- ${i.name} (id: ${i.id}): ${p.width} x ${p.height} x ${p.depth}, en ${WALL_NAMES[i.wall]} de ${i.offset} a ${i.offset + p.width}${i.elevation ? `, colgado a ${i.elevation}` : ""}; ${p.doors ?? 0} puerta(s), ${p.shelves ?? 0} repisa(s)${p.dividers ? `, ${p.dividers} división(es)` : ""}${p.drawers ? `, ${p.drawers} cajón(es)` : ""}${p.hangingBar ? ", barra de colgar" : ""}, unión ${p.joinery ?? "confirmat"}`);
+      lines.push(`- ${i.name} (id: ${i.id}): ${p.width} x ${p.height} x ${p.depth}, en ${WALL_NAMES[i.wall]} de ${i.offset} a ${i.offset + p.width}${i.gap ? `, suelto, separado ${i.gap} del muro` : ""}${i.elevation ? `, colgado a ${i.elevation}` : ""}; ${p.doors ?? 0} puerta(s), ${p.shelves ?? 0} repisa(s)${p.dividers ? `, ${p.dividers} división(es)` : ""}${p.drawers ? `, ${p.drawers} cajón(es)` : ""}${p.hangingBar ? ", barra de colgar" : ""}, unión ${p.joinery ?? "confirmat"}`);
     }
     if (room.floor) {
       const f = room.floor, plan = planFloor(room, f);

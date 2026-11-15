@@ -1,6 +1,6 @@
 import type { Millimeters } from "./model/index.js";
 import type { Selection } from "./commands.js";
-import { getRoom, itemBox, wallLength, type Room, type WallSide, type World } from "./world.js";
+import { frontDepth, getRoom, itemBox, roomSpan, wallLength, type Room, type WallSide, type World } from "./world.js";
 
 type Vec3 = [number, number, number];
 
@@ -59,6 +59,12 @@ export function dimensionsFor(world: World, sel: Selection): DimLine[] {
     const side = len - item.offset - w >= 150 ? item.offset + w + 80 : Math.max(0, item.offset - 80);
     up(room, item.wall, side, 0, item.elevation, front, "gap");
     up(room, item.wall, side, item.elevation, item.elevation + h, front, "size");
+    // Mueble suelto: cuánto queda entre su espalda y el muro, y entre su frente y el muro de enfrente.
+    if (item.gap) {
+      const mid = item.offset + w / 2, across = (u0: number, u1: number) => { if (u1 - u0 >= 1) out.push({ from: wallPoint(room, item.wall, mid, 30, u0), to: wallPoint(room, item.wall, mid, 30, u1), value: Math.round(u1 - u0), kind: "gap" }); };
+      across(0, item.gap);
+      across(front, roomSpan(room, item.wall));
+    }
   } else if (sel.kind === "opening") {
     const room = getRoom(world, sel.roomId);
     const o = room.openings.find((x) => x.id === sel.openingId);
@@ -106,4 +112,17 @@ export function snapAlongWall(world: World, roomId: string, wall: WallSide, widt
   const near = candidates.map((c) => ({ c, d: Math.abs(c - raw) })).filter((x) => x.d <= tolerance).sort((a, b) => a.d - b.d)[0];
   const value = near ? near.c : Math.round(raw / grid) * grid;
   return Math.min(max, Math.max(0, value));
+}
+
+/**
+ * Ajusta la separación del muro de un mueble que se arrastra hacia adentro del cuarto: la mantiene dentro,
+ * la redondea a la rejilla y la "imanta" al muro, al centro del cuarto y al muro de enfrente.
+ */
+export function snapGap(world: World, itemId: string, raw: number, grid = 10, tolerance = 60): number {
+  const item = world.items.find((i) => i.id === itemId);
+  if (!item) return 0;
+  const room = getRoom(world, item.roomId);
+  const max = Math.max(0, roomSpan(room, item.wall) - frontDepth(item.params));
+  const near = [0, Math.round(max / 2), max].map((c) => ({ c, d: Math.abs(c - raw) })).filter((x) => x.d <= tolerance).sort((a, b) => a.d - b.d)[0];
+  return Math.min(max, Math.max(0, near ? near.c : Math.round(raw / grid) * grid));
 }

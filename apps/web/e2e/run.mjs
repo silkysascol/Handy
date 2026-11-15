@@ -254,6 +254,61 @@ test("flechas mueven 10 mm y con Mayús 100; Esc cancela un arrastre", async ({ 
   assert.equal(offset(), start - 90);
 });
 
+test("mueble suelto: se pide con la habitación seleccionada, se aleja, se gira y se arrastra hacia adentro", async ({ h }) => {
+  const rooms = (await h.world()).rooms;
+  // La habitación más grande, para que haya dónde ponerlo.
+  const room = rooms.slice().sort((a, b) => b.width * b.depth - a.width * a.depth)[0];
+  await h.page.evaluate((id) => window.__handy.select({ kind: "room", roomId: id }), room.id);
+  const made = await h.say("mesa de tubo de 100 x 75 x 60");
+  assert.match(made, /a \d+ mm del muro norte de .* y a \d+ mm de su izquierda, mirando al sur/);
+  const sel = await h.selection();
+  assert.equal(sel.kind, "item");
+  const item = async () => (await h.world()).items.find((i) => i.id === sel.itemId);
+  const start = await item();
+  assert.equal(start.gap, Math.round((room.depth - 600) / 2));
+  assert.equal(start.offset, Math.round((room.width - 1000) / 2));
+  assert.match(await h.page.textContent("#props"), /Separado del muro/);
+  // Cotas: además del ancho y los lados, la distancia a su muro y al de enfrente.
+  assert.ok((await h.page.locator(".dim").count()) >= 5);
+
+  // Teclado: arriba y abajo lo alejan y lo acercan; R lo gira sin moverlo de sitio.
+  await h.page.locator("#view canvas").focus().catch(() => {});
+  await h.page.keyboard.press("ArrowUp");
+  await h.page.waitForFunction((g) => window.__handy.getWorld().items.some((i) => i.gap === g), start.gap + 10);
+  await h.page.keyboard.press("Shift+ArrowDown");
+  await h.page.waitForFunction((g) => window.__handy.getWorld().items.some((i) => i.gap === g), start.gap - 90);
+  await h.page.keyboard.press("r");
+  await h.page.waitForFunction((id) => window.__handy.getWorld().items.find((i) => i.id === id).wall === "east", sel.itemId);
+  await h.page.keyboard.press("r"); await h.page.keyboard.press("r"); await h.page.keyboard.press("r");
+  await h.page.waitForFunction((id) => window.__handy.getWorld().items.find((i) => i.id === id).wall === "north", sel.itemId);
+
+  // Arrastrar hacia adentro del cuarto lo aleja del muro. La dirección en pantalla se mide moviéndolo con una orden.
+  const screen = () => h.page.evaluate(() => window.__handy.selectionScreen());
+  const p0 = await screen();
+  await h.say("aléjalo 30 cm");
+  const p1 = await screen();
+  await h.say("acércalo 30 cm");
+  const before = (await item()).gap;
+  const a = p0, dx = p1.x - p0.x, dy = p1.y - p0.y;
+  assert.ok(Math.hypot(dx, dy) > 4, "alejar el mueble debe moverlo en pantalla");
+  await h.page.mouse.move(a.x, a.y);
+  await h.page.mouse.down();
+  for (let i = 1; i <= 8; i++) await h.page.mouse.move(a.x + (dx * i) / 8, a.y + (dy * i) / 8);
+  await h.page.mouse.up();
+  await h.page.waitForTimeout(300);
+  const after = (await item()).gap;
+  assert.ok(after - before > 120 && after - before < 600, `arrastrar hacia adentro debía alejarlo unos 300 mm y cambió ${after - before}`);
+
+  // Con palabras: pegarlo al muro, pasarlo a otro, y lo que no cabe no cambia nada.
+  assert.match(await h.say("pégalo al muro"), /pegado al muro norte/);
+  assert.equal((await item()).gap, undefined);
+  assert.match(await h.say("pásalo al muro sur"), /contra el muro sur/);
+  assert.match(await h.say("sepáralo 20 m"), /No cabe/);
+  assert.equal((await item()).wall, "south");
+  await h.say("quítalo");
+  assert.equal((await h.world()).items.some((i) => i.id === sel.itemId), false);
+});
+
 test("armado paso a paso en 3D: niveles de detalle, piezas que entran, puntos de herraje y manual imprimible", async ({ h }) => {
   // Con varios muebles y nada seleccionado, pide escoger uno.
   await h.page.keyboard.press("Escape");

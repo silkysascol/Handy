@@ -3,7 +3,7 @@ import { defaultFloorSpec, planFloor, type FloorSpec } from "./flooring.js";
 import type { FrameOptions } from "./generators/frame.js";
 import { profileBySide } from "./profiles.js";
 import {
-  addOpening, addRoom, attachRoom, getRoom, itemModel, placeCabinet, removeItem, removeOpening, updateItem, updateOpening, updateRoom,
+  addOpening, addRoom, attachRoom, frontDepth, getRoom, itemModel, placeCabinet, removeItem, removeOpening, roomSpan, rotateItem, updateItem, updateOpening, updateRoom,
   wallLength, WALL_NAMES, type WallSide, type World,
 } from "./world.js";
 
@@ -97,12 +97,32 @@ function parseAnchor(t: string): Anchor {
   return undefined;
 }
 
+/**
+ * Separación del muro: "separado 60 cm", "a 1 m del muro", o "en el centro del cuarto" (entonces "center").
+ * "a 2 m de la pared izquierda" no es separación: es la posición a lo largo del muro.
+ */
+function parseGap(t: string): number | "center" | undefined {
+  if (/en (el )?(centro|medio) (del cuarto|de la habitacion|de la sala|de la cocina|del espacio|del salon)|en la mitad del|suelt[oa] en el (centro|medio)|\bisla\b/.test(t)) return "center";
+  const m = t.match(new RegExp(`(?:separad[oa]s?|separal[oa]|despegad[oa]|despegal[oa]|suelt[oa])(?: a| de)? ${NUM} ?${UNIT}`)) ?? t.match(new RegExp(`a ${NUM} ?${UNIT} (?:del muro|de la pared)(?! (?:izquierd|derech|de la izq|de la der))`));
+  return m ? toMm(Number(m[1]), m[2]) : undefined;
+}
+
+const WALL_WORD: Record<string, WallSide> = { norte: "north", sur: "south", este: "east", oriente: "east", oeste: "west", occidente: "west" };
+/** "contra el muro sur", "al muro este", "en la pared norte". */
+function parseWall(t: string): WallSide | undefined {
+  const m = t.match(/(?:muro|pared) (?:del )?(norte|sur|este|oriente|oeste|occidente)/);
+  return m ? WALL_WORD[m[1]] : undefined;
+}
+
+/** Hacia dónde mira el frente de un mueble apoyado en cada muro. */
+const FACES: Record<WallSide, string> = { north: "sur", south: "norte", east: "oeste", west: "este" };
+
 const offsetFor = (anchor: Anchor, len: number, width: number): number =>
   !anchor || anchor.from === "center" ? Math.round((len - width) / 2) : anchor.from === "left" ? anchor.distance : len - anchor.distance - width;
 
 const describeAnchor = (anchor: Anchor, offset: number) => (!anchor || anchor.from === "center" ? `centrada, a ${offset} mm de la izquierda` : `a ${offset} mm de la izquierda`);
 
-const FURNITURE = /gabinete|mueble|armario|closet|cajonera|comoda|estante|estanteria|biblioteca|repisero|alacena|modulo/;
+const FURNITURE = /gabinete|mueble|armario|closet|cajonera|comoda|estante|estanteria|biblioteca|repisero|alacena|modulo|isla/;
 /** Estructura metálica: "mesa de tubo", "estantería metálica", "estructura en acero". */
 const METAL = /\b(metal|metalic[oa]|acero|hierro|perfil|perfiles|de tubo|en tubo|tubo cuadrado|tubo de \d|tubo \d)/;
 const FRAME_WORD = /\b(mesa|meson|banco|base|estanteria|estante|repisero|estructura|marco|rack)\b/;
@@ -153,26 +173,31 @@ function wallCommand(world: World, sel: Extract<Selection, { kind: "wall" }>, t:
   const len = wallLength(room, sel.wall);
   const anchor = parseAnchor(t);
   const dims = parseDims(t);
+  const gapWanted = parseGap(t);
+  const where = (gap: number | undefined, offset: number, a: Anchor) => (gap ? `a ${gap} mm del ${WALL_NAMES[sel.wall]} de ${room.name} y a ${offset} mm de su izquierda, mirando al ${FACES[sel.wall]}` : `en el ${WALL_NAMES[sel.wall]}, ${describeAnchor(a, offset)}`);
 
   if (METAL.test(t) && FRAME_WORD.test(t) && !/closet|armario|cajonera/.test(t)) {
     const shelving = /estanteria|estante|repisero|rack|niveles|nivel/.test(t);
     const def = shelving ? [1000, 2000, 400] : [1200, 750, 600];
     const [width, height, depth] = [dims?.[0] ?? def[0], dims?.[1] ?? def[1], dims?.[2] ?? def[2]];
-    const offset = offsetFor(anchor, len, width);
+    const offset = offsetFor(gapWanted === "center" ? { from: "center" } : anchor, len, width);
+    const gap = gapWanted === "center" ? Math.max(0, Math.round((roomSpan(room, sel.wall) - depth) / 2)) : gapWanted;
     const frame: FrameOptions = { type: shelving ? "shelving" : "table", ...parseFrame(t) };
-    const item = placeCabinet(world, { roomId: room.id, wall: sel.wall, offset, name: shelving ? "Estantería de tubo" : /banco/.test(t) ? "Banco de tubo" : "Mesa de tubo", params: { width, height, depth }, frame });
+    const item = placeCabinet(world, { roomId: room.id, wall: sel.wall, offset, gap, name: shelving ? "Estantería de tubo" : /banco/.test(t) ? "Banco de tubo" : "Mesa de tubo", params: { width, height, depth }, frame });
     const meta = itemModel(item).meta as { profile: string; steelKg: number };
-    return { ok: true, understood: true, select: { kind: "item", itemId: item.id }, message: `${item.name} de ${width} x ${height} x ${depth} mm en ${meta.profile}, ${String(meta.steelKg).replace(".", ",")} kg de acero, en el ${WALL_NAMES[sel.wall]}, ${describeAnchor(anchor, offset)}.` };
+    return { ok: true, understood: true, select: { kind: "item", itemId: item.id }, message: `${item.name} de ${width} x ${height} x ${depth} mm en ${meta.profile}, ${String(meta.steelKg).replace(".", ",")} kg de acero, ${where(gap, offset, anchor)}.` };
   }
 
   if (FURNITURE.test(t)) {
     const word = t.match(FURNITURE)![0];
     const [width, height, depth] = [dims?.[0] ?? lengthAfter(t, "ancho") ?? 800, dims?.[1] ?? lengthAfter(t, "alto|altura") ?? 2000, dims?.[2] ?? lengthAfter(t, "fondo|profundidad|prof") ?? 500];
     const elevation = fromFloor(t) ?? lengthAfter(t, "colgad[ao]|elevad[ao]") ?? 0;
-    const offset = offsetFor(anchor, len, width);
+    const offset = offsetFor(gapWanted === "center" ? { from: "center" } : anchor, len, width);
+    const doorsWanted = countOf(t, "puertas?") ?? 0, drawersWanted = countOf(t, "cajones|cajon|gavetas?");
+    const gap = gapWanted === "center" ? Math.max(0, Math.round((roomSpan(room, sel.wall) - depth - (doorsWanted || drawersWanted ? 18 : 0)) / 2)) : gapWanted;
     const joinery: Joinery = /confirmat/.test(t) ? "confirmat" : /tarugo/.test(t) ? "dowel" : "minifix";
     const item = placeCabinet(world, {
-      roomId: room.id, wall: sel.wall, offset, elevation,
+      roomId: room.id, wall: sel.wall, offset, elevation, gap,
       name: word.charAt(0).toUpperCase() + word.slice(1),
       params: {
         width, height, depth, joinery,
@@ -184,7 +209,7 @@ function wallCommand(world: World, sel: Extract<Selection, { kind: "wall" }>, t:
         plinthHeight: plinthFrom(t) ?? 0,
       },
     });
-    return { ok: true, understood: true, select: { kind: "item", itemId: item.id }, message: `${item.name} de ${width} x ${height} x ${depth} mm en el ${WALL_NAMES[sel.wall]}, ${describeAnchor(anchor, offset)}${elevation ? `, a ${elevation} mm del piso` : ""}.` };
+    return { ok: true, understood: true, select: { kind: "item", itemId: item.id }, message: `${item.name} de ${width} x ${height} x ${depth} mm ${where(gap, offset, anchor)}${elevation ? `, a ${elevation} mm del piso` : ""}.` };
   }
 
   const type = /ventana/.test(t) ? "window" : /puerta/.test(t) ? "door" : /\b(paso|vano|abertura|arco)\b/.test(t) ? "pass" : undefined;
@@ -279,6 +304,39 @@ function itemCommand(world: World, sel: Extract<Selection, { kind: "item" }>, t:
   if (/confirmat/.test(t)) { updateItem(world, item.id, { params: { joinery: "confirmat" } }); return done(`${item.name}: unión confirmat.`); }
   if (/tarugo/.test(t)) { updateItem(world, item.id, { params: { joinery: "dowel" } }); return done(`${item.name}: unión con tarugos.`); }
 
+  // Girar sin moverlo de sitio: "gíralo", "gíralo a la izquierda", "dale media vuelta"
+  if (/\b(gira|giral[oa]|rota|rotal[oa]|voltea|volteal[oa])\b|media vuelta/.test(t)) {
+    const turns = /media vuelta|180/.test(t) ? 2 : /izquierda|270/.test(t) ? 3 : 1;
+    rotateItem(world, item.id, turns);
+    return done(`${item.name}: girado, ahora mira al ${FACES[item.wall]}. Queda ${item.gap ? `a ${item.gap} mm del ${WALL_NAMES[item.wall]}` : `contra el ${WALL_NAMES[item.wall]}`}, de ${item.offset} a ${item.offset + p.width} mm.`);
+  }
+  const span = roomSpan(room, item.wall), front = frontDepth(p), gapNow = item.gap ?? 0;
+  // Pasarlo a otro muro: "pásalo al muro este", "contra la pared sur a 50 cm de la izquierda"
+  const toWall = parseWall(t);
+  if (toWall && toWall !== item.wall) {
+    const a = parseAnchor(t), g = parseGap(t);
+    const offset = offsetFor(a, wallLength(room, toWall), p.width);
+    updateItem(world, item.id, { wall: toWall, offset, gap: typeof g === "number" ? g : 0 });
+    return done(`${item.name}: ahora ${item.gap ? `a ${item.gap} mm del` : "contra el"} ${WALL_NAMES[toWall]}, de ${offset} a ${offset + p.width} mm, mirando al ${FACES[toWall]}.`);
+  }
+  // Separación del muro: en el centro del cuarto, a una distancia, más lejos, más cerca o pegado
+  const gapWanted = parseGap(t);
+  if (gapWanted === "center") {
+    const offset = Math.round((len - p.width) / 2), gap = Math.max(0, Math.round((span - front) / 2));
+    updateItem(world, item.id, { offset, gap });
+    return done(`${item.name}: en el centro de ${room.name}, a ${gap} mm del ${WALL_NAMES[item.wall]} y a ${offset} mm de su izquierda.`);
+  }
+  const sideways = /izquierda|derecha/.test(t);
+  let gap: number | undefined;
+  if (typeof gapWanted === "number") gap = gapWanted;
+  else if (!sideways && /pegal[oa]|arrimal[oa]|contra (el muro|la pared)|al muro|a la pared/.test(t)) gap = 0;
+  else if (L !== undefined && !sideways && /alejal[oa]|aleja\b|hacia (adelante|el frente|delante)|al frente|adelantal[oa]/.test(t)) gap = gapNow + L;
+  else if (L !== undefined && !sideways && /acercal[oa]|acerca\b|hacia atras|atrasal[oa]/.test(t)) gap = Math.max(0, gapNow - L);
+  if (gap !== undefined) {
+    updateItem(world, item.id, { gap });
+    return done(gap ? `${item.name}: ahora a ${gap} mm del ${WALL_NAMES[item.wall]}. Quedan ${span - gap - front} mm hasta el muro de enfrente.` : `${item.name}: pegado al ${WALL_NAMES[item.wall]}.`);
+  }
+
   // Posición a lo largo del muro
   const anchor = parseAnchor(t);
   if (/muev|corre|desplaza|ponl[oa]|ubical[oa]|pegal[oa]|central[oa]|centra\b/.test(t) || (anchor && !/ancho|alto|fondo|profund/.test(t))) {
@@ -350,6 +408,12 @@ function roomCommand(world: World, sel: Extract<Selection, { kind: "room" }>, t:
   const room = getRoom(world, sel.roomId);
   const done = (message: string): CommandResult => ({ ok: true, understood: true, select: sel, message });
   const dims = parseDims(t);
+
+  // Un mueble pedido con la habitación seleccionada va suelto en el centro, salvo que se nombre un muro.
+  if (!/\b(piso|enchape|baldosa|baldosas|ceramica|porcelanato)\b/.test(t) && (FURNITURE.test(t) || (METAL.test(t) && FRAME_WORD.test(t)))) {
+    const wall = parseWall(t);
+    return wallCommand(world, { kind: "wall", roomId: room.id, wall: wall ?? "north" }, wall || parseGap(t) !== undefined ? t : `${t} en el centro del cuarto`);
+  }
 
   // Piso: "piso de porcelanato 60 x 60", "cerámica 45 x 45 trabada", "junta 2", "quita el piso"
   if (/\b(piso|enchape|baldosa|baldosas|ceramica|porcelanato|junta|trabad[oa]|traba)\b/.test(t)) {

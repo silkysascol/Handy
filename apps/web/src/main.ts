@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
-  activeProviders, adjacentWall, createPriceBook, effectiveOpenings, isPriceBook, isPriceCommand, needKey, priceAgeDays, runPriceCommand, checkWorld, createWorld, cutSheetHtml, dimensionsFor, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld, snapAlongWall, updateItem, updateOpening, wallCoord, wallPoint, itemBox,
+  activeProviders, adjacentWall, createPriceBook, effectiveOpenings, isPriceBook, isPriceCommand, needKey, priceAgeDays, runPriceCommand, checkWorld, createWorld, cutSheetHtml, dimensionsFor, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld, snapAlongWall, snapGap, updateItem, updateOpening, wallCoord, wallPoint, itemBox,
   runCommand, StaticCatalogProvider, wallBoxes, wallLength, wallRects, wallRectToBox, WALL_NAMES,
   type AABB, type DimLine, type PriceBook, type Room, type Selection, type StaticCatalog, type WallSide, type World, type WorldIssue, type WorldQuote,
 } from "@handy/core";
@@ -228,6 +228,12 @@ function buildScene() {
         m.material.metalness = 0.5; m.material.roughness = 0.5;
         group.add(m); pickables.push(m);
       }
+      if (model.bars?.length) {
+        // Una estructura de tubo es casi toda hueca: un volumen invisible deja agarrarla por cualquier parte.
+        const grab = box({ min: [0, 0, 0], max: [item.params.width, item.params.height, item.params.depth] }, COLORS.steel, { sel: { kind: "item", itemId: item.id }, grab: true }, { opacity: 0, edges: false });
+        grab.material.depthWrite = false;
+        group.add(grab); pickables.push(grab);
+      }
       for (const f of model.fixtures ?? []) {
         const m = box(f.box, COLORS.metal, { sel: { kind: "item", itemId: item.id } });
         m.material.metalness = 0.6; m.material.roughness = 0.35;
@@ -395,7 +401,7 @@ const pointerNdc = (e: { clientX: number; clientY: number }) => {
   return new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
 };
 
-interface Drag { mode: "move" | "width" | "height"; sel: Selection; snapshot: string; plane: THREE.Plane; u0: number; y0: number; startOffset: number; startValue: number; active: boolean; changed: boolean }
+interface Drag { mode: "move" | "width" | "height"; sel: Selection; snapshot: string; plane: THREE.Plane; u0: number; inset0: number; y0: number; startOffset: number; startGap: number; startValue: number; active: boolean; changed: boolean }
 let down: { x: number; y: number } | null = null;
 let drag: Drag | null = null;
 let rebuildQueued = false;
@@ -424,7 +430,9 @@ renderer.domElement.addEventListener("pointerdown", (e) => {
     const n = new THREE.Vector3(camera.position.x - hit.point.x, 0, camera.position.z - hit.point.z).normalize();
     plane.setFromNormalAndCoplanarPoint(n, hit.point);
   } else plane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), hit.point);
-  drag = { mode, sel, snapshot: JSON.stringify(world), plane, u0: wallCoord(t.room, t.wall, hit.point.x / M, hit.point.z / M).u, y0: hit.point.y / M, startOffset: t.offset, startValue: mode === "width" ? t.width : t.height, active: false, changed: false };
+  const at = wallCoord(t.room, t.wall, hit.point.x / M, hit.point.z / M);
+  const dragged = sel.kind === "item" ? world.items.find((i) => i.id === sel.itemId) : undefined;
+  drag = { mode, sel, snapshot: JSON.stringify(world), plane, u0: at.u, inset0: at.inset, y0: hit.point.y / M, startOffset: t.offset, startGap: dragged?.gap ?? 0, startValue: mode === "width" ? t.width : t.height, active: false, changed: false };
   controls.enabled = false;
 }, { capture: true });
 
@@ -445,8 +453,15 @@ window.addEventListener("pointermove", (e) => {
       const raw = drag.startOffset + (wallCoord(t.room, t.wall, p.x / M, p.z / M).u - drag.u0);
       const exclude = drag.sel.kind === "item" ? { itemId: drag.sel.itemId } : drag.sel.kind === "opening" ? { openingId: drag.sel.openingId } : {};
       const offset = snapAlongWall(world, t.room.id, t.wall, t.width, raw, exclude);
-      if (offset === t.offset) return;
-      if (drag.sel.kind === "item") updateItem(world, drag.sel.itemId, { offset });
+      if (drag.sel.kind === "item") {
+        // Hacia adentro del cuarto el mueble se despega del muro. Uno pegado necesita un tirón claro (20 cm)
+        // para soltarse, y uno colgado no se suelta: así mover de lado no lo despega sin querer.
+        const item = world.items.find((i) => i.id === (drag!.sel as { itemId: string }).itemId)!;
+        const rawGap = drag.startGap + (wallCoord(t.room, t.wall, p.x / M, p.z / M).inset - drag.inset0);
+        const gap = item.elevation > 0 || (drag.startGap === 0 && rawGap < 200) ? drag.startGap : snapGap(world, item.id, rawGap);
+        if (offset === t.offset && gap === (item.gap ?? 0)) return;
+        try { updateItem(world, item.id, { offset, gap }); } catch { updateItem(world, item.id, { offset }); }
+      } else if (offset === t.offset) return;
       else if (drag.sel.kind === "opening") updateOpening(world, drag.sel.roomId, drag.sel.openingId, { offset });
     } else if (drag.sel.kind === "item" && drag.mode === "width") {
       const width = round(drag.startValue + (wallCoord(t.room, t.wall, p.x / M, p.z / M).u - drag.u0));
@@ -541,7 +556,7 @@ function select(s: Selection) {
 
 const PLACEHOLDER: Record<Selection["kind"], string> = {
   world: 'Haz clic en un muro o un mueble, o crea una habitación: "cocina de 2,8 x 2,4 m"',
-  room: '"piso de porcelanato 60 x 60" · "alto 2,6 m" · "ancho 4 m"',
+  room: '"mesa de tubo de 120 x 75 x 60" · "piso de porcelanato 60 x 60" · "alto 2,6 m"',
   wall: '"pon una puerta de 80 x 205 a 2 m de la izquierda" · "armario de 800 x 2000 x 500 con 2 puertas"',
   opening: '"muévela 20 cm a la derecha" · "90 x 210" · "quítala"',
   item: '"ensancha 10 cm" · "agrega una repisa" · "muévelo 30 cm a la derecha" · "¿cómo se arma?"',
@@ -549,13 +564,13 @@ const PLACEHOLDER: Record<Selection["kind"], string> = {
 
 const EXAMPLES: Record<Selection["kind"], string[]> = {
   world: ["cocina de 2,8 x 2,4 m", "baño de 1,5 x 2,2 al este de la cocina", "estudio de 3 x 3 al sur de la sala desplazado 50 cm"],
-  room: ["piso de porcelanato 60 x 60", "piso de cerámica 45 x 45 trabado", "junta 3", "quita el piso", "alto 2,6 m", "ancho 4 m"],
+  room: ["mesa de tubo de 120 x 75 x 60", "isla de 180 x 90 x 60 con 4 cajones", "piso de porcelanato 60 x 60", "piso de cerámica 45 x 45 trabado", "junta 3", "quita el piso", "alto 2,6 m", "ancho 4 m"],
   wall: ["pon una puerta de 80 x 205 a 2 m de la izquierda", "ventana de 120 x 100 centrada, antepecho 110", "armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas", "closet de 180 x 220 x 60 con 2 divisiones, barra y 3 cajones", "cajonera de 80 x 90 x 50", "mesa de tubo de 120 x 75 x 60", "estantería metálica de 100 x 200 x 40 con 5 niveles", "alacena de 900 x 700 x 350 a 1,5 m del piso con 2 puertas", "grosor 20 cm"],
   opening: ["muévela 20 cm a la derecha", "a 1 m de la izquierda", "90 x 210", "céntrala", "quítala"],
-  item: ["ensancha 10 cm", "alto 1800", "muévelo 30 cm a la derecha", "agrega una repisa", "2 divisiones", "3 cajones", "con barra de colgar", "2 puertas", "sin tornillos a la vista", "quítalo"],
+  item: ["ensancha 10 cm", "alto 1800", "muévelo 30 cm a la derecha", "sepáralo 60 cm", "en el centro del cuarto", "gíralo", "pásalo al muro sur", "agrega una repisa", "2 divisiones", "3 cajones", "con barra de colgar", "2 puertas", "sin tornillos a la vista", "quítalo"],
 };
 
-const FRAME_EXAMPLES = ["tubo de 50", "tubo de 25", "5 niveles", "sin tablero", "atornillada", "ensancha 20 cm", "alto 90 cm", "muévelo 30 cm a la derecha", "quítalo"];
+const FRAME_EXAMPLES = ["tubo de 50", "tubo de 25", "5 niveles", "sin tablero", "atornillada", "ensancha 20 cm", "alto 90 cm", "muévelo 30 cm a la derecha", "en el centro del cuarto", "gíralo", "pégalo al muro", "quítalo"];
 
 // ---------- Paneles ----------
 
@@ -624,11 +639,12 @@ function renderProps() {
       const bars = planBars(m.bars ?? []).totals[0];
       body = kv("Ancho × alto × fondo", `${fmt(p.width)} × ${fmt(p.height)} × ${fmt(p.depth)}`) + kv("Tipo", i.frame?.type === "shelving" ? `estantería · ${i.frame.levels ?? 4} niveles` : "mesa") + kv("Perfil", getProfile(meta.profile).name.replace("Tubo cuadrado ", "tubo ")) +
         kv("Acero", `${String(meta.steelMeters).replace(".", ",")} m · ${String(meta.steelKg).replace(".", ",")} kg`) + kv("Barras de 6 m", bars ? `${bars.bars} · sobra ${bars.wastePct} %` : "—") +
-        kv("Uniones", `${meta.joints} · ${meta.joint === "weld" ? "soldadas" : "atornilladas"}`) + kv("Tablero", i.frame?.top === false ? "no" : "sí") + kv("Muro", WALL_NAMES[i.wall]) + kv("Desde la izquierda", `${fmt(i.offset)} mm`);
-    } else body = kv("Ancho × alto × fondo", `${fmt(p.width)} × ${fmt(p.height)} × ${fmt(p.depth)}`) + kv("Muro", WALL_NAMES[i.wall]) + kv("Desde la izquierda", `${fmt(i.offset)} mm`) + kv("Del piso", `${fmt(i.elevation)} mm`) +
+        kv("Uniones", `${meta.joints} · ${meta.joint === "weld" ? "soldadas" : "atornilladas"}`) + kv("Tablero", i.frame?.top === false ? "no" : "sí") + kv("Muro", WALL_NAMES[i.wall]) + kv("Desde la izquierda", `${fmt(i.offset)} mm`) + kv("Separado del muro", i.gap ? `${fmt(i.gap)} mm` : "pegado");
+    } else body = kv("Ancho × alto × fondo", `${fmt(p.width)} × ${fmt(p.height)} × ${fmt(p.depth)}`) + kv("Muro", WALL_NAMES[i.wall]) + kv("Desde la izquierda", `${fmt(i.offset)} mm`) + kv("Separado del muro", i.gap ? `${fmt(i.gap)} mm` : "pegado") + kv("Del piso", `${fmt(i.elevation)} mm`) +
       kv("Puertas", String(p.doors ?? 0)) + kv("Repisas", String(p.shelves ?? 0)) + (p.dividers ? kv("Divisiones", `${p.dividers} · ${p.dividers + 1} cuerpos`) : "") + (p.drawers ? kv("Cajones", `${p.drawers} de ${fmt(p.drawerHeight ?? 200)} mm`) : "") + (p.hangingBar ? kv("Barra de colgar", "sí, con maletero") : "") + kv("Zócalo", p.plinthHeight ? `${fmt(p.plinthHeight)} mm` : "no") + kv("Unión", p.joinery === "minifix" || p.joinery === "dowel" ? `${p.joinery} · sin tornillos a la vista` : p.joinery ?? "confirmat");
   }
-  if (s.kind === "item" || s.kind === "opening") body += `<p class="note">Arrástralo para moverlo a lo largo del muro${s.kind === "item" ? "; tira de los cuadros naranjas para cambiar ancho y alto" : ""}. Flechas: 10 mm, con Mayús 100.</p>`;
+  if (s.kind === "item") body += `<p class="note">Arrastra para moverlo: de lado va por su muro y hacia adentro se despega de él. Los cuadros naranjas cambian ancho y alto. Flechas: 10 mm, con Mayús 100. R lo gira.</p>`;
+  else if (s.kind === "opening") body += `<p class="note">Arrastra para moverla a lo largo del muro. Flechas: 10 mm, con Mayús 100.</p>`;
   const mine = issues.filter((x) => (s.kind === "item" && x.itemId === s.itemId) || s.kind === "world" || ((s.kind === "room" || s.kind === "wall") && x.roomId === s.roomId));
   props.innerHTML =
     `<div class="sec"><h2>${esc(s.kind === "world" ? world.name : selectionLabel(s))}</h2><div class="b">${body}</div></div>` +
@@ -781,7 +797,11 @@ window.addEventListener("keydown", (e) => {
   if (typing || (selection.kind !== "item" && selection.kind !== "opening") || e.ctrlKey || e.metaKey || e.altKey) return;
   const step = e.shiftKey ? 100 : 10;
   const it = selection.kind === "item";
+  // Un mueble suelto se aleja o se acerca a su muro con arriba y abajo; uno pegado sube y baja. R lo gira.
+  const loose = it && (world.items.find((i) => i.id === (selection as { itemId: string }).itemId)?.gap ?? 0) > 0;
   const cmd = e.key === "ArrowRight" ? `muévelo ${step} mm a la derecha` : e.key === "ArrowLeft" ? `muévelo ${step} mm a la izquierda`
+    : loose && e.key === "ArrowUp" ? `aléjalo ${step} mm` : loose && e.key === "ArrowDown" ? `acércalo ${step} mm`
+    : it && (e.key === "r" || e.key === "R") && document.activeElement !== input ? "gíralo"
     : it && e.key === "ArrowUp" ? `súbelo ${step} mm` : it && e.key === "ArrowDown" ? `bájalo ${step} mm`
     : e.key === "Delete" && document.activeElement !== input ? "quita" : null;
   if (!cmd) return;

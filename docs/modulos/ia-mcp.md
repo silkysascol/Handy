@@ -21,7 +21,7 @@ Flujo de precios reales: `prices_needed` → la IA busca cada renglón en las ti
 
 ### Herramientas del mundo
 
-El mundo vive en `~/.handy/mundo.world.json` o donde indique `HANDY_WORLD`. La IA debe llamar a `world_describe` antes de proponer algo.
+El mundo vive en `~/.handy/mundo.world.json` o donde indique `HANDY_WORLD`. La IA debe llamar a `world_describe` antes de proponer algo. Para un mueble suelto (mesa, isla), `world_place_cabinet` y `world_place_frame` aceptan `gap`, la separación del muro; `world_update_item` acepta `gap` y `rotate` (cuartos de vuelta sin moverlo de sitio). `world_check` avisa de pasillos angostos y de puertas con poco espacio al frente.
 
 | Herramienta | Qué hace |
 | --- | --- |
