@@ -136,6 +136,19 @@ describe("Handy MCP server", () => {
     expect((await call("world_describe")).text).toMatch(/suelta, separada 400 del muro/);
     await call("world_remove_item", { itemId: island.data.item.id });
 
+    // Habitación en L y columnas: la IA cierra una esquina, pone una columna y la mueve con una orden.
+    const corner = await call("world_add_block", { roomId: "dormitorio", name: "Esquina cerrada", x: 0, z: 2400, width: 1200, depth: 800 });
+    expect(corner.text).toMatch(/Esquina cerrada \(id: esquina-cerrada\) de 1200 x 800 mm en Dormitorio/);
+    expect(corner.data.freeAreaM2).toBeCloseTo(3.6 * 3.2 - 1.2 * 0.8, 5);
+    const column = await call("world_add_block", { roomId: "dormitorio", x: 1500, z: 1400, width: 300, depth: 300 });
+    const movedCol = await call("world_command", { roomId: "dormitorio", blockId: column.data.block.id, text: "muévela 20 cm al este" });
+    expect(movedCol.text).toMatch(/Columna: a 1700 mm del muro oeste/);
+    expect((await call("world_describe")).text).toMatch(/Macizos .* Piso libre: /);
+    expect((await call("world_add_block", { roomId: "dormitorio", x: 3500, z: 0, width: 300, depth: 300 })).isError).toBe(true);
+    await call("world_remove_block", { roomId: "dormitorio", blockId: column.data.block.id });
+    await call("world_remove_block", { roomId: "dormitorio", blockId: "esquina-cerrada" });
+    expect((await call("world_remove_block", { roomId: "dormitorio", blockId: "esquina-cerrada" })).isError).toBe(true);
+
     // Precios reales: la IA ve qué falta, anota lo que encontró y el presupuesto deja el catálogo de ejemplo.
     expect(withFloor.text).toContain("CATÁLOGO DE EJEMPLO");
     const needed = await call("prices_needed");

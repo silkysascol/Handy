@@ -77,6 +77,19 @@ export function dimensionsFor(world: World, sel: Selection): DimLine[] {
     const side = len - o.offset - o.width >= 150 ? o.offset + o.width + 80 : Math.max(0, o.offset - 80);
     up(room, o.wall, side, 0, o.sill, 40, "gap");
     up(room, o.wall, side, o.sill, o.sill + o.height, 40, "size");
+  } else if (sel.kind === "block") {
+    const room = getRoom(world, sel.roomId);
+    const b = room.blocks?.find((x) => x.id === sel.blockId);
+    if (!b) return out;
+    // Medido desde el muro norte: a lo largo es de oeste a este, y hacia adentro de norte a sur.
+    const across = (u: number, i0: number, i1: number, kind: DimLine["kind"]) => { if (i1 - i0 >= 1) out.push({ from: wallPoint(room, "north", u, 30, i0), to: wallPoint(room, "north", u, 30, i1), value: Math.round(i1 - i0), kind }); };
+    const midX = b.x + b.width / 2, midZ = b.z + b.depth / 2;
+    along(room, "north", 0, b.x, 30, midZ, "gap");
+    along(room, "north", b.x + b.width, room.width, 30, midZ, "gap");
+    across(midX, 0, b.z, "gap");
+    across(midX, b.z + b.depth, room.depth, "gap");
+    along(room, "north", b.x, b.x + b.width, 30, b.z + b.depth + 100, "size");
+    across(b.x + b.width + 100, b.z, b.z + b.depth, "size");
   } else if (sel.kind === "wall") {
     const room = getRoom(world, sel.roomId);
     along(room, sel.wall, 0, wallLength(room, sel.wall), room.height + 120, 0, "size");
@@ -107,6 +120,8 @@ export function snapAlongWall(world: World, roomId: string, wall: WallSide, widt
   const edges: number[] = [0, len];
   for (const o of room.openings) if (o.wall === wall && o.id !== exclude.openingId) edges.push(o.offset, o.offset + o.width);
   for (const i of world.items) if (i.roomId === room.id && i.wall === wall && i.id !== exclude.itemId) edges.push(i.offset, i.offset + i.params.width);
+  // Los bordes de columnas y esquinas cerradas también atraen, estén o no pegadas a este muro.
+  for (const blk of room.blocks ?? []) edges.push(...(wall === "north" ? [blk.x, blk.x + blk.width] : wall === "south" ? [room.width - blk.x - blk.width, room.width - blk.x] : wall === "east" ? [blk.z, blk.z + blk.depth] : [room.depth - blk.z - blk.depth, room.depth - blk.z]));
   // Un borde vecino atrae tanto al lado izquierdo como al derecho de lo que se mueve.
   const candidates = edges.flatMap((e) => [e, e - width]).filter((c) => c >= 0 && c <= max);
   const near = candidates.map((c) => ({ c, d: Math.abs(c - raw) })).filter((x) => x.d <= tolerance).sort((a, b) => a.d - b.d)[0];

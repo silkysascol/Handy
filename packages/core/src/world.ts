@@ -28,7 +28,25 @@ export interface Opening {
   sill: Millimeters;
 }
 
-/** Habitación rectangular. `origin` es la esquina interior noroeste (x mínimo, z mínimo). */
+/**
+ * Macizo dentro de la habitación: una columna, un buitrón, una chimenea, un muro bajo, o una esquina
+ * cerrada que convierte el rectángulo en una L. Ocupa piso, estorba a los muebles y se ve como muro.
+ */
+export interface Block {
+  id: string;
+  name: string;
+  /** Esquina noroeste del macizo, medida desde la esquina interior noroeste de la habitación. */
+  x: Millimeters;
+  z: Millimeters;
+  /** De oeste a este. */
+  width: Millimeters;
+  /** De norte a sur. */
+  depth: Millimeters;
+  /** Alto. Si falta, llega hasta el techo. */
+  height?: Millimeters;
+}
+
+/** Habitación rectangular, con macizos opcionales que la recortan. `origin` es la esquina interior noroeste (x mínimo, z mínimo). */
 export interface Room {
   id: string;
   name: string;
@@ -40,6 +58,8 @@ export interface Room {
   openings: Opening[];
   /** Piso instalado o planeado en la habitación. */
   floor?: FloorSpec;
+  /** Columnas, buitrones y esquinas cerradas. */
+  blocks?: Block[];
 }
 
 export interface PlacedItem {
@@ -214,6 +234,78 @@ export function addOpening(world: World, roomId: string, input: Omit<Opening, "i
 }
 
 // ---------- Geometría ----------
+
+// ---------- Macizos: columnas, buitrones y esquinas cerradas ----------
+
+/** Caja del macizo en el mundo. */
+export function blockBox(room: Room, b: Block): AABB {
+  const [ox, oz] = room.origin;
+  return { min: [ox + b.x, 0, oz + b.z], max: [ox + b.x + b.width, Math.min(b.height ?? room.height, room.height), oz + b.z + b.depth] };
+}
+
+/** Tramo de un muro que un macizo tapa por estar pegado a él, o `null` si no lo toca. */
+function blockOnWall(room: Room, b: Block, wall: WallSide): [number, number] | null {
+  const touching = wall === "north" ? b.z <= 0 : wall === "south" ? b.z + b.depth >= room.depth : wall === "west" ? b.x <= 0 : b.x + b.width >= room.width;
+  if (!touching) return null;
+  return wall === "north" ? [b.x, b.x + b.width] : wall === "south" ? [room.width - b.x - b.width, room.width - b.x] : wall === "east" ? [b.z, b.z + b.depth] : [room.depth - b.z - b.depth, room.depth - b.z];
+}
+
+function assertBlock(room: Room, b: Block, others: Block[]): void {
+  if (b.width < 50 || b.depth < 50) throw new Error("Un macizo debe medir al menos 50 mm por lado.");
+  if (b.height !== undefined && (b.height < 50 || b.height > room.height)) throw new Error(`El alto debe estar entre 50 y ${room.height} mm, el alto de la habitación.`);
+  if (b.x < 0 || b.z < 0 || b.x + b.width > room.width || b.z + b.depth > room.depth) throw new Error(`No cabe: ${b.name} iría de ${b.x} a ${b.x + b.width} mm de oeste a este y de ${b.z} a ${b.z + b.depth} mm de norte a sur, y ${room.name} mide ${room.width} x ${room.depth} mm.`);
+  if (b.width * b.depth > room.width * room.depth * 0.6) throw new Error(`${b.name} ocuparía más de la mitad de ${room.name}. Si la habitación es más pequeña, cambia sus medidas.`);
+  for (const o of others) {
+    if (b.x < o.x + o.width && o.x < b.x + b.width && b.z < o.z + o.depth && o.z < b.z + b.depth) throw new Error(`${b.name} se cruza con ${o.name}.`);
+  }
+  const top = b.height ?? room.height;
+  for (const wall of ["north", "east", "south", "west"] as WallSide[]) {
+    const span = blockOnWall(room, b, wall);
+    if (!span) continue;
+    for (const o of room.openings) {
+      if (o.wall === wall && span[0] < o.offset + o.width && o.offset < span[1] && top > o.sill) throw new Error(`${b.name} taparía ${o.type === "window" ? "la ventana" : o.type === "door" ? "la puerta" : "el paso"} del ${WALL_NAMES[wall]}. Muévela o quítala primero.`);
+    }
+  }
+}
+
+export interface BlockInput { name?: string; x: Millimeters; z: Millimeters; width: Millimeters; depth: Millimeters; height?: Millimeters }
+
+/** Agrega una columna, un buitrón o una esquina cerrada a una habitación. */
+export function addBlock(world: World, roomId: string, input: BlockInput): Block {
+  const room = getRoom(world, roomId);
+  const name = input.name ?? "Columna";
+  const blocks = room.blocks ?? [];
+  const block: Block = { id: uniqueId(slug(name), blocks.map((b) => b.id)), name, x: Math.round(input.x), z: Math.round(input.z), width: Math.round(input.width), depth: Math.round(input.depth), ...(input.height && input.height < room.height ? { height: Math.round(input.height) } : {}) };
+  assertBlock(room, block, blocks);
+  room.blocks = [...blocks, block];
+  return block;
+}
+
+/** Mueve o cambia un macizo. Si el resultado no cabe o tapa una abertura, lanza un error y no cambia nada. */
+export function updateBlock(world: World, roomId: string, blockId: string, patch: Omit<Partial<BlockInput>, "height"> & { height?: Millimeters | null }): Block {
+  const room = getRoom(world, roomId);
+  const block = room.blocks?.find((b) => b.id === blockId);
+  if (!block) throw new Error(`No existe "${blockId}" en ${room.name}.`);
+  const { height, ...rest } = patch;
+  const next: Block = { ...block, ...rest };
+  if (height === null || (height !== undefined && height >= room.height)) delete next.height;
+  else if (height !== undefined) next.height = Math.round(height);
+  assertBlock(room, next, room.blocks!.filter((b) => b.id !== blockId));
+  Object.assign(block, next);
+  if (next.height === undefined) delete block.height;
+  return block;
+}
+
+export function removeBlock(world: World, roomId: string, blockId: string): boolean {
+  const room = getRoom(world, roomId);
+  const before = room.blocks?.length ?? 0;
+  room.blocks = (room.blocks ?? []).filter((b) => b.id !== blockId);
+  if (!room.blocks.length) delete room.blocks;
+  return before > (room.blocks?.length ?? 0);
+}
+
+/** Área de piso libre: el rectángulo menos lo que ocupan los macizos. */
+export const roomArea = (room: Pick<Room, "width" | "depth" | "blocks">): number => room.width * room.depth - (room.blocks ?? []).reduce((a, b) => a + b.width * b.depth, 0);
 
 /** Giro alrededor de Y que lleva el frente del mueble hacia el interior de la habitación. */
 export const WALL_ROTATION: Record<WallSide, 0 | 90 | 180 | 270> = { north: 0, west: 90, south: 180, east: 270 };
@@ -426,6 +518,9 @@ export function updateRoom(world: World, roomId: string, patch: RoomPatch): Room
   for (const i of world.items.filter((x) => x.roomId === room.id)) {
     if (i.offset + i.params.width > wallLength(next, i.wall) || i.elevation + i.params.height > next.height) throw new Error(`Con esas medidas ya no cabe ${i.name}. Muévelo o cámbialo primero.`);
   }
+  for (const b of next.blocks ?? []) {
+    if (b.x + b.width > next.width || b.z + b.depth > next.depth) throw new Error(`Con esas medidas ya no cabe ${b.name}. Muévela o quítala primero.`);
+  }
   Object.assign(room, next);
   return room;
 }
@@ -481,6 +576,10 @@ export function freeWallRuns(world: World, roomId: string, opts: { height?: Mill
       const blocks = o.type !== "window" ? elevation < o.sill + o.height : top > o.sill && elevation < o.sill + o.height;
       if (blocks) blocked.push([o.offset, o.offset + o.width]);
     }
+    for (const b of room.blocks ?? []) {
+      const span = blockOnWall(room, b, wall);
+      if (span && (b.height ?? room.height) > elevation) blocked.push(span);
+    }
     for (const item of world.items) {
       if (item.roomId !== room.id) continue;
       const box = itemBox(room, item);
@@ -525,6 +624,7 @@ export function checkWorld(world: World): WorldIssue[] {
       return adj ? wallBoxes(adj.room)[adj.wall] : walls[w];
     };
     const boxes = new Map(items.map((i) => [i.id, itemBox(room, i)]));
+    const solids = (room.blocks ?? []).map((b) => ({ block: b, box: blockBox(room, b) }));
 
     for (let a = 0; a < items.length; a++) for (let b = a + 1; b < items.length; b++) {
       if (overlaps(boxes.get(items[a].id)!, boxes.get(items[b].id)!, 1)) {
@@ -534,6 +634,9 @@ export function checkWorld(world: World): WorldIssue[] {
 
     for (const item of items) {
       const box = boxes.get(item.id)!;
+      for (const s of solids) {
+        if (overlaps(box, s.box, 1)) issues.push({ level: "error", code: "hits-block", itemId: item.id, roomId: room.id, message: `${item.name} se mete en ${s.block.name} en ${room.name}.` });
+      }
       const free = (item.gap ?? 0) > 50;
       // Se mira cada muro, no solo el del mueble: uno suelto, o uno en esquina, también puede quedar frente a una puerta.
       for (const w of Object.keys(walls) as WallSide[]) {
@@ -556,6 +659,13 @@ export function checkWorld(world: World): WorldIssue[] {
         }
       }
       if (free) {
+        for (const s of solids) {
+          const b = s.box;
+          if (box.max[1] <= b.min[1] || b.max[1] <= box.min[1]) continue;
+          const sepX = Math.max(box.min[0] - b.max[0], b.min[0] - box.max[0]), sepZ = Math.max(box.min[2] - b.max[2], b.min[2] - box.max[2]);
+          const between = sepX < 0 && sepZ >= 0 ? sepZ : sepZ < 0 && sepX >= 0 ? sepX : -1;
+          if (between >= DEAD_GAP && between < MIN_PASSAGE) issues.push({ level: "warning", code: "tight-passage", itemId: item.id, roomId: room.id, message: `Entre ${item.name} y ${s.block.name} queda un paso de ${Math.round(between)} mm. Lo mínimo para pasar son ${MIN_PASSAGE} mm y lo cómodo 800.` });
+        }
         for (const other of items) {
           if (other.id === item.id || ((other.gap ?? 0) > 50 && other.id < item.id)) continue;
           const b = boxes.get(other.id)!;
@@ -571,6 +681,7 @@ export function checkWorld(world: World): WorldIssue[] {
       const obstacles: Obstacle[] = [
         ...(Object.keys(walls) as WallSide[]).map((w) => ({ id: `wall-${w}`, name: WALL_NAMES[w], box: worldToLocal(solidWall(w), t) })),
         ...items.filter((o) => o.id !== item.id).map((o) => ({ id: o.id, name: o.name, box: worldToLocal(boxes.get(o.id)!, t) })),
+        ...solids.map((s) => ({ id: `block-${s.block.id}`, name: s.block.name, box: worldToLocal(s.box, t) })),
       ];
       const model = itemModel(item);
       for (const c of checkMotionCollisions(model, obstacles) as Collision[]) {
@@ -617,6 +728,10 @@ export function describeWorld(world: World): string {
       const ops = effectiveOpenings(world, room, wall).map((o) => `${o.type === "door" ? "puerta" : o.type === "window" ? "ventana" : "paso"} ${o.width}x${o.height} en ${o.offset}–${o.offset + o.width}${o.sill ? `, antepecho ${o.sill}` : ""}${o.ownerRoomId !== room.id ? ` (id ${o.id}, guardada en ${o.ownerRoomId})` : ""}`);
       const adj = adjacentWall(world, room, wall);
       lines.push(`- ${WALL_NAMES[wall]} (${wall}): largo ${wallLength(room, wall)}, grosor ${room.wallThickness[wall]}${adj ? `, compartido con ${adj.room.name} (su ${WALL_NAMES[adj.wall]})` : ""}${ops.length ? `; ${ops.join("; ")}` : ""}`);
+    }
+    if (room.blocks?.length) {
+      lines.push(`Macizos (columnas, buitrones, esquinas cerradas; x desde el muro oeste, z desde el muro norte). Piso libre: ${m2(roomArea(room), 1)} m².`);
+      for (const b of room.blocks) lines.push(`- ${b.name} (id: ${b.id}): ${b.width} x ${b.depth}${b.height ? `, alto ${b.height}` : ", hasta el techo"}, x ${b.x}–${b.x + b.width}, z ${b.z}–${b.z + b.depth}`);
     }
     const items = world.items.filter((i) => i.roomId === room.id);
     if (items.length) lines.push("Muebles:");

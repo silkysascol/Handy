@@ -98,3 +98,29 @@ Revisiones nuevas en `checkWorld`:
 - `blocks-door` y `blocks-window` ahora miran los cuatro muros, no solo el del mueble: uno en esquina también puede tapar la puerta del muro vecino.
 
 Límites: los muebles miran a uno de los cuatro muros; no hay ángulos libres. No se modela el barrido de la hoja de las puertas del cuarto.
+
+## Habitaciones en L, columnas y buitrones
+
+Una habitación sigue siendo un rectángulo con cuatro muros, pero puede tener **macizos** dentro: volúmenes del color del muro que ocupan piso. Con eso se resuelven los casos reales sin cambiar el resto del modelo:
+
+| Caso | Cómo se dice, con la habitación seleccionada |
+| --- | --- |
+| Habitación en L | "recorta la esquina noreste 2 x 1,5 m" |
+| Columna suelta | "columna de 30 x 30 a 2 m del muro oeste y 1 m del muro norte" |
+| Columna o mocheta contra un muro | "columna de 30 x 30 pegada al muro sur a 1,5 m del muro este" |
+| Buitrón o ducto en una esquina | "buitrón de 60 x 40 en la esquina suroeste" |
+| Muro bajo o poyo | "muro bajo de 150 x 12 a 2 m del muro norte" (90 cm de alto si no se dice otro) |
+
+Las medidas son ancho (de oeste a este) por fondo (de norte a sur). Lo que no se diga queda centrado. Las esquinas son noroeste, noreste, suroeste y sureste.
+
+Con el macizo seleccionado (clic en la vista o en la lista): "muévela 20 cm al este", "a 1 m del muro norte", "céntrala", "40 x 60", "alto 1 m", "hasta el techo", "quítala". Las flechas la mueven 10 mm hacia el punto cardinal; con Mayús, 100. Las cotas muestran la distancia a los cuatro muros.
+
+Qué cambia con un macizo:
+
+- **Piso**: el área libre baja; las baldosas que quedan debajo no se cuentan y las que lo bordean se marcan como recortes, una baldosa entera cada una. El guardaescobas suma sus caras.
+- **Muros**: el tramo que tapa deja de estar libre para muebles.
+- **Muebles**: `hits-block` si un mueble se mete en él; cuenta como obstáculo al abrir puertas y cajones, y para el aviso de pasillo angosto.
+- **Reglas**: no puede cruzarse con otro macizo, salirse de la habitación, ocupar más del 60 % de ella ni tapar una puerta o una ventana. Un muro bajo sí puede ir bajo el antepecho de una ventana.
+- **Exportación**: sale a Blender como un volumen más del grupo de muros.
+
+Límites: los macizos son rectangulares y alineados con los muros. No hay muros inclinados ni curvos. Las caras de una esquina cerrada no admiten todavía puertas ni ventanas, y un mueble contra una de esas caras se coloca como mueble suelto, con su separación del muro.

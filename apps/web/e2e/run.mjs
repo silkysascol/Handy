@@ -309,6 +309,61 @@ test("mueble suelto: se pide con la habitación seleccionada, se aleja, se gira 
   assert.equal((await h.world()).items.some((i) => i.id === sel.itemId), false);
 });
 
+test("habitación en L y columnas: se crean con palabras, se seleccionan en 3D, se mueven y estorban a los muebles", async ({ h }) => {
+  await h.page.evaluate(() => window.__handy.select({ kind: "world" }));
+  assert.match(await h.say("bodega de 5 x 4 m"), /Bodega/);
+  const room = (await h.world()).rooms.find((r) => r.name === "Bodega");
+  const selRoom = () => h.page.evaluate((id) => window.__handy.select({ kind: "room", roomId: id }), room.id);
+  const blocks = async () => (await h.world()).rooms.find((r) => r.id === room.id).blocks ?? [];
+
+  // Cerrar una esquina la vuelve una L: el piso libre baja de 20 a 17 m².
+  await selRoom();
+  assert.match(await h.say("recorta la esquina noreste 2 x 1,5 m"), /Esquina cerrada de 2000 x 1500 mm, hasta el techo.* queda con 17,0 m² de piso/);
+  assert.deepEqual(await h.selection(), { kind: "block", roomId: room.id, blockId: "esquina-cerrada" });
+  assert.match(await h.page.textContent("#props"), /Al muro sur/);
+  assert.equal(await h.page.locator(".node", { hasText: "Esquina cerrada" }).count(), 1);
+  await selRoom();
+  assert.match(await h.page.textContent("#props"), /Piso libre\s*17,0 m²/);
+
+  // Una columna, puesta por distancias a dos muros; las flechas la mueven por puntos cardinales.
+  assert.match(await h.say("columna de 30 x 30 a 2 m del muro oeste y 2 m del muro norte"), /Columna de 300 x 300 mm/);
+  assert.equal((await h.selection()).blockId, "columna");
+  assert.ok((await h.page.locator(".dim").count()) >= 6);
+  await h.page.keyboard.press("ArrowRight");
+  await h.page.keyboard.press("Shift+ArrowDown");
+  await h.page.waitForFunction((id) => { const b = window.__handy.getWorld().rooms.find((r) => r.id === id).blocks.find((x) => x.id === "columna"); return b.x === 2010 && b.z === 2100; }, room.id);
+  assert.match(await h.say("muévela 9 m al este"), /No cabe/);
+
+  // Se puede seleccionar con un clic en la vista 3D.
+  await h.page.click("#frame");
+  await h.page.waitForTimeout(400);
+  await h.page.evaluate(() => window.__handy.select({ kind: "world" }));
+  assert.ok(await h.clickUntil((s) => s.kind === "block"), "ningún clic en la vista dio con una columna o esquina");
+
+  // Un mueble que se mete en la esquina cerrada se avisa; el piso descuenta lo que no es piso.
+  await h.page.evaluate((id) => window.__handy.select({ kind: "wall", roomId: id, wall: "north" }), room.id);
+  assert.match(await h.say("armario de 80 x 200 x 50 a 2,6 m de la izquierda"), /Armario de 800/);
+  const item = await h.selection();
+  await h.page.waitForFunction(() => /se mete en Esquina cerrada/.test(document.getElementById("issues").textContent + document.getElementById("props").textContent));
+  await h.say("quítalo");
+  await selRoom();
+  const floor = await h.say("piso de porcelanato 50 x 50");
+  assert.match(floor, /Necesitas \d+ piezas/);
+  const area = await h.page.evaluate((id) => { const w = window.__handy.getWorld(); const r = w.rooms.find((x) => x.id === id); return r.width * r.depth - r.blocks.reduce((a, b) => a + b.width * b.depth, 0); }, room.id);
+  assert.equal(area, 5000 * 4000 - 2000 * 1500 - 300 * 300);
+  await h.say("quita el piso");
+
+  // Quitar la columna devuelve la selección a la habitación.
+  // Se escoge en la lista lateral: con el cursor en la barra de órdenes, Supr borra texto y no la columna.
+  await h.pick("Columna");
+  assert.equal((await h.selection()).blockId, "columna");
+  await h.page.keyboard.press("Delete");
+  await h.page.waitForFunction((id) => window.__handy.getWorld().rooms.find((r) => r.id === id).blocks.length === 1, room.id);
+  assert.equal((await h.selection()).kind, "room");
+  assert.equal((await blocks()).length, 1);
+  assert.ok(item.itemId);
+});
+
 test("armado paso a paso en 3D: niveles de detalle, piezas que entran, puntos de herraje y manual imprimible", async ({ h }) => {
   // Con varios muebles y nada seleccionado, pide escoger uno.
   await h.page.keyboard.press("Escape");
@@ -489,6 +544,9 @@ for (const c of cases) {
   } catch (e) {
     failed++;
     console.log(`  ✗ ${c.name}\n      ${String(e.message ?? e).split("\n").slice(0, 6).join("\n      ")}`);
+    // La línea de este archivo donde falló, para no adivinar cuál espera se agotó.
+    const where = String(e.stack ?? "").split("\n").find((l) => l.includes("run.mjs:"));
+    if (where) console.log(`      en ${where.trim().replace(/^at /, "").replace(/.*run\.mjs:/, "run.mjs:").replace(/\)$/, "")}`);
     if (h) await h.page.screenshot({ path: join(app.dir, "fallo.png") }).then(() => console.log(`      captura: ${join(app.dir, "fallo.png")}`)).catch(() => {});
   } finally {
     await h?.close();

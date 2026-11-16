@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
-  activeProviders, adjacentWall, createPriceBook, effectiveOpenings, isPriceBook, isPriceCommand, needKey, priceAgeDays, runPriceCommand, checkWorld, createWorld, cutSheetHtml, dimensionsFor, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld, snapAlongWall, snapGap, updateItem, updateOpening, wallCoord, wallPoint, itemBox,
+  activeProviders, adjacentWall, blockBox, roomArea, createPriceBook, effectiveOpenings, isPriceBook, isPriceCommand, needKey, priceAgeDays, runPriceCommand, checkWorld, createWorld, cutSheetHtml, dimensionsFor, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld, snapAlongWall, snapGap, updateItem, updateOpening, wallCoord, wallPoint, itemBox,
   runCommand, StaticCatalogProvider, wallBoxes, wallLength, wallRects, wallRectToBox, WALL_NAMES,
   type AABB, type DimLine, type PriceBook, type Room, type Selection, type StaticCatalog, type WallSide, type World, type WorldIssue, type WorldQuote,
 } from "@handy/core";
@@ -207,6 +207,14 @@ function buildScene() {
       ["south", "west", ox - t.west, ox, oz + room.depth, oz + room.depth + t.south], ["south", "east", ox + room.width, ox + room.width + t.east, oz + room.depth, oz + room.depth + t.south],
     ];
     for (const [a, b, x0, x1, z0, z1] of corners) if (x1 > x0 && z1 > z0) content.add(box({ min: [x0, 0, z0], max: [x1, room.height, z1] }, COLORS.wall, { ghostSides: [a, b], roomId: room.id }));
+
+    // Columnas, buitrones y esquinas cerradas: macizos del color del muro, que se pueden seleccionar.
+    for (const b of room.blocks ?? []) {
+      // Si toca un muro que mira a la cámara, se vuelve transparente con él para no tapar el interior.
+      const touches = SIDES.filter((w) => (w === "north" ? b.z <= 0 : w === "south" ? b.z + b.depth >= room.depth : w === "west" ? b.x <= 0 : b.x + b.width >= room.width));
+      const m = box(blockBox(room, b), COLORS.wall, { sel: { kind: "block", roomId: room.id, blockId: b.id }, ...(touches.length ? { ghostSides: touches, roomId: room.id } : {}) });
+      content.add(m); pickables.push(m);
+    }
 
     for (const item of world.items.filter((i) => i.roomId === room.id)) {
       const tr = itemTransform(room, item);
@@ -525,6 +533,7 @@ function selectionExists(s: Selection): boolean {
     case "wall": return world.rooms.some((r) => r.id === s.roomId);
     case "opening": return world.rooms.some((r) => r.id === s.roomId && r.openings.some((o) => o.id === s.openingId));
     case "item": return world.items.some((i) => i.id === s.itemId);
+    case "block": return world.rooms.some((r) => r.id === s.roomId && !!r.blocks?.some((b) => b.id === s.blockId));
   }
 }
 
@@ -539,6 +548,7 @@ function selectionLabel(s: Selection): string {
       return `${room?.name} · ${o?.type === "window" ? "ventana" : o?.type === "door" ? "puerta" : "paso"} del ${o ? WALL_NAMES[o.wall] : ""}`;
     }
     case "item": return world.items.find((i) => i.id === s.itemId)?.name ?? "Mueble";
+    case "block": { const room = world.rooms.find((r) => r.id === s.roomId); return `${room?.name} · ${room?.blocks?.find((b) => b.id === s.blockId)?.name ?? "columna"}`; }
   }
 }
 
@@ -559,12 +569,14 @@ const PLACEHOLDER: Record<Selection["kind"], string> = {
   room: '"mesa de tubo de 120 x 75 x 60" · "piso de porcelanato 60 x 60" · "alto 2,6 m"',
   wall: '"pon una puerta de 80 x 205 a 2 m de la izquierda" · "armario de 800 x 2000 x 500 con 2 puertas"',
   opening: '"muévela 20 cm a la derecha" · "90 x 210" · "quítala"',
+  block: '"muévela 20 cm al este" · "a 1 m del muro norte" · "40 x 60" · "quítala"',
   item: '"ensancha 10 cm" · "agrega una repisa" · "muévelo 30 cm a la derecha" · "¿cómo se arma?"',
 };
 
 const EXAMPLES: Record<Selection["kind"], string[]> = {
   world: ["cocina de 2,8 x 2,4 m", "baño de 1,5 x 2,2 al este de la cocina", "estudio de 3 x 3 al sur de la sala desplazado 50 cm"],
-  room: ["mesa de tubo de 120 x 75 x 60", "isla de 180 x 90 x 60 con 4 cajones", "piso de porcelanato 60 x 60", "piso de cerámica 45 x 45 trabado", "junta 3", "quita el piso", "alto 2,6 m", "ancho 4 m"],
+  block: ["muévela 20 cm al este", "muévela 50 cm al sur", "a 1 m del muro norte", "céntrala", "40 x 60", "alto 1 m", "hasta el techo", "quítala"],
+  room: ["mesa de tubo de 120 x 75 x 60", "isla de 180 x 90 x 60 con 4 cajones", "columna de 30 x 30 a 2 m del muro oeste y 1 m del muro norte", "recorta la esquina noreste 2 x 1,5 m", "buitrón de 60 x 40 en la esquina suroeste", "piso de porcelanato 60 x 60", "piso de cerámica 45 x 45 trabado", "junta 3", "quita el piso", "alto 2,6 m", "ancho 4 m"],
   wall: ["pon una puerta de 80 x 205 a 2 m de la izquierda", "ventana de 120 x 100 centrada, antepecho 110", "armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas", "closet de 180 x 220 x 60 con 2 divisiones, barra y 3 cajones", "cajonera de 80 x 90 x 50", "mesa de tubo de 120 x 75 x 60", "estantería metálica de 100 x 200 x 40 con 5 niveles", "alacena de 900 x 700 x 350 a 1,5 m del piso con 2 puertas", "grosor 20 cm"],
   opening: ["muévela 20 cm a la derecha", "a 1 m de la izquierda", "90 x 210", "céntrala", "quítala"],
   item: ["ensancha 10 cm", "alto 1800", "muévelo 30 cm a la derecha", "sepáralo 60 cm", "en el centro del cuarto", "gíralo", "pásalo al muro sur", "agrega una repisa", "2 divisiones", "3 cajones", "con barra de colgar", "2 puertas", "sin tornillos a la vista", "quítalo"],
@@ -582,11 +594,14 @@ function renderTree() {
   let html = "";
   for (const room of world.rooms) {
     html += node(room.name, `${fmt(room.width)} × ${fmt(room.depth)}`, 0, { kind: "room", roomId: room.id });
+    for (const b of room.blocks ?? []) html += node(b.name, `${fmt(b.width)} × ${fmt(b.depth)}`, 1, { kind: "block", roomId: room.id, blockId: b.id });
+    // Los muebles sueltos van aparte: no pertenecen a un muro.
+    for (const i of world.items.filter((x) => x.roomId === room.id && x.gap)) html += node(`${i.name} · suelto`, `${fmt(i.params.width)} × ${fmt(i.params.height)}`, 1, { kind: "item", itemId: i.id });
     for (const wall of SIDES) {
       const adj = adjacentWall(world, room, wall);
       html += node(cap(WALL_NAMES[wall]) + (adj ? ` · con ${adj.room.name}` : ""), fmt(wallLength(room, wall)), 1, { kind: "wall", roomId: room.id, wall });
       for (const o of room.openings.filter((x) => x.wall === wall)) html += node(o.type === "window" ? "Ventana" : o.type === "door" ? "Puerta" : "Paso", `${fmt(o.width)} × ${fmt(o.height)}`, 2, { kind: "opening", roomId: room.id, openingId: o.id });
-      for (const i of world.items.filter((x) => x.roomId === room.id && x.wall === wall)) html += node(i.name, `${fmt(i.params.width)} × ${fmt(i.params.height)}`, 2, { kind: "item", itemId: i.id });
+      for (const i of world.items.filter((x) => x.roomId === room.id && x.wall === wall && !x.gap)) html += node(i.name, `${fmt(i.params.width)} × ${fmt(i.params.height)}`, 2, { kind: "item", itemId: i.id });
     }
   }
   tree.innerHTML = html || `<p class="note">Aún no hay habitaciones. Escribe abajo: "sala de 4 x 3 m".</p>`;
@@ -606,7 +621,7 @@ function renderProps() {
     body = kv("Habitaciones", String(world.rooms.length)) + kv("Muebles", String(world.items.length)) + `<p class="note">Haz clic en un muro, un mueble, una puerta o una ventana y escribe abajo lo que quieres cambiar, en tus palabras.</p>`;
   } else if (s.kind === "room") {
     const r = world.rooms.find((x) => x.id === s.roomId)!;
-    body = kv("Ancho (norte y sur)", `${fmt(r.width)} mm`) + kv("Fondo (este y oeste)", `${fmt(r.depth)} mm`) + kv("Altura", `${fmt(r.height)} mm`) + kv("Área", `${((r.width * r.depth) / 1e6).toFixed(1).replace(".", ",")} m²`);
+    body = kv("Ancho (norte y sur)", `${fmt(r.width)} mm`) + kv("Fondo (este y oeste)", `${fmt(r.depth)} mm`) + kv("Altura", `${fmt(r.height)} mm`) + kv(r.blocks?.length ? "Piso libre" : "Área", `${(roomArea(r) / 1e6).toFixed(1).replace(".", ",")} m²`) + (r.blocks?.length ? kv("Columnas y recortes", String(r.blocks.length)) : "");
     if (r.floor) {
       const f = r.floor, plan = planFloor(r, f);
       body += `<div class="kv"><span class="k"><strong>Piso</strong></span><span class="num">${f.material === "porcelain" ? "porcelanato" : "cerámica"} ${fmt(f.tileWidth)} × ${fmt(f.tileLength)}</span></div>` +
@@ -627,6 +642,11 @@ function renderProps() {
     const thickness = r.wallThickness[s.wall] > 0 || !adj ? `${fmt(r.wallThickness[s.wall])} mm` : `${fmt(adj.room.wallThickness[adj.wall])} mm · es de ${adj.room.name}`;
     body = kv("Largo", `${fmt(wallLength(r, s.wall))} mm`) + kv("Grosor", thickness) + (adj ? kv("Compartido con", adj.room.name) : "") + kv("Altura", `${fmt(r.height)} mm`) + kv("Izquierda", `esquina con el ${WALL_NAMES[LEFT_OF[s.wall]]}`) +
       kv("Tramos libres", runs.map((x) => `${fmt(x.from)}–${fmt(x.to)}`).join(" · ") || "ninguno") + `<p class="note">Las distancias se miden desde la izquierda mirando el muro desde dentro de la habitación.</p>`;
+  } else if (s.kind === "block") {
+    const r = world.rooms.find((x) => x.id === s.roomId)!;
+    const b = r.blocks!.find((x) => x.id === s.blockId)!;
+    body = kv("Ancho × fondo", `${fmt(b.width)} × ${fmt(b.depth)} mm`) + kv("Alto", b.height ? `${fmt(b.height)} mm` : "hasta el techo") + kv("Del muro oeste", `${fmt(b.x)} mm`) + kv("Del muro norte", `${fmt(b.z)} mm`) +
+      kv("Al muro este", `${fmt(r.width - b.x - b.width)} mm`) + kv("Al muro sur", `${fmt(r.depth - b.z - b.depth)} mm`) + `<p class="note">Flechas: la mueven 10 mm hacia el oeste, el este, el norte o el sur; con Mayús, 100.</p>`;
   } else if (s.kind === "opening") {
     const r = world.rooms.find((x) => x.id === s.roomId)!;
     const o = r.openings.find((x) => x.id === s.openingId)!;
@@ -794,8 +814,14 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") { cancelDrag(); return; }
   const input = $<HTMLInputElement>("cmd-input");
   const typing = document.activeElement === input && input.value !== "";
-  if (typing || (selection.kind !== "item" && selection.kind !== "opening") || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (typing || (selection.kind !== "item" && selection.kind !== "opening" && selection.kind !== "block") || e.ctrlKey || e.metaKey || e.altKey) return;
   const step = e.shiftKey ? 100 : 10;
+  if (selection.kind === "block") {
+    const to = e.key === "ArrowRight" ? "este" : e.key === "ArrowLeft" ? "oeste" : e.key === "ArrowUp" ? "norte" : e.key === "ArrowDown" ? "sur" : null;
+    const order = to ? `muévela ${step} mm al ${to}` : e.key === "Delete" && document.activeElement !== input ? "quítala" : null;
+    if (order) { e.preventDefault(); void applyCommand(order, true); }
+    return;
+  }
   const it = selection.kind === "item";
   // Un mueble suelto se aleja o se acerca a su muro con arriba y abajo; uno pegado sube y baja. R lo gira.
   const loose = it && (world.items.find((i) => i.id === (selection as { itemId: string }).itemId)?.gap ?? 0) > 0;

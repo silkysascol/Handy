@@ -1,6 +1,6 @@
 import type { AABB } from "./collision.js";
 import { panelBox, panelInstances } from "./collision.js";
-import { effectiveOpenings, itemModel, itemTransform, wallLength, WALL_NAMES, type Opening, type Room, type WallSide, type World } from "./world.js";
+import { blockBox, roomArea, effectiveOpenings, itemModel, itemTransform, wallLength, WALL_NAMES, type Opening, type Room, type WallSide, type World } from "./world.js";
 
 /**
  * Exporta el mundo a glTF 2.0 (un solo archivo .gltf con el buffer embebido) para abrirlo en Blender,
@@ -120,7 +120,8 @@ export function exportGltf(world: World): string {
     corner("esquina suroeste", ox - t.west, ox, oz + room.depth, oz + room.depth + t.south);
     corner("esquina sureste", ox + room.width, ox + room.width + t.east, oz + room.depth, oz + room.depth + t.south);
 
-    const floor = boxNode("Piso", { min: [ox - t.west, -100, oz - t.north], max: [ox + room.width + t.east, 0, oz + room.depth + t.south] }, "floor", { handy: { areaM2: (room.width * room.depth) / 1e6 } });
+    const floor = boxNode("Piso", { min: [ox - t.west, -100, oz - t.north], max: [ox + room.width + t.east, 0, oz + room.depth + t.south] }, "floor", { handy: { areaM2: roomArea(room) / 1e6 } });
+    for (const blk of room.blocks ?? []) wallNodes.push(boxNode(blk.name, blockBox(room, blk), "wall", { handy: { block: blk.id, width: blk.width, depth: blk.depth, height: blk.height ?? room.height } }));
     const walls = add({ name: "Muros", children: wallNodes });
 
     const itemNodes: number[] = [];

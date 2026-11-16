@@ -3,7 +3,7 @@ import { defaultFloorSpec, planFloor, type FloorSpec } from "./flooring.js";
 import type { FrameOptions } from "./generators/frame.js";
 import { profileBySide } from "./profiles.js";
 import {
-  addOpening, addRoom, attachRoom, frontDepth, getRoom, itemModel, placeCabinet, removeItem, removeOpening, roomSpan, rotateItem, updateItem, updateOpening, updateRoom,
+  addBlock, addOpening, addRoom, attachRoom, frontDepth, removeBlock, updateBlock, getRoom, itemModel, placeCabinet, removeItem, removeOpening, roomSpan, rotateItem, updateItem, updateOpening, updateRoom,
   wallLength, WALL_NAMES, type WallSide, type World,
 } from "./world.js";
 
@@ -17,6 +17,8 @@ export type Selection =
   | { kind: "item"; itemId: string }
   | { kind: "opening"; roomId: string; openingId: string }
   | { kind: "room"; roomId: string }
+  /** Una columna, un buitrón o una esquina cerrada de una habitación. */
+  | { kind: "block"; roomId: string; blockId: string }
   /** Nada seleccionado: órdenes sobre el mundo, como crear una habitación. */
   | { kind: "world" };
 
@@ -161,6 +163,7 @@ export function runCommand(world: World, selection: Selection, text: string): Co
       case "item": return itemCommand(world, selection, t);
       case "opening": return openingCommand(world, selection, t);
       case "room": return roomCommand(world, selection, t);
+      case "block": return blockCommand(world, selection, t);
       case "world": return worldCommand(world, t, text);
     }
   } catch (e) {
@@ -374,6 +377,81 @@ function itemCommand(world: World, sel: Extract<Selection, { kind: "item" }>, t:
   return unknown('En un mueble puedes: "ensancha 10 cm", "alto 1800", "muévelo 30 cm a la derecha", "pégalo a la izquierda", "agrega una repisa", "2 divisiones", "3 cajones", "con barra de colgar", "2 puertas", "sin tornillos a la vista", "quítalo".');
 }
 
+// ---------- Columnas, buitrones y esquinas cerradas ----------
+
+const BLOCK = /\b(columna|pilar|buitron|ducto|chimenea|macizo|mocheta|muro bajo|medio muro|murete|poyo|recorte|recorta|recortar|esquina cerrada|cierra la esquina|en l\b|forma de l\b)/;
+const CORNER: Record<string, [WallSide, WallSide]> = { noroeste: ["north", "west"], noreste: ["north", "east"], suroeste: ["south", "west"], sureste: ["south", "east"], nororiente: ["north", "east"], noroccidente: ["north", "west"], suroriente: ["south", "east"], suroccidente: ["south", "west"] };
+
+/** Distancia pedida a cada muro: "a 2 m del muro oeste", "pegada al muro norte", "en la esquina noreste". */
+function wallDistances(t: string): Partial<Record<WallSide, number>> {
+  const out: Partial<Record<WallSide, number>> = {};
+  const corner = t.match(/esquina (noroeste|noreste|suroeste|sureste|nororiente|noroccidente|suroriente|suroccidente)/);
+  if (corner) for (const w of CORNER[corner[1]]) out[w] = 0;
+  for (const m of t.matchAll(new RegExp(`(?:^|\\s)${NUM} ?${UNIT} (?:del|de la|de el) (?:muro|pared) (norte|sur|este|oriente|oeste|occidente)`, "g"))) out[WALL_WORD[m[3]]] = toMm(Number(m[1]), m[2]);
+  for (const m of t.matchAll(/(?:pegad[oa] al?|contra el|contra la|en el|en la|sobre el) (?:muro|pared) (norte|sur|este|oriente|oeste|occidente)/g)) out[WALL_WORD[m[1]]] ??= 0;
+  return out;
+}
+
+/** Posición de un macizo de `w` x `d` a partir de las distancias pedidas; lo que no se diga queda centrado. */
+function blockPosition(room: { width: number; depth: number }, w: number, d: number, dist: Partial<Record<WallSide, number>>, fallback?: { x: number; z: number }): { x: number; z: number } {
+  const x = dist.west !== undefined ? dist.west : dist.east !== undefined ? room.width - w - dist.east : fallback?.x ?? Math.round((room.width - w) / 2);
+  const z = dist.north !== undefined ? dist.north : dist.south !== undefined ? room.depth - d - dist.south : fallback?.z ?? Math.round((room.depth - d) / 2);
+  return { x, z };
+}
+
+const blockWhere = (room: { width: number; depth: number }, b: { x: number; z: number; width: number; depth: number }) => `a ${b.x} mm del muro oeste y ${b.z} mm del muro norte (quedan ${room.width - b.x - b.width} al este y ${room.depth - b.z - b.depth} al sur)`;
+
+function createBlock(world: World, roomId: string, t: string): CommandResult {
+  const room = getRoom(world, roomId);
+  const dims = parseDims(t);
+  const closesCorner = /recort|esquina cerrada|cierra la esquina|en l\b|forma de l\b/.test(t);
+  const low = /muro bajo|medio muro|murete|poyo/.test(t);
+  const name = closesCorner ? "Esquina cerrada" : /buitron/.test(t) ? "Buitrón" : /ducto/.test(t) ? "Ducto" : /chimenea/.test(t) ? "Chimenea" : /mocheta/.test(t) ? "Mocheta" : low ? "Muro bajo" : /macizo/.test(t) ? "Macizo" : "Columna";
+  const def = closesCorner ? [1000, 1000] : low ? [1500, 120] : [300, 300];
+  const [width, depth] = [dims?.[0] ?? def[0], dims?.[1] ?? def[1]];
+  const height = dims?.[2] ?? lengthAfter(t, "alto|altura") ?? (low ? 900 : undefined);
+  const dist = wallDistances(t);
+  if (closesCorner && (dist.north === undefined && dist.south === undefined || dist.west === undefined && dist.east === undefined)) return fail('Dime cuál esquina se cierra: "recorta la esquina noreste 2 x 1,5 m". Las esquinas son noroeste, noreste, suroeste y sureste.');
+  const b = addBlock(world, room.id, { name, width, depth, height, ...blockPosition(room, width, depth, dist) });
+  const area = (room.width * room.depth - (room.blocks ?? []).reduce((a, x) => a + x.width * x.depth, 0)) / 1e6;
+  return { ok: true, understood: true, select: { kind: "block", roomId: room.id, blockId: b.id }, message: `${b.name} de ${width} x ${depth} mm${b.height ? `, alto ${b.height} mm` : ", hasta el techo"}, ${blockWhere(room, b)}. ${room.name} queda con ${area.toFixed(1).replace(".", ",")} m² de piso.` };
+}
+
+function blockCommand(world: World, sel: Extract<Selection, { kind: "block" }>, t: string): CommandResult {
+  const room = getRoom(world, sel.roomId);
+  const b = room.blocks?.find((x) => x.id === sel.blockId);
+  if (!b) return fail(`No existe "${sel.blockId}" en ${room.name}.`);
+  const done = (message: string): CommandResult => ({ ok: true, understood: true, select: sel, message });
+  if (DELETE.test(t)) {
+    removeBlock(world, room.id, b.id);
+    return { ok: true, understood: true, select: { kind: "room", roomId: room.id }, message: `${b.name}: ya no está en ${room.name}.` };
+  }
+  const L = firstLength(t), dims = parseDims(t);
+  if (/hasta el techo|altura completa|toda la altura/.test(t)) { updateBlock(world, room.id, b.id, { height: null }); return done(`${b.name}: hasta el techo.`); }
+  const h = lengthAfter(t, "alto|altura");
+  if (h !== undefined) { updateBlock(world, room.id, b.id, { height: h }); return done(`${b.name}: alto ${b.height ?? room.height} mm.`); }
+  if (dims) {
+    // Al cambiar de tamaño se queda pegada a los muros que ya tocaba.
+    const x = b.x + b.width >= room.width && b.x > 0 ? room.width - dims[0] : b.x, z = b.z + b.depth >= room.depth && b.z > 0 ? room.depth - dims[1] : b.z;
+    updateBlock(world, room.id, b.id, { width: dims[0], depth: dims[1], x, z, ...(dims[2] ? { height: dims[2] } : {}) });
+    return done(`${b.name}: ${b.width} x ${b.depth} mm, ${blockWhere(room, b)}.`);
+  }
+  const w = lengthAfter(t, "ancho"), d = lengthAfter(t, "fondo|profundidad|largo");
+  if (w !== undefined || d !== undefined) { updateBlock(world, room.id, b.id, { ...(w !== undefined ? { width: w } : {}), ...(d !== undefined ? { depth: d } : {}) }); return done(`${b.name}: ${b.width} x ${b.depth} mm.`); }
+  const dist = wallDistances(t);
+  if (Object.keys(dist).length || /centr/.test(t)) {
+    updateBlock(world, room.id, b.id, blockPosition(room, b.width, b.depth, dist, /centr/.test(t) ? undefined : { x: b.x, z: b.z }));
+    return done(`${b.name}: ${blockWhere(room, b)}.`);
+  }
+  const dir = t.match(/\b(?:al|hacia el|para el) (norte|sur|este|oriente|oeste|occidente)\b/);
+  if (L !== undefined && dir) {
+    const to = WALL_WORD[dir[1]];
+    updateBlock(world, room.id, b.id, to === "north" ? { z: b.z - L } : to === "south" ? { z: b.z + L } : to === "west" ? { x: b.x - L } : { x: b.x + L });
+    return done(`${b.name}: ${blockWhere(room, b)}.`);
+  }
+  return unknown('En una columna o esquina cerrada puedes: "muévela 20 cm al este", "a 1 m del muro norte", "40 x 60", "alto 1 m", "hasta el techo", "quítala".');
+}
+
 function openingCommand(world: World, sel: Extract<Selection, { kind: "opening" }>, t: string): CommandResult {
   const room = getRoom(world, sel.roomId);
   const o = room.openings.find((x) => x.id === sel.openingId);
@@ -408,6 +486,9 @@ function roomCommand(world: World, sel: Extract<Selection, { kind: "room" }>, t:
   const room = getRoom(world, sel.roomId);
   const done = (message: string): CommandResult => ({ ok: true, understood: true, select: sel, message });
   const dims = parseDims(t);
+
+  // Columnas, buitrones, muros bajos y esquinas cerradas (habitación en L).
+  if (BLOCK.test(t) && !DELETE.test(t)) return createBlock(world, room.id, t);
 
   // Un mueble pedido con la habitación seleccionada va suelto en el centro, salvo que se nombre un muro.
   if (!/\b(piso|enchape|baldosa|baldosas|ceramica|porcelanato)\b/.test(t) && (FURNITURE.test(t) || (METAL.test(t) && FRAME_WORD.test(t)))) {

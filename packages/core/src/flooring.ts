@@ -26,7 +26,7 @@ export interface FloorSpec {
   piecesPerBox?: number;
 }
 
-export interface FloorTile { x: Millimeters; z: Millimeters; w: Millimeters; d: Millimeters; cut: boolean }
+export interface FloorTile { x: Millimeters; z: Millimeters; w: Millimeters; d: Millimeters; cut: boolean; /** Recortada alrededor de una columna o una esquina cerrada. */ notch?: boolean }
 
 export interface FloorPlan {
   areaM2: number;
@@ -79,7 +79,7 @@ function tilesForCuts(cuts: number[], tile: number, kerf: number): number {
   return count;
 }
 
-export function planFloor(room: Pick<Room, "width" | "depth" | "openings">, spec: FloorSpec): FloorPlan {
+export function planFloor(room: Pick<Room, "width" | "depth" | "openings" | "blocks">, spec: FloorSpec): FloorPlan {
   const { tileWidth: tw, tileLength: tl, joint } = spec;
   if (tw < 50 || tl < 50) throw new Error("La baldosa debe medir al menos 50 mm por lado.");
   const W = room.width, D = room.depth;
@@ -87,6 +87,7 @@ export function planFloor(room: Pick<Room, "width" | "depth" | "openings">, spec
   const x0 = spec.start === "corner" ? 0 : centeredStart(W, tw, joint);
   const z0 = spec.start === "corner" ? 0 : centeredStart(D, tl, joint);
 
+  const blocks = room.blocks ?? [];
   const tiles: FloorTile[] = [];
   let row = 0;
   for (let z = z0; z < D; z += mz, row++) {
@@ -95,16 +96,21 @@ export function planFloor(room: Pick<Room, "width" | "depth" | "openings">, spec
       const cx0 = Math.max(0, x), cz0 = Math.max(0, z), cx1 = Math.min(W, x + tw), cz1 = Math.min(D, z + tl);
       const w = cx1 - cx0, d = cz1 - cz0;
       if (w < 1 || d < 1) continue;
-      tiles.push({ x: Math.round(cx0), z: Math.round(cz0), w: Math.round(w), d: Math.round(d), cut: w < tw - 0.5 || d < tl - 0.5 });
+      // Lo que queda bajo una columna o una esquina cerrada no lleva baldosa; lo que la bordea se recorta.
+      const covered = blocks.reduce((a, b) => a + Math.max(0, Math.min(cx1, b.x + b.width) - Math.max(cx0, b.x)) * Math.max(0, Math.min(cz1, b.z + b.depth) - Math.max(cz0, b.z)), 0);
+      if (covered >= w * d - 1) continue;
+      tiles.push({ x: Math.round(cx0), z: Math.round(cz0), w: Math.round(w), d: Math.round(d), cut: covered > 0 || w < tw - 0.5 || d < tl - 0.5, ...(covered > 0 ? { notch: true } : {}) });
     }
   }
 
   const full = tiles.filter((t) => !t.cut);
   const cuts = tiles.filter((t) => t.cut);
   const kerf = 3;
-  const onlyX = cuts.filter((t) => t.d >= tl - 0.5).map((t) => t.w);
-  const onlyZ = cuts.filter((t) => t.w >= tw - 0.5).map((t) => t.d);
-  const corners = cuts.filter((t) => t.w < tw - 0.5 && t.d < tl - 0.5).length;
+  // Un recorte alrededor de una columna gasta una baldosa entera: su sobrante casi nunca sirve.
+  const straight = cuts.filter((t) => !t.notch);
+  const onlyX = straight.filter((t) => t.d >= tl - 0.5).map((t) => t.w);
+  const onlyZ = straight.filter((t) => t.w >= tw - 0.5).map((t) => t.d);
+  const corners = straight.filter((t) => t.w < tw - 0.5 && t.d < tl - 0.5).length + cuts.filter((t) => t.notch).length;
   const tilesNeeded = full.length + tilesForCuts(onlyX, tw, kerf) + tilesForCuts(onlyZ, tl, kerf) + corners;
 
   const reservePct = spec.pattern === "brick" ? 10 : 5;
@@ -112,7 +118,9 @@ export function planFloor(room: Pick<Room, "width" | "depth" | "openings">, spec
   const tileM2 = (tw * tl) / 1e6;
   const piecesPerBox = spec.piecesPerBox ?? Math.max(1, Math.round(1.5 / tileM2));
   const boxes = Math.ceil(tilesToBuy / piecesPerBox);
-  const areaM2 = (W * D) / 1e6;
+  const areaM2 = (W * D - blocks.reduce((a, b) => a + b.width * b.depth, 0)) / 1e6;
+  // Guardaescobas: los lados de un macizo que dan al cuarto suman; los que van contra un muro le quitan ese tramo.
+  const skirtingExtra = blocks.reduce((a, b) => a + (b.z <= 0 ? -b.width : b.width) + (b.z + b.depth >= D ? -b.width : b.width) + (b.x <= 0 ? -b.depth : b.depth) + (b.x + b.width >= W ? -b.depth : b.depth), 0);
 
   const maxSide = Math.max(tw, tl);
   const kgPerM2 = maxSide <= 300 ? 4 : maxSide <= 600 ? 5.5 : 7.5;
@@ -123,11 +131,13 @@ export function planFloor(room: Pick<Room, "width" | "depth" | "openings">, spec
   const groutKg = Number((areaM2 * groutPerM2 * 1.1).toFixed(1));
 
   const doorways = room.openings.filter((o) => o.type !== "window").reduce((s, o) => s + o.width, 0);
-  const smallestCut = cuts.length ? Math.min(...cuts.map((t) => Math.min(t.w < tw - 0.5 ? t.w : Infinity, t.d < tl - 0.5 ? t.d : Infinity))) : 0;
+  const smallestCut = straight.length ? Math.min(...straight.map((t) => Math.min(t.w < tw - 0.5 ? t.w : Infinity, t.d < tl - 0.5 ? t.d : Infinity))) : 0;
   const notes: string[] = [];
   if (smallestCut && smallestCut < 50) notes.push(`Queda un corte de solo ${smallestCut} mm: difícil de cortar y de pegar. Mueve el arranque o cambia el ancho de junta.`);
   if (spec.pattern === "brick" && spec.brickOffset > 0.34 && maxSide >= 600) notes.push("En piezas largas, trabar a la mitad marca el desnivel entre piezas. Usa un tercio.");
   if (spec.material === "porcelain") notes.push("El porcelanato se corta con disco diamantado continuo o cortadora de rodel de buena calidad.");
+  const notched = cuts.filter((t) => t.notch).length;
+  if (notched) notes.push(`${notched} pieza(s) se recortan alrededor de columnas o esquinas: márcalas con plantilla de cartón y córtalas con pulidora.`);
   if (maxSide > 600) notes.push("Formato grande: doble encolado (pega en el piso y en la pieza) y niveladores.");
 
   return {
@@ -136,7 +146,7 @@ export function planFloor(room: Pick<Room, "width" | "depth" | "openings">, spec
     adhesive: { type: flexible ? "flexible para porcelanato" : "estándar", kgPerM2, kg: adhesiveKg, bags25: Math.ceil(adhesiveKg / 25), trowel: maxSide <= 300 ? "llana dentada de 6 a 8 mm" : maxSide <= 600 ? "llana dentada de 10 mm" : "llana dentada de 12 mm, doble encolado" },
     grout: { kgPerM2: Number(groutPerM2.toFixed(3)), kg: groutKg, bags2: Math.max(1, Math.ceil(groutKg / 2)) },
     spacers: tiles.length * 4,
-    skirtingM: Number(((2 * (W + D) - doorways) / 1000).toFixed(1)),
+    skirtingM: Number(((2 * (W + D) + skirtingExtra - doorways) / 1000).toFixed(1)),
     smallestCut, notes,
   };
 }

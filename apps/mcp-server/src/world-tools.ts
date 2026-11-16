@@ -7,6 +7,10 @@ import {
   addOpening,
   addRoom,
   activeProviders,
+  addBlock,
+  getRoom,
+  removeBlock,
+  roomArea,
   assemblyHtml,
   attachRoom,
   buildAssemblyPlan,
@@ -305,14 +309,50 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
     {
       title: "Orden en lenguaje natural sobre una selección",
       description: 'Aplica una orden corta en español sobre lo seleccionado, igual que la barra de comandos del visor: "pon una puerta de 80 x 205 a 2 m de la izquierda" (muro), "ensancha 10 cm" (mueble), "muévela 20 cm a la derecha" (abertura), "cocina de 2,8 x 2,4 m" (sin selección). Para la selección envía roomId + wall, o itemId, o roomId + openingId, o solo roomId, o nada.',
-      inputSchema: { text: z.string(), roomId: z.string().optional(), wall: wall.optional(), itemId: z.string().optional(), openingId: z.string().optional() },
+      inputSchema: { text: z.string(), roomId: z.string().optional(), wall: wall.optional(), itemId: z.string().optional(), openingId: z.string().optional(), blockId: z.string().optional().describe("Con roomId: una columna o esquina cerrada de esa habitación") },
     },
-    async ({ text: order, roomId, wall: w, itemId, openingId }) => {
-      const selection: Selection = itemId ? { kind: "item", itemId } : roomId && openingId ? { kind: "opening", roomId, openingId } : roomId && w ? { kind: "wall", roomId, wall: w } : roomId ? { kind: "room", roomId } : { kind: "world" };
+    async ({ text: order, roomId, wall: w, itemId, openingId, blockId }) => {
+      const selection: Selection = itemId ? { kind: "item", itemId } : roomId && blockId ? { kind: "block", roomId, blockId } : roomId && openingId ? { kind: "opening", roomId, openingId } : roomId && w ? { kind: "wall", roomId, wall: w } : roomId ? { kind: "room", roomId } : { kind: "world" };
       const world = store.load();
       const result = runCommand(world, selection, order);
       if (result.ok) store.save(world);
       return { ...text(result.message, { ...result }), isError: !result.ok };
+    },
+  );
+
+  server.registerTool(
+    "world_add_block",
+    {
+      title: "Agregar columna, buitrón o esquina cerrada",
+      description: "Agrega un macizo dentro de una habitación: una columna, un buitrón, una chimenea, un muro bajo, o una esquina cerrada que convierte el rectángulo en una L. Descuenta piso, bloquea tramos de muro y estorba a los muebles. Para una L, pon el macizo en la esquina (por ejemplo x = ancho de la habitación menos su ancho, z = 0 para la esquina noreste). Para moverlo o cambiarlo usa world_command con roomId y blockId.",
+      inputSchema: {
+        roomId: z.string(),
+        name: z.string().optional().describe("Columna, Buitrón, Esquina cerrada, Muro bajo..."),
+        x: z.number().int().min(0).describe("Distancia en mm desde el muro oeste hasta el macizo"),
+        z: z.number().int().min(0).describe("Distancia en mm desde el muro norte hasta el macizo"),
+        width: z.number().int().min(50).describe("De oeste a este, en mm"),
+        depth: z.number().int().min(50).describe("De norte a sur, en mm"),
+        height: z.number().int().min(50).optional().describe("Alto en mm; sin él llega al techo"),
+      },
+    },
+    async ({ roomId, ...input }) => {
+      const world = store.load();
+      const block = addBlock(world, roomId, input);
+      store.save(world);
+      const room = getRoom(world, roomId);
+      const issues = checkWorld(world).filter((i) => i.roomId === roomId && i.code === "hits-block");
+      return text([`${block.name} (id: ${block.id}) de ${block.width} x ${block.depth} mm en ${room.name}, a ${block.x} mm del muro oeste y ${block.z} mm del muro norte${block.height ? `, alto ${block.height}` : ", hasta el techo"}. Piso libre: ${(roomArea(room) / 1e6).toFixed(2)} m².`, ...issues.map((i) => `[${i.level}] ${i.message}`)].join("\n"), { block, freeAreaM2: roomArea(room) / 1e6, issues });
+    },
+  );
+
+  server.registerTool(
+    "world_remove_block",
+    { title: "Quitar columna o esquina cerrada", description: "Quita un macizo de una habitación por su id (ver world_describe).", inputSchema: { roomId: z.string(), blockId: z.string() } },
+    async ({ roomId, blockId }) => {
+      const world = store.load();
+      if (!removeBlock(world, roomId, blockId)) throw new Error(`No existe "${blockId}" en esa habitación.`);
+      store.save(world);
+      return text(`${blockId} quitado. Piso libre: ${(roomArea(getRoom(world, roomId)) / 1e6).toFixed(2)} m².`);
     },
   );
 
