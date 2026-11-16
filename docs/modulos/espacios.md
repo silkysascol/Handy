@@ -151,3 +151,31 @@ Lo que Handy hace con eso:
 - **Costo.** Cada habitación con puntos suma al presupuesto: tomas, interruptores, rosetas, una caja por punto, y un estimado de tubería y cable. La tubería se estima desde cada punto hasta el techo y de ahí a la luz más cercana; el cable son tres hilos por tubo más un 10 %.
 
 Importante: son alturas y distancias de práctica común, no una revisión de norma (RETIE, NTC 2050). No hay tablero, circuitos ni cálculo de cargas. La instalación la define y la valida un electricista; Handy sirve para planear dónde van las cosas, no perforar donde no toca y saber cuánto material comprar.
+
+## Sol: por dónde entra, a qué hora y cuánto
+
+Handy calcula dónde está el sol en tu ciudad a cualquier fecha y hora, y lo cruza con las ventanas de la casa.
+
+Primero hay que decirle dos cosas, con cualquier cosa seleccionada:
+
+- **Dónde está la casa:** "estamos en Bogotá", o "latitud 4,7 longitud -74,1". Conoce las principales ciudades de Colombia y varias capitales.
+- **Hacia dónde mira:** el "muro norte" del modelo es solo un nombre. Si en la realidad mira a otro lado, dilo: "el muro norte mira al este". Sin eso, Handy supone que mira al norte.
+
+Después:
+
+| Quieres | Haces |
+| --- | --- |
+| Ver el sol ahora | botón **Sol** |
+| Ver una hora | "sol a las 3 pm", o mueve el control de hora |
+| Ver una fecha | "sol el 21 de junio a las 9", o los botones 21 jun, 21 mar, 21 dic |
+| Ocultarlo | "quita el sol" |
+
+Qué muestra:
+
+- **En la vista:** una mancha amarilla en el piso donde toca el sol que entra por cada ventana, y la luz de la escena puesta donde está el sol.
+- **En la habitación seleccionada:** las horas de sol directo de cada ventana en junio, marzo y diciembre, con el punto cardinal al que mira.
+- **Para tu IA** (`world_sun`): por ventana, horas de sol, de qué hora a qué hora, hasta dónde entra y sobre qué muebles cae. Avisa del sol de tarde por ventanas al oeste, que es el que más calienta, y de muebles asoleados, que se decoloran.
+
+Cómo se calcula: posición solar con las fórmulas de la NOAA (error menor de un grado), comprobada en las pruebas contra la altura del sol al mediodía en Bogotá y Buenos Aires en los solsticios. Las horas de sol se muestrean cada 10 minutos.
+
+Límites: no cuenta edificios vecinos, árboles, aleros, balcones ni cortinas. El grosor del muro no recorta la mancha. Solo estudia ventanas, no puertas. La mancha se dibuja en el piso, aunque haya un mueble encima.

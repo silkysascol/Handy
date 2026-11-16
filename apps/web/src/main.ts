@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
-  activeProviders, adjacentWall, blockBox, roomArea, drillBands, electricalTakeoff, pointPosition, createPriceBook, effectiveOpenings, isPriceBook, isPriceCommand, needKey, priceAgeDays, runPriceCommand, checkWorld, createWorld, cutSheetHtml, dimensionsFor, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld, snapAlongWall, snapGap, updateItem, updateOpening, wallCoord, wallPoint, itemBox,
+  activeProviders, adjacentWall, blockBox, roomArea, clock, compassName, parseSunQuery, sunPatch, sunPosition, sunReport, sunVector, wallBearing, REFERENCE_DAYS, drillBands, electricalTakeoff, pointPosition, createPriceBook, effectiveOpenings, isPriceBook, isPriceCommand, needKey, priceAgeDays, runPriceCommand, checkWorld, createWorld, cutSheetHtml, dimensionsFor, exportGltf, freeWallRuns, getProfile, itemModel, itemTransform, mergedModel, panelBox, panelInstances, planBars, planFloor, quoteWorld, snapAlongWall, snapGap, updateItem, updateOpening, wallCoord, wallPoint, itemBox,
   runCommand, StaticCatalogProvider, wallBoxes, wallLength, wallRects, wallRectToBox, WALL_NAMES,
   type AABB, type DimLine, type PriceBook, type Room, type Selection, type StaticCatalog, type WallSide, type World, type WorldIssue, type WorldQuote,
 } from "@handy/core";
@@ -287,7 +287,66 @@ function buildScene() {
   buildHandles();
   buildDims();
   buildBands();
+  buildSun();
 }
+
+// ---------- Estudio de sol ----------
+
+/** Fecha y hora que se están mirando, o nada si el sol está oculto. */
+let sunView: { date: string; minutes: number } | null = null;
+let sunMeshes: THREE.Mesh[] = [];
+const SUN_HOME = new THREE.Vector3(5, 10, 8);
+
+/** Pinta en el piso la mancha de sol de cada ventana a la hora elegida y pone la luz de la escena donde está el sol. */
+function buildSun() {
+  for (const m of sunMeshes) { content.remove(m); m.geometry.dispose(); }
+  sunMeshes = [];
+  const bar = $("sunbar"), toggle = $("sun-toggle");
+  bar.hidden = !sunView;
+  toggle.setAttribute("aria-pressed", String(!!sunView));
+  if (!sunView || !world.site) { sun.position.copy(SUN_HOME); sun.intensity = 1.8; return; }
+  const pos = sunPosition(world.site, sunView.date, sunView.minutes);
+  const [, month, day] = sunView.date.split("-");
+  const when = `${Number(day)} ${["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"][Number(month) - 1]} · ${clock(sunView.minutes)}`;
+  $("sun-label").textContent = `${world.site.place ?? "Sol"} · ${when}`;
+  $<HTMLInputElement>("sun-time").value = String(sunView.minutes);
+  for (const b of bar.querySelectorAll<HTMLButtonElement>("[data-sun-date]")) b.classList.toggle("on", b.dataset.sunDate !== "hoy" && sunView.date.endsWith(b.dataset.sunDate!));
+  let entering = 0;
+  if (pos.altitude > 0) {
+    const v = sunVector(world.site, pos);
+    sun.position.set(v[0] * 20, Math.max(v[1], 0.05) * 20, v[2] * 20);
+    sun.intensity = 0.6 + 1.6 * Math.sin((pos.altitude * Math.PI) / 180);
+    for (const room of world.rooms) for (const o of room.openings.filter((x) => x.type === "window")) {
+      const patch = sunPatch(world, room, o, pos);
+      if (!patch) continue;
+      entering++;
+      // Polígono convexo sobre el piso, en abanico desde su primer vértice.
+      const vertices: number[] = [];
+      for (let i = 1; i < patch.length - 1; i++) for (const q of [patch[0], patch[i + 1], patch[i]]) vertices.push(q[0] * M, 0.004, q[1] * M);
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+      geo.computeVertexNormals();
+      const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffd966, transparent: true, opacity: 0.62, depthWrite: false, side: THREE.DoubleSide }));
+      mesh.renderOrder = 3;
+      content.add(mesh); sunMeshes.push(mesh);
+    }
+  } else { sun.position.copy(SUN_HOME); sun.intensity = 0.5; }
+  $("sun-note").textContent = pos.altitude <= 0 ? "Es de noche a esa hora."
+    : `Sol a ${Math.round(pos.altitude)}° de altura, viene del ${compassName(pos.azimuth)}. ${entering ? `Entra por ${entering} ventana(s): lo amarillo es donde toca el piso.` : "A esta hora no toca el piso por ninguna ventana."} No cuenta edificios vecinos, árboles ni aleros.`;
+}
+
+/** Muestra el sol a una hora y fecha; lo que no se diga se conserva o se toma de hoy a las 3 p. m. */
+function showSun(change: { date?: string; minutes?: number } = {}): boolean {
+  if (!world.site) { toast('Para ver el sol dime dónde está la casa: "estamos en Bogotá". Si el muro norte del modelo no mira al norte, dilo también: "el muro norte mira al este".', true); return false; }
+  sunView = { date: change.date ?? sunView?.date ?? today(), minutes: change.minutes ?? sunView?.minutes ?? 900 };
+  buildSun();
+  return true;
+}
+function hideSun() { sunView = null; buildSun(); }
+$("sun-toggle").onclick = () => { if (sunView) hideSun(); else showSun(); };
+$("sun-close").onclick = hideSun;
+$<HTMLInputElement>("sun-time").oninput = (e) => { showSun({ minutes: Number((e.target as HTMLInputElement).value) }); };
+for (const b of document.querySelectorAll<HTMLButtonElement>("[data-sun-date]")) b.onclick = () => { showSun({ date: b.dataset.sunDate === "hoy" ? today() : `${new Date().getFullYear()}-${b.dataset.sunDate}` }); };
 
 /** Habitación a la que pertenece lo seleccionado. */
 function selectedRoom(): Room | undefined {
@@ -638,7 +697,7 @@ const PLACEHOLDER: Record<Selection["kind"], string> = {
 };
 
 const EXAMPLES: Record<Selection["kind"], string[]> = {
-  world: ["cocina de 2,8 x 2,4 m", "baño de 1,5 x 2,2 al este de la cocina", "estudio de 3 x 3 al sur de la sala desplazado 50 cm"],
+  world: ["estamos en Bogotá", "el muro norte mira al este", "sol a las 3 pm", "sol el 21 de junio a las 9", "cocina de 2,8 x 2,4 m", "baño de 1,5 x 2,2 al este de la cocina", "estudio de 3 x 3 al sur de la sala desplazado 50 cm"],
   point: ["muévela 20 cm a la derecha", "a 1 m de la izquierda", "a 1,1 m del piso", "súbela 10 cm", "con protección", "quítala"],
   block: ["muévela 20 cm al este", "muévela 50 cm al sur", "a 1 m del muro norte", "céntrala", "40 x 60", "alto 1 m", "hasta el techo", "quítala"],
   room: ["mesa de tubo de 120 x 75 x 60", "isla de 180 x 90 x 60 con 4 cajones", "columna de 30 x 30 a 2 m del muro oeste y 1 m del muro norte", "recorta la esquina noreste 2 x 1,5 m", "buitrón de 60 x 40 en la esquina suroeste", "2 luces", "reparte las tomas", "piso de porcelanato 60 x 60", "piso de cerámica 45 x 45 trabado", "junta 3", "quita el piso", "alto 2,6 m", "ancho 4 m"],
@@ -650,6 +709,16 @@ const EXAMPLES: Record<Selection["kind"], string[]> = {
 const FRAME_EXAMPLES = ["tubo de 50", "tubo de 25", "5 niveles", "sin tablero", "atornillada", "ensancha 20 cm", "alto 90 cm", "muévelo 30 cm a la derecha", "en el centro del cuarto", "gíralo", "pégalo al muro", "quítalo"];
 
 // ---------- Paneles ----------
+
+/** Horas de sol directo de cada ventana de una habitación en las tres fechas de referencia. */
+function sunRows(r: Room): string {
+  const windows = r.openings.filter((o) => o.type === "window");
+  if (!windows.length) return "";
+  if (!world.site) return `<p class="note">Para saber cuánto sol recibe cada ventana, dime dónde está la casa: "estamos en Bogotá".</p>`;
+  const days = REFERENCE_DAYS(new Date().getFullYear()).map((d) => sunReport(world, d.date, r.id));
+  const h = (n: number) => `${String(n).replace(".", ",")} h`;
+  return windows.map((o, i) => kv(`Sol · ventana ${compassName(wallBearing(world.site!, o.wall))}`, `jun ${h(days[0][i].hours)} · mar ${h(days[1][i].hours)} · dic ${h(days[2][i].hours)}`)).join("");
+}
 
 function node(label: string, meta: string, level: number, sel: Selection): string {
   return `<button type="button" class="node l${level}" data-sel='${esc(JSON.stringify(sel))}' aria-current="${sameSel(sel, selection)}"><span>${esc(label)}</span><span class="num">${esc(meta)}</span></button>`;
@@ -688,7 +757,7 @@ function renderProps() {
     body = kv("Habitaciones", String(world.rooms.length)) + kv("Muebles", String(world.items.length)) + `<p class="note">Haz clic en un muro, un mueble, una puerta o una ventana y escribe abajo lo que quieres cambiar, en tus palabras.</p>`;
   } else if (s.kind === "room") {
     const r = world.rooms.find((x) => x.id === s.roomId)!;
-    body = kv("Ancho (norte y sur)", `${fmt(r.width)} mm`) + kv("Fondo (este y oeste)", `${fmt(r.depth)} mm`) + kv("Altura", `${fmt(r.height)} mm`) + kv(r.blocks?.length ? "Piso libre" : "Área", `${(roomArea(r) / 1e6).toFixed(1).replace(".", ",")} m²`) + (r.blocks?.length ? kv("Columnas y recortes", String(r.blocks.length)) : "");
+    body = kv("Ancho (norte y sur)", `${fmt(r.width)} mm`) + kv("Fondo (este y oeste)", `${fmt(r.depth)} mm`) + kv("Altura", `${fmt(r.height)} mm`) + kv(r.blocks?.length ? "Piso libre" : "Área", `${(roomArea(r) / 1e6).toFixed(1).replace(".", ",")} m²`) + (r.blocks?.length ? kv("Columnas y recortes", String(r.blocks.length)) : "") + sunRows(r);
     if (r.floor) {
       const f = r.floor, plan = planFloor(r, f);
       body += `<div class="kv"><span class="k"><strong>Piso</strong></span><span class="num">${f.material === "porcelain" ? "porcelanato" : "cerámica"} ${fmt(f.tileWidth)} × ${fmt(f.tileLength)}</span></div>` +
@@ -859,6 +928,14 @@ async function applyCommand(text: string, quiet = false): Promise<boolean> {
   const before = JSON.stringify(world);
   const footprint = () => JSON.stringify(world.rooms.map((r) => [r.origin, r.width, r.depth]));
   const shape = footprint();
+  // "sol a las 3 pm" no cambia el mundo: cambia lo que se está mirando.
+  const sunQuery = parseSunQuery(text, new Date().getFullYear());
+  if (sunQuery) {
+    if (sunQuery.off) { hideSun(); toast("Sol oculto."); return true; }
+    if (!showSun(sunQuery)) return false;
+    toast($("sun-note").textContent ?? "");
+    return true;
+  }
   // Los precios no cambian el mundo: van al libro de precios propio.
   if (isPriceCommand(text)) return applyPriceCommand(text);
   // "¿cómo se arma?" no cambia el mundo: entrega el manual del mueble seleccionado.
@@ -1003,7 +1080,7 @@ const toScreen = (v: THREE.Vector3) => {
   return { x: r.left + ((q.x + 1) / 2) * r.width, y: r.top + ((1 - q.y) / 2) * r.height };
 };
 (window as unknown as Record<string, unknown>).__handy = {
-  ready: true, getWorld: () => world, select, getSelection: () => selection, getPrices: () => book, bands: () => bands.length, pointScreen: (roomId: string, pointId: string) => { const r = world.rooms.find((x) => x.id === roomId), p = r?.points?.find((x) => x.id === pointId); if (!r || !p) return null; const [x, y, z] = pointPosition(r, p); return toScreen(new THREE.Vector3(x * M, (p.kind === "light" ? y - 20 : y) * M, z * M)); }, getQuote: () => lastQuote, assembly: () => assembly,
+  ready: true, getWorld: () => world, select, getSelection: () => selection, getPrices: () => book, bands: () => bands.length, sun: () => ({ view: sunView, patches: sunMeshes.length, note: $("sun-note").textContent }), pointScreen: (roomId: string, pointId: string) => { const r = world.rooms.find((x) => x.id === roomId), p = r?.points?.find((x) => x.id === pointId); if (!r || !p) return null; const [x, y, z] = pointPosition(r, p); return toScreen(new THREE.Vector3(x * M, (p.kind === "light" ? y - 20 : y) * M, z * M)); }, getQuote: () => lastQuote, assembly: () => assembly,
   /** Punto en pantalla del centro del frente de lo seleccionado, y de sus manijas. */
   selectionScreen: () => { const t = dragTarget(selection); if (!t) return null; const [x, y, z] = wallPoint(t.room, t.wall, t.offset + t.width / 2, t.base + t.height / 2, t.front); return toScreen(new THREE.Vector3(x * M, y * M, z * M)); },
   handleScreen: (kind: string) => { const h = handles.find((m) => m.userData.handle === kind); return h ? toScreen(h.getWorldPosition(new THREE.Vector3())) : null; },

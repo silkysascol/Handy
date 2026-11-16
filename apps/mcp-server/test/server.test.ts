@@ -166,6 +166,17 @@ describe("Handy MCP server", () => {
     for (const p of (await call("world_electrical", { roomId: "dormitorio" })).data.points) await call("world_command", { roomId: "dormitorio", pointId: p.id, text: "quítala" });
     expect((await call("world_quote")).data.groups.electrical).toBe(0);
 
+    // Sol: la IA fija la ciudad y la orientación y pregunta por las ventanas.
+    expect((await call("world_sun")).isError).toBe(true);
+    const site = await call("world_set_site", { place: "Bogotá", north: 90 });
+    expect(site.text).toMatch(/Lugar: Bogotá .* El muro norte del modelo mira al este \(90°\)/);
+    const sunDay = await call("world_sun", { roomId: "dormitorio", date: "2026-03-21", time: "08:00" });
+    expect(sunDay.text).toMatch(/Dormitorio, ventana del muro norte \(mira al este\): \d,\d h de sol directo, de 6:\d\d a\. m\./);
+    expect(sunDay.text).toMatch(/A las 08:00 del 2026-03-21 el sol está a \d+(\.\d+)?° de altura y viene del este/);
+    expect(sunDay.data.days[0].windows[0].hours).toBeGreaterThan(4);
+    expect((await call("world_sun")).data.days).toHaveLength(3);
+    expect((await call("world_set_site", { place: "Springfield" })).isError).toBe(true);
+
     // Precios reales: la IA ve qué falta, anota lo que encontró y el presupuesto deja el catálogo de ejemplo.
     expect(withFloor.text).toContain("CATÁLOGO DE EJEMPLO");
     const needed = await call("prices_needed");

@@ -17,6 +17,7 @@
     <span id="sync" class="muted"></span>
     <div class="grow"></div>
     <button type="button" class="btn" id="frame" title="Encuadra toda la casa en la vista">Ver todo</button>
+    <button type="button" class="btn" id="sun-toggle" title="Ver por dónde entra el sol a una hora y fecha" aria-pressed="false">Sol</button>
     <button type="button" class="btn" id="undo" title="Ctrl+Z">Deshacer</button>
     <button type="button" class="btn" id="import">Abrir mundo</button>
     <button type="button" class="btn" id="export-world">Guardar archivo</button>
@@ -30,6 +31,13 @@
     <aside id="tree" aria-label="Contenido del mundo"></aside>
     <section id="view" aria-label="Vista 3D">
       <div id="chips"><span class="chip" id="sel-chip">Nada seleccionado</span></div>
+      <div id="sunbar" hidden>
+        <div class="sun-row"><strong id="sun-label">Sol</strong><button type="button" class="btn" id="sun-close" aria-label="Ocultar el sol">×</button></div>
+        <label class="sr" for="sun-time">Hora del día</label>
+        <input type="range" id="sun-time" min="300" max="1140" step="10" value="900">
+        <div class="sun-row"><button type="button" class="btn" data-sun-date="06-21">21 jun</button><button type="button" class="btn" data-sun-date="03-21">21 mar</button><button type="button" class="btn" data-sun-date="12-21">21 dic</button><button type="button" class="btn" data-sun-date="hoy">Hoy</button></div>
+        <p class="muted" id="sun-note"></p>
+      </div>
       <div id="price" tabindex="0" aria-describedby="price-pop">
         <div class="price-badge"><span id="price-total">—</span><span id="price-sub" class="muted"></span></div>
         <div id="price-pop" role="tooltip"></div>

@@ -19,3 +19,4 @@ export * from "./assembly.js";
 export * from "./pricebook.js";
 export * from "./joints.js";
 export * from "./electrical.js";
+export * from "./sun.js";

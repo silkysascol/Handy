@@ -113,7 +113,22 @@ export interface World {
   name: string;
   rooms: Room[];
   items: PlacedItem[];
+  /** Dónde está la casa y hacia dónde mira, para el estudio de sol. */
+  site?: Site;
   updatedAt?: string;
+}
+
+export interface Site {
+  /** Nombre del lugar, si se dio una ciudad. */
+  place?: string;
+  /** Grados; norte positivo. */
+  latitude: number;
+  /** Grados; este positivo (América es negativo). */
+  longitude: number;
+  /** Horas respecto a UTC de la hora local (Colombia: -5). */
+  utcOffset: number;
+  /** Hacia dónde mira de verdad el "muro norte" del modelo, en grados desde el norte y en sentido horario. 0 = norte, 90 = este. */
+  north: number;
 }
 
 export function createWorld(name: string): World {

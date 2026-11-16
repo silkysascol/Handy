@@ -2,6 +2,7 @@ import type { Joinery } from "./model/index.js";
 import { defaultFloorSpec, planFloor, type FloorSpec } from "./flooring.js";
 import type { FrameOptions } from "./generators/frame.js";
 import { profileBySide } from "./profiles.js";
+import { compassName, setSite } from "./sun.js";
 import { addPoint, isWetRoom, POINT_HEIGHT, removePoint, spreadOutlets, updatePoint } from "./electrical.js";
 import {
   addBlock, addOpening, addRoom, attachRoom, frontDepth, removeBlock, updateBlock, getRoom, itemModel, placeCabinet, removeItem, removeOpening, roomSpan, rotateItem, updateItem, updateOpening, updateRoom,
@@ -161,6 +162,9 @@ export function runCommand(world: World, selection: Selection, text: string): Co
   const t = norm(text);
   if (!t) return unknown("Escribe qué quieres cambiar.");
   try {
+    // Dónde está la casa y hacia dónde mira: vale con cualquier cosa seleccionada.
+    const site = siteCommand(world, t);
+    if (site) return site;
     switch (selection.kind) {
       case "wall": return wallCommand(world, selection, t);
       case "item": return itemCommand(world, selection, t);
@@ -380,6 +384,31 @@ function itemCommand(world: World, sel: Extract<Selection, { kind: "item" }>, t:
     }
   }
   return unknown('En un mueble puedes: "ensancha 10 cm", "alto 1800", "muévelo 30 cm a la derecha", "pégalo a la izquierda", "agrega una repisa", "2 divisiones", "3 cajones", "con barra de colgar", "2 puertas", "sin tornillos a la vista", "quítalo".');
+}
+
+// ---------- Lugar y orientación de la casa, para el estudio de sol ----------
+
+const COMPASS_DEG: Record<string, number> = { norte: 0, noreste: 45, nororiente: 45, este: 90, oriente: 90, sureste: 135, suroriente: 135, sur: 180, suroeste: 225, suroccidente: 225, oeste: 270, occidente: 270, noroeste: 315, noroccidente: 315 };
+
+function siteCommand(world: World, t: string): CommandResult | null {
+  const done = (message: string): CommandResult => ({ ok: true, understood: true, message });
+  const coords = t.match(/latitud (-?\d+(?:\.\d+)?).*longitud (-?\d+(?:\.\d+)?)/);
+  if (coords) {
+    const s = setSite(world, { latitude: Number(coords[1]), longitude: Number(coords[2]) });
+    return done(`Lugar: latitud ${s.latitude}, longitud ${s.longitude}, hora UTC${s.utcOffset >= 0 ? "+" : ""}${s.utcOffset}. Ya puedes pedir "sol a las 3 pm".`);
+  }
+  const facing = t.match(/(?:muro|pared) norte (?:mira|da|apunta|queda)(?: hacia)? (?:al|el|a el)? ?(noreste|nororiente|noroeste|noroccidente|sureste|suroriente|suroeste|suroccidente|norte|sur|este|oriente|oeste|occidente)\b/) ?? null;
+  const turned = t.match(/norte (?:real )?(?:a|girado|rotado) (\d+(?:\.\d+)?) ?(?:grados|°)/);
+  if (facing || turned) {
+    if (!world.site) return fail('Primero dime dónde está la casa: "estamos en Bogotá".');
+    const s = setSite(world, { north: facing ? COMPASS_DEG[facing[1]] : Number(turned![1]) });
+    return done(`Orientación: el muro norte del modelo mira al ${compassName(s.north)} (${s.north}°). El muro este mira al ${compassName(s.north + 90)}, el sur al ${compassName(s.north + 180)} y el oeste al ${compassName(s.north + 270)}.`);
+  }
+  if (/\b(estamos en|estoy en|vivo en|ubicacion|la casa queda en|la casa esta en|queda en)\b/.test(t)) {
+    const s = setSite(world, { place: t });
+    return done(`Lugar: ${s.place} (latitud ${s.latitude}, longitud ${s.longitude}). Supongo que el muro norte del modelo mira al ${compassName(s.north)}; si no, dilo: "el muro norte mira al este". Ya puedes pedir "sol a las 3 pm".`);
+  }
+  return null;
 }
 
 // ---------- Electricidad: tomas, interruptores, datos y luces ----------

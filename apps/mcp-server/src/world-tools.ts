@@ -8,6 +8,12 @@ import {
   addRoom,
   activeProviders,
   addBlock,
+  compassName,
+  REFERENCE_DAYS,
+  setSite,
+  sunPosition,
+  sunReport,
+  sunSummary,
   addPoint,
   describeElectrical,
   drillBands,
@@ -322,6 +328,49 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
       const result = runCommand(world, selection, order);
       if (result.ok) store.save(world);
       return { ...text(result.message, { ...result }), isError: !result.ok };
+    },
+  );
+
+  server.registerTool(
+    "world_set_site",
+    {
+      title: "Lugar y orientación de la casa",
+      description: "Fija dónde está la casa (una ciudad conocida, o latitud y longitud) y hacia dónde mira de verdad el muro norte del modelo. Hace falta para el estudio de sol. north son grados desde el norte en sentido horario: 0 = el muro norte mira al norte, 90 = mira al este. Pregunta al usuario la orientación; no la supongas.",
+      inputSchema: {
+        place: z.string().optional().describe("Ciudad: Bogotá, Medellín, Cali, Barranquilla, Cartagena, Bucaramanga, Pereira, Ciudad de México, Lima, Quito, Madrid..."),
+        latitude: z.number().min(-66).max(66).optional(),
+        longitude: z.number().min(-180).max(180).optional(),
+        utcOffset: z.number().min(-12).max(14).optional().describe("Horas respecto a UTC de la hora local"),
+        north: z.number().min(0).max(360).optional().describe("Hacia dónde mira el muro norte del modelo, en grados"),
+      },
+    },
+    async (input) => {
+      const world = store.load();
+      const site = setSite(world, input);
+      store.save(world);
+      return text(`Lugar: ${site.place ?? "coordenadas"} (latitud ${site.latitude}, longitud ${site.longitude}, UTC${site.utcOffset >= 0 ? "+" : ""}${site.utcOffset}). El muro norte del modelo mira al ${compassName(site.north)} (${site.north}°).`, { site });
+    },
+  );
+
+  server.registerTool(
+    "world_sun",
+    {
+      title: "Estudio de sol",
+      description: "Por cada ventana, cuántas horas de sol directo recibe en una fecha, de qué hora a qué hora, hasta dónde entra y sobre qué muebles cae. Sin fecha, da los dos solsticios y un equinoccio. Con time (HH:MM, hora local) dice además dónde está el sol en ese momento. No cuenta edificios vecinos, árboles, aleros ni cortinas. Requiere world_set_site.",
+      inputSchema: { roomId: z.string().optional(), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("AAAA-MM-DD"), time: z.string().regex(/^\d{1,2}:\d{2}$/).optional().describe("Hora local, HH:MM en 24 horas") },
+    },
+    async ({ roomId, date, time }) => {
+      const world = store.load();
+      if (!world.site) throw new Error("Falta el lugar de la casa. Usa world_set_site con la ciudad y la orientación.");
+      const year = new Date().getFullYear();
+      const days = date ? [{ label: date, date }] : REFERENCE_DAYS(year);
+      const lines = days.flatMap((d) => sunSummary(world, d.date, roomId));
+      if (time) {
+        const [h, m] = time.split(":").map(Number);
+        const pos = sunPosition(world.site, days[0].date, h * 60 + m);
+        lines.push(pos.altitude > 0 ? `A las ${time} del ${days[0].date} el sol está a ${pos.altitude}° de altura y viene del ${compassName(pos.azimuth)} (${pos.azimuth}°).` : `A las ${time} del ${days[0].date} es de noche.`);
+      }
+      return text(lines.join("\n"), { site: world.site, days: days.map((d) => ({ date: d.date, windows: sunReport(world, d.date, roomId) })) });
     },
   );
 

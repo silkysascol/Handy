@@ -420,6 +420,53 @@ test("electricidad: tomas, interruptores y luces con palabras, franjas de no per
   await h.page.waitForFunction(() => window.__handy.getQuote() && window.__handy.getQuote().groups.electrical === 0);
 });
 
+test("sol: pide el lugar, pinta dónde entra por las ventanas y cambia con la hora, la fecha y la orientación", async ({ h }) => {
+  const sun = () => h.page.evaluate(() => window.__handy.sun());
+  await h.page.evaluate(() => window.__handy.select({ kind: "world" }));
+  // Sin lugar no hay sol: lo pide.
+  await h.page.click("#sun-toggle");
+  await h.page.waitForFunction(() => /dime dónde está la casa/.test(document.getElementById("toast").textContent));
+  assert.equal((await sun()).view, null);
+  assert.match(await h.say("estamos en Bogotá"), /Lugar: Bogotá/);
+  assert.equal((await h.world()).site.place, "Bogotá");
+
+  // Una ventana al este en una habitación nueva y sola: a las 8 de la mañana le entra sol; a las 4 de la tarde no.
+  assert.match(await h.say("solar de 4 x 3 m"), /Solar/);
+  const room = (await h.world()).rooms.find((r) => r.name === "Solar");
+  const others = (await h.world()).rooms.filter((r) => r.id !== room.id).flatMap((r) => r.openings.filter((o) => o.type === "window")).length;
+  await h.page.evaluate((id) => window.__handy.select({ kind: "wall", roomId: id, wall: "east" }), room.id);
+  assert.match(await h.say("ventana de 120 x 100 centrada, antepecho 100"), /Ventana de 1200 x 1000/);
+  assert.match(await h.say("sol el 21 de marzo a las 8 de la mañana"), /Sol a \d+° de altura, viene del este/);
+  let s = await sun();
+  assert.deepEqual([s.view.date.slice(5), s.view.minutes], ["03-21", 480]);
+  assert.ok(s.patches >= 1, "a las 8 debía entrar sol por la ventana del este");
+  assert.equal(await h.page.locator("#sunbar").isVisible(), true);
+  assert.match(await h.page.textContent("#sun-label"), /Bogotá · 21 mar · 8:00 a\. m\./);
+  const morning = s.patches;
+
+  // El control de hora mueve el sol: a las 4 de la tarde esa ventana ya no recibe.
+  await h.page.fill("#sun-time", "960");
+  s = await sun();
+  assert.equal(s.view.minutes, 960);
+  assert.ok(s.patches <= morning - 1 + others, "la ventana del este no debía recibir sol en la tarde");
+  // Girar la casa media vuelta deja esa ventana mirando al oeste: ahora recibe el sol de la tarde.
+  assert.match(await h.say("el muro norte mira al sur"), /mira al sur \(180°\)/);
+  s = await sun();
+  assert.ok(s.patches >= 1);
+  await h.page.evaluate((id) => window.__handy.select({ kind: "room", roomId: id }), room.id);
+  assert.match(await h.page.textContent("#props"), /Sol · ventana oeste\s*jun \d+(,\d)? h · mar \d+(,\d)? h · dic \d+(,\d)? h/);
+
+  // Fechas de referencia, noche y apagado.
+  await h.page.click('[data-sun-date="12-21"]');
+  assert.equal((await sun()).view.date.slice(5), "12-21");
+  assert.match(await h.say("sol a las 11 de la noche"), /Es de noche a esa hora/);
+  assert.equal((await sun()).patches, 0);
+  await h.say("quita el sol");
+  assert.equal((await sun()).view, null);
+  assert.equal(await h.page.locator("#sunbar").isVisible(), false);
+  await h.say("el muro norte mira al norte");
+});
+
 test("armado paso a paso en 3D: niveles de detalle, piezas que entran, puntos de herraje y manual imprimible", async ({ h }) => {
   // Con varios muebles y nada seleccionado, pide escoger uno.
   await h.page.keyboard.press("Escape");
