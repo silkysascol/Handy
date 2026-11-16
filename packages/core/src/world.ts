@@ -12,6 +12,8 @@ import { planFloor, type FloorSpec } from "./flooring.js";
  * Ejes del mundo (los mismos de glTF y three.js): X a la derecha, Y arriba, Z hacia el observador.
  * En planta se usa X y Z. Todo en milímetros enteros.
  */
+import { describeElectrical, electricalIssues } from "./electrical.js";
+
 export type WallSide = "north" | "east" | "south" | "west";
 
 export const WALL_NAMES: Record<WallSide, string> = { north: "muro norte", east: "muro este", south: "muro sur", west: "muro oeste" };
@@ -46,6 +48,27 @@ export interface Block {
   height?: Millimeters;
 }
 
+export type PointKind = "outlet" | "switch" | "data" | "light";
+
+/**
+ * Punto eléctrico. Tomas, interruptores y puntos de datos van en un muro (`wall`, `offset`, `height`);
+ * las luces van en el techo (`x` desde el muro oeste, `z` desde el muro norte).
+ */
+export interface ElectricPoint {
+  id: string;
+  name: string;
+  kind: PointKind;
+  wall?: WallSide;
+  /** Distancia desde el extremo izquierdo del muro, mirándolo desde dentro. */
+  offset?: Millimeters;
+  /** Altura del centro de la caja sobre el piso terminado. */
+  height?: Millimeters;
+  x?: Millimeters;
+  z?: Millimeters;
+  /** Toma con protección de falla a tierra, para zonas húmedas. */
+  gfci?: boolean;
+}
+
 /** Habitación rectangular, con macizos opcionales que la recortan. `origin` es la esquina interior noroeste (x mínimo, z mínimo). */
 export interface Room {
   id: string;
@@ -60,6 +83,8 @@ export interface Room {
   floor?: FloorSpec;
   /** Columnas, buitrones y esquinas cerradas. */
   blocks?: Block[];
+  /** Tomas, interruptores, puntos de datos y luces. */
+  points?: ElectricPoint[];
 }
 
 export interface PlacedItem {
@@ -95,9 +120,9 @@ export function createWorld(name: string): World {
   return { version: 1, name, rooms: [], items: [] };
 }
 
-const slug = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "x";
+export const slug = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "x";
 
-function uniqueId(base: string, taken: string[]): string {
+export function uniqueId(base: string, taken: string[]): string {
   let id = base;
   for (let i = 2; taken.includes(id); i++) id = `${base}-${i}`;
   return id;
@@ -244,7 +269,7 @@ export function blockBox(room: Room, b: Block): AABB {
 }
 
 /** Tramo de un muro que un macizo tapa por estar pegado a él, o `null` si no lo toca. */
-function blockOnWall(room: Room, b: Block, wall: WallSide): [number, number] | null {
+export function blockOnWall(room: Room, b: Block, wall: WallSide): [number, number] | null {
   const touching = wall === "north" ? b.z <= 0 : wall === "south" ? b.z + b.depth >= room.depth : wall === "west" ? b.x <= 0 : b.x + b.width >= room.width;
   if (!touching) return null;
   return wall === "north" ? [b.x, b.x + b.width] : wall === "south" ? [room.width - b.x - b.width, room.width - b.x] : wall === "east" ? [b.z, b.z + b.depth] : [room.depth - b.z - b.depth, room.depth - b.z];
@@ -539,7 +564,7 @@ export interface WallRun {
 }
 
 /** Proyección de una caja del mundo sobre un muro, en la coordenada "offset" de ese muro. */
-function spanOnWall(room: Room, wall: WallSide, box: AABB): [number, number] {
+export function spanOnWall(room: Room, wall: WallSide, box: AABB): [number, number] {
   const [ox, oz] = room.origin;
   switch (wall) {
     case "north": return [box.min[0] - ox, box.max[0] - ox];
@@ -550,7 +575,7 @@ function spanOnWall(room: Room, wall: WallSide, box: AABB): [number, number] {
 }
 
 /** Distancia de una caja a la cara interior del muro. */
-function distanceToWall(room: Room, wall: WallSide, box: AABB): number {
+export function distanceToWall(room: Room, wall: WallSide, box: AABB): number {
   const [ox, oz] = room.origin;
   switch (wall) {
     case "north": return box.min[2] - oz;
@@ -631,6 +656,8 @@ export function checkWorld(world: World): WorldIssue[] {
         issues.push({ level: "error", code: "items-overlap", itemId: items[a].id, roomId: room.id, message: `${items[a].name} y ${items[b].name} se solapan en ${room.name}.` });
       }
     }
+
+    issues.push(...electricalIssues(world, room));
 
     for (const item of items) {
       const box = boxes.get(item.id)!;
@@ -733,6 +760,7 @@ export function describeWorld(world: World): string {
       lines.push(`Macizos (columnas, buitrones, esquinas cerradas; x desde el muro oeste, z desde el muro norte). Piso libre: ${m2(roomArea(room), 1)} m².`);
       for (const b of room.blocks) lines.push(`- ${b.name} (id: ${b.id}): ${b.width} x ${b.depth}${b.height ? `, alto ${b.height}` : ", hasta el techo"}, x ${b.x}–${b.x + b.width}, z ${b.z}–${b.z + b.depth}`);
     }
+    lines.push(...describeElectrical(room));
     const items = world.items.filter((i) => i.roomId === room.id);
     if (items.length) lines.push("Muebles:");
     for (const i of items) {

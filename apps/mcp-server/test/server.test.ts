@@ -149,6 +149,23 @@ describe("Handy MCP server", () => {
     await call("world_remove_block", { roomId: "dormitorio", blockId: "esquina-cerrada" });
     expect((await call("world_remove_block", { roomId: "dormitorio", blockId: "esquina-cerrada" })).isError).toBe(true);
 
+    // Electricidad: la IA pone un interruptor y una luz, reparte tomas y ve dónde no perforar.
+    const sw = await call("world_add_point", { roomId: "dormitorio", kind: "switch", wall: "south", offset: 1150 });
+    expect(sw.text).toMatch(/Interruptor \(id: interruptor\) en el muro sur, a 1150 mm de la izquierda y 1100 mm del piso/);
+    await call("world_add_point", { roomId: "dormitorio", kind: "light", x: 1800, z: 1600 });
+    expect((await call("world_add_point", { roomId: "dormitorio", kind: "outlet", wall: "south", offset: 600 })).isError).toBe(true);
+    const elec = await call("world_electrical", { roomId: "dormitorio", spread: true });
+    expect(elec.text).toMatch(/Repartí \d+ toma\(s\)/);
+    expect(elec.text).toMatch(/No perforar sin comprobar, de piso a techo: .*muro sur de 1050 a 1250 \(Interruptor\)/);
+    expect(elec.data.takeoff.outlets).toBeGreaterThan(1);
+    expect(elec.data.takeoff.conduitM).toBeGreaterThan(5);
+    const raised = await call("world_command", { roomId: "dormitorio", pointId: "interruptor", text: "súbela 10 cm" });
+    expect(raised.text).toMatch(/1200 mm del piso/);
+    const withElec = await call("world_quote");
+    expect(withElec.data.groups.electrical).toBeGreaterThan(0);
+    for (const p of (await call("world_electrical", { roomId: "dormitorio" })).data.points) await call("world_command", { roomId: "dormitorio", pointId: p.id, text: "quítala" });
+    expect((await call("world_quote")).data.groups.electrical).toBe(0);
+
     // Precios reales: la IA ve qué falta, anota lo que encontró y el presupuesto deja el catálogo de ejemplo.
     expect(withFloor.text).toContain("CATÁLOGO DE EJEMPLO");
     const needed = await call("prices_needed");

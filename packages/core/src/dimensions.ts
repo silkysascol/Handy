@@ -77,6 +77,19 @@ export function dimensionsFor(world: World, sel: Selection): DimLine[] {
     const side = len - o.offset - o.width >= 150 ? o.offset + o.width + 80 : Math.max(0, o.offset - 80);
     up(room, o.wall, side, 0, o.sill, 40, "gap");
     up(room, o.wall, side, o.sill, o.sill + o.height, 40, "size");
+  } else if (sel.kind === "point") {
+    const room = getRoom(world, sel.roomId);
+    const p = room.points?.find((x) => x.id === sel.pointId);
+    if (!p) return out;
+    if (p.wall !== undefined && p.offset !== undefined && p.height !== undefined) {
+      along(room, p.wall, 0, p.offset, p.height, 40, "gap");
+      along(room, p.wall, p.offset, wallLength(room, p.wall), p.height, 40, "gap");
+      up(room, p.wall, p.offset, 0, p.height, 40, "size");
+    } else {
+      const x = p.x ?? 0, z = p.z ?? 0, y = room.height - 40;
+      const line = (u0: number, i0: number, u1: number, i1: number) => out.push({ from: wallPoint(room, "north", u0, y, i0), to: wallPoint(room, "north", u1, y, i1), value: Math.round(Math.abs(u1 - u0) + Math.abs(i1 - i0)), kind: "gap" });
+      line(0, z, x, z); line(x, z, room.width, z); line(x, 0, x, z); line(x, z, x, room.depth);
+    }
   } else if (sel.kind === "block") {
     const room = getRoom(world, sel.roomId);
     const b = room.blocks?.find((x) => x.id === sel.blockId);

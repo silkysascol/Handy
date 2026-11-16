@@ -124,3 +124,30 @@ Qué cambia con un macizo:
 - **Exportación**: sale a Blender como un volumen más del grupo de muros.
 
 Límites: los macizos son rectangulares y alineados con los muros. No hay muros inclinados ni curvos. Las caras de una esquina cerrada no admiten todavía puertas ni ventanas, y un mueble contra una de esas caras se coloca como mueble suelto, con su separación del muro.
+
+## Electricidad: tomas, interruptores, datos y luces
+
+Cada habitación puede tener puntos eléctricos. Los de pared (toma, interruptor, datos) tienen muro, distancia desde la izquierda y altura; las luces van en el techo, por distancia a los muros oeste y norte.
+
+| Quieres | Dices | Sale |
+| --- | --- | --- |
+| Una toma, con un muro seleccionado | "toma a 1 m de la izquierda" | a 300 mm del piso |
+| Varias en un muro | "3 tomas" | repartidas parejo |
+| Toma sobre mesón | "toma de mesón a 60 cm de la derecha" | a 1100 mm, con protección GFCI |
+| Interruptor | "interruptor" | a 1100 mm, junto a la puerta de ese muro, a 15 cm del vano |
+| Datos o TV | "toma de tv a 1 m de la derecha a 1,2 m del piso" | donde digas |
+| Luces, con la habitación seleccionada | "2 luces", "luz a 1 m del muro norte y 2 m del muro oeste" | en el techo, repartidas por el lado largo |
+| Tomas automáticas, con la habitación seleccionada | "reparte las tomas" | una cada 3,6 m de muro libre como máximo |
+
+Con un punto seleccionado: "muévela 20 cm a la derecha", "a 1,1 m del piso", "súbela 10 cm", "con protección", "quítala". Las flechas hacen lo mismo de a 10 mm.
+
+Lo que Handy hace con eso:
+
+- **Franjas de no perforar.** Sobre cada toma e interruptor se dibuja una franja roja de 20 cm de ancho, de piso a techo: por ahí suele subir o bajar la tubería. Si un mueble alto o colgado se fija al muro sobre una franja, avisa (`drill-band`).
+- **Puntos tapados.** Si un mueble queda delante de una toma o un interruptor, avisa (`point-covered`). Para un interruptor dice que no se podrá accionar.
+- **Zonas húmedas.** En cocina, baño, lavadero, patio y similares, las tomas salen con protección de falla a tierra (GFCI).
+- **Reparto de tomas.** "reparte las tomas" recorre los tramos libres de muro (sin puertas, columnas ni muebles) y pone las necesarias para que ningún punto del muro quede a más de 1,8 m de una.
+- **No deja** poner un punto dentro de una puerta o una ventana, ni en un tramo tapado por una columna, ni una luz dentro de una columna.
+- **Costo.** Cada habitación con puntos suma al presupuesto: tomas, interruptores, rosetas, una caja por punto, y un estimado de tubería y cable. La tubería se estima desde cada punto hasta el techo y de ahí a la luz más cercana; el cable son tres hilos por tubo más un 10 %.
+
+Importante: son alturas y distancias de práctica común, no una revisión de norma (RETIE, NTC 2050). No hay tablero, circuitos ni cálculo de cargas. La instalación la define y la valida un electricista; Handy sirve para planear dónde van las cosas, no perforar donde no toca y saber cuánto material comprar.

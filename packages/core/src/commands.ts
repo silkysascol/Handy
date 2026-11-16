@@ -2,6 +2,7 @@ import type { Joinery } from "./model/index.js";
 import { defaultFloorSpec, planFloor, type FloorSpec } from "./flooring.js";
 import type { FrameOptions } from "./generators/frame.js";
 import { profileBySide } from "./profiles.js";
+import { addPoint, isWetRoom, POINT_HEIGHT, removePoint, spreadOutlets, updatePoint } from "./electrical.js";
 import {
   addBlock, addOpening, addRoom, attachRoom, frontDepth, removeBlock, updateBlock, getRoom, itemModel, placeCabinet, removeItem, removeOpening, roomSpan, rotateItem, updateItem, updateOpening, updateRoom,
   wallLength, WALL_NAMES, type WallSide, type World,
@@ -17,6 +18,8 @@ export type Selection =
   | { kind: "item"; itemId: string }
   | { kind: "opening"; roomId: string; openingId: string }
   | { kind: "room"; roomId: string }
+  /** Una toma, un interruptor, un punto de datos o una luz. */
+  | { kind: "point"; roomId: string; pointId: string }
   /** Una columna, un buitrón o una esquina cerrada de una habitación. */
   | { kind: "block"; roomId: string; blockId: string }
   /** Nada seleccionado: órdenes sobre el mundo, como crear una habitación. */
@@ -164,6 +167,7 @@ export function runCommand(world: World, selection: Selection, text: string): Co
       case "opening": return openingCommand(world, selection, t);
       case "room": return roomCommand(world, selection, t);
       case "block": return blockCommand(world, selection, t);
+      case "point": return pointCommand(world, selection, t);
       case "world": return worldCommand(world, t, text);
     }
   } catch (e) {
@@ -176,6 +180,7 @@ function wallCommand(world: World, sel: Extract<Selection, { kind: "wall" }>, t:
   const len = wallLength(room, sel.wall);
   const anchor = parseAnchor(t);
   const dims = parseDims(t);
+  if (ELECTRIC.test(t) && !DELETE.test(t)) return createWallPoints(world, sel, t);
   const gapWanted = parseGap(t);
   const where = (gap: number | undefined, offset: number, a: Anchor) => (gap ? `a ${gap} mm del ${WALL_NAMES[sel.wall]} de ${room.name} y a ${offset} mm de su izquierda, mirando al ${FACES[sel.wall]}` : `en el ${WALL_NAMES[sel.wall]}, ${describeAnchor(a, offset)}`);
 
@@ -377,6 +382,90 @@ function itemCommand(world: World, sel: Extract<Selection, { kind: "item" }>, t:
   return unknown('En un mueble puedes: "ensancha 10 cm", "alto 1800", "muévelo 30 cm a la derecha", "pégalo a la izquierda", "agrega una repisa", "2 divisiones", "3 cajones", "con barra de colgar", "2 puertas", "sin tornillos a la vista", "quítalo".');
 }
 
+// ---------- Electricidad: tomas, interruptores, datos y luces ----------
+
+const ELECTRIC = /\b(tomas?|tomacorrientes?|enchufes?|interruptor|interruptores|suiche|suiches|switch|apagador|punto de red|punto de datos|puntos de red)\b/;
+const LIGHT = /\b(luz|luces|lampara|lamparas|bombillos?|plafon|plafones|roseta|rosetas|focos?)\b/;
+const mmText = (n: number) => `${n} mm`;
+
+function createWallPoints(world: World, sel: Extract<Selection, { kind: "wall" }>, t: string): CommandResult {
+  const room = getRoom(world, sel.roomId);
+  const len = wallLength(room, sel.wall);
+  const kind = /interruptor|suiche|switch|apagador/.test(t) ? "switch" : /\b(red|datos|tv|television|internet|antena)\b/.test(t) ? "data" : "outlet";
+  const counter = /meson|lavamanos|lavaplatos|encimera|sobre el mueble/.test(t);
+  const height = fromFloor(t) ?? lengthAfter(t, "altura|alto") ?? (kind === "outlet" && counter ? POINT_HEIGHT.counter : undefined);
+  const gfci = kind === "outlet" && (/gfci|humeda|proteccion/.test(t) || counter) ? true : undefined;
+  const name = kind === "switch" ? "Interruptor" : kind === "data" ? (/tv|television|antena/.test(t) ? "Toma de TV" : "Punto de datos") : counter ? "Toma de mesón" : "Toma";
+  const anchor = parseAnchor(t);
+  const n = countOf(t, "tomas?|tomacorrientes?|enchufes?|interruptores|interruptor|suiches?|puntos?") ?? 1;
+  const offsets: number[] = [];
+  const door = room.openings.find((o) => o.wall === sel.wall && o.type !== "window");
+  if (anchor) offsets.push(offsetFor(anchor, len, 0));
+  else if (kind === "switch" && door) {
+    // Un interruptor va junto a la puerta, del lado donde haya muro: a 15 cm del vano.
+    const right = door.offset + door.width + 150, left = door.offset - 150;
+    offsets.push(right <= len - 50 ? right : left);
+  } else for (let i = 0; i < n; i++) offsets.push(Math.round((len * (2 * i + 1)) / (2 * n)));
+  const before = JSON.stringify(room.points ?? null);
+  try {
+    const made = offsets.map((offset) => addPoint(world, room.id, { kind, name, wall: sel.wall, offset, height, gfci }));
+    const p = made[made.length - 1];
+    const note = kind === "switch" && door && !anchor ? " Va junto a la puerta, a 15 cm del vano." : p.gfci && !gfci ? ` ${room.name} es zona húmeda: sale con protección de falla a tierra (GFCI).` : "";
+    return { ok: true, understood: true, select: { kind: "point", roomId: room.id, pointId: p.id }, message: `${made.length > 1 ? `${made.length} × ${name}` : name} en el ${WALL_NAMES[sel.wall]}, a ${made.map((m) => m.offset).join(", ")} mm de la izquierda y ${mmText(p.height!)} del piso.${note}` };
+  } catch (e) {
+    // Si uno de varios no cabe, no queda ninguno a medias.
+    const prev = JSON.parse(before) as typeof room.points | null;
+    if (prev) room.points = prev; else delete room.points;
+    throw e;
+  }
+}
+
+function createLights(world: World, roomId: string, t: string): CommandResult {
+  const room = getRoom(world, roomId);
+  const dist = wallDistances(t);
+  const n = countOf(t, "luces|luz|lamparas?|bombillos?|plafones|plafon|rosetas?|focos?") ?? 1;
+  const spots: { x: number; z: number }[] = [];
+  if (Object.keys(dist).length) spots.push(blockPosition(room, 0, 0, dist));
+  else {
+    // Repartidas a lo largo del lado más largo, centradas en el otro.
+    const alongX = room.width >= room.depth;
+    for (let i = 0; i < n; i++) { const a = Math.round(((alongX ? room.width : room.depth) * (2 * i + 1)) / (2 * n)); spots.push(alongX ? { x: a, z: Math.round(room.depth / 2) } : { x: Math.round(room.width / 2), z: a }); }
+  }
+  const made = spots.map((s) => addPoint(world, room.id, { kind: "light", ...s }));
+  const p = made[made.length - 1];
+  return { ok: true, understood: true, select: { kind: "point", roomId: room.id, pointId: p.id }, message: `${made.length > 1 ? `${made.length} luces` : "Luz"} en el techo de ${room.name}: ${made.map((m) => `a ${m.x} mm del muro oeste y ${m.z} del norte`).join("; ")}.` };
+}
+
+function pointCommand(world: World, sel: Extract<Selection, { kind: "point" }>, t: string): CommandResult {
+  const room = getRoom(world, sel.roomId);
+  const p = room.points?.find((x) => x.id === sel.pointId);
+  if (!p) return fail(`No existe el punto "${sel.pointId}".`);
+  const done = (message: string): CommandResult => ({ ok: true, understood: true, select: sel, message });
+  if (DELETE.test(t)) { removePoint(world, room.id, p.id); return { ok: true, understood: true, select: { kind: "room", roomId: room.id }, message: `${p.name}: ya no está en ${room.name}.` }; }
+  const L = firstLength(t);
+  if (p.kind === "light") {
+    const dist = wallDistances(t);
+    if (Object.keys(dist).length || /centr/.test(t)) { updatePoint(world, room.id, p.id, blockPosition(room, 0, 0, dist, /centr/.test(t) ? undefined : { x: p.x!, z: p.z! })); return done(`${p.name}: a ${p.x} mm del muro oeste y ${p.z} del norte.`); }
+    const dir = t.match(/\b(?:al|hacia el|para el) (norte|sur|este|oriente|oeste|occidente)\b/);
+    if (L !== undefined && dir) {
+      const to = WALL_WORD[dir[1]];
+      updatePoint(world, room.id, p.id, to === "north" ? { z: p.z! - L } : to === "south" ? { z: p.z! + L } : to === "west" ? { x: p.x! - L } : { x: p.x! + L });
+      return done(`${p.name}: a ${p.x} mm del muro oeste y ${p.z} del norte.`);
+    }
+    return unknown('En una luz puedes: "muévela 30 cm al este", "a 1 m del muro norte", "céntrala", "quítala".');
+  }
+  const where = () => `${p.name}: a ${p.offset} mm de la izquierda y ${p.height} mm del piso, en el ${WALL_NAMES[p.wall!]}.`;
+  if (/gfci|proteccion/.test(t) && p.kind === "outlet") { updatePoint(world, room.id, p.id, { gfci: !/sin (gfci|proteccion)/.test(t) }); return done(`${p.name}: ${p.gfci ? "con" : "sin"} protección de falla a tierra.`); }
+  const floor = fromFloor(t) ?? lengthAfter(t, "altura|alto");
+  if (floor !== undefined) { updatePoint(world, room.id, p.id, { height: floor }); return done(where()); }
+  if (L !== undefined && /\bsub[ei]|levanta|eleva/.test(t)) { updatePoint(world, room.id, p.id, { height: p.height! + L }); return done(where()); }
+  if (L !== undefined && /\bbaja/.test(t)) { updatePoint(world, room.id, p.id, { height: p.height! - L }); return done(where()); }
+  const anchor = parseAnchor(t);
+  if (anchor) { updatePoint(world, room.id, p.id, { offset: offsetFor(anchor, wallLength(room, p.wall!), 0) }); return done(where()); }
+  if (L !== undefined && /derecha|izquierda/.test(t)) { updatePoint(world, room.id, p.id, { offset: p.offset! + (/derecha/.test(t) ? L : -L) }); return done(where()); }
+  return unknown('En una toma o un interruptor puedes: "muévela 20 cm a la derecha", "a 1 m de la izquierda", "a 1,1 m del piso", "súbela 10 cm", "con protección", "quítala".');
+}
+
 // ---------- Columnas, buitrones y esquinas cerradas ----------
 
 const BLOCK = /\b(columna|pilar|buitron|ducto|chimenea|macizo|mocheta|muro bajo|medio muro|murete|poyo|recorte|recorta|recortar|esquina cerrada|cierra la esquina|en l\b|forma de l\b)/;
@@ -486,6 +575,15 @@ function roomCommand(world: World, sel: Extract<Selection, { kind: "room" }>, t:
   const room = getRoom(world, sel.roomId);
   const done = (message: string): CommandResult => ({ ok: true, understood: true, select: sel, message });
   const dims = parseDims(t);
+
+  // Electricidad: luces en el techo y tomas repartidas por los muros libres.
+  if (/repart|distribu|automatic/.test(t) && /tomas?|enchufes?|tomacorrientes?/.test(t)) {
+    const made = spreadOutlets(world, room.id);
+    if (!made.length) return fail(`No encontré tramos de muro libres en ${room.name} donde haga falta otra toma.`);
+    return done(`${made.length} toma(s) repartidas en ${room.name} a ${POINT_HEIGHT.outlet} mm del piso: ${made.map((m) => `${WALL_NAMES[m.wall!]} a ${m.offset}`).join("; ")}. Así ningún punto de muro libre queda a más de 1,8 m de una toma.${isWetRoom(room) ? " Es zona húmeda: salen con protección GFCI." : ""}`);
+  }
+  if (ELECTRIC.test(t) && !DELETE.test(t)) return fail('Las tomas y los interruptores van en un muro: haz clic en el muro y escribe "toma a 1 m de la izquierda" o "interruptor". Para repartirlas solas: "reparte las tomas".');
+  if (LIGHT.test(t) && !DELETE.test(t) && !/\bluz de \d/.test(t)) return createLights(world, room.id, t);
 
   // Columnas, buitrones, muros bajos y esquinas cerradas (habitación en L).
   if (BLOCK.test(t) && !DELETE.test(t)) return createBlock(world, room.id, t);

@@ -1,5 +1,6 @@
 import type { AABB } from "./collision.js";
 import { panelBox, panelInstances } from "./collision.js";
+import { pointPosition } from "./electrical.js";
 import { blockBox, roomArea, effectiveOpenings, itemModel, itemTransform, wallLength, WALL_NAMES, type Opening, type Room, type WallSide, type World } from "./world.js";
 
 /**
@@ -122,6 +123,7 @@ export function exportGltf(world: World): string {
 
     const floor = boxNode("Piso", { min: [ox - t.west, -100, oz - t.north], max: [ox + room.width + t.east, 0, oz + room.depth + t.south] }, "floor", { handy: { areaM2: roomArea(room) / 1e6 } });
     for (const blk of room.blocks ?? []) wallNodes.push(boxNode(blk.name, blockBox(room, blk), "wall", { handy: { block: blk.id, width: blk.width, depth: blk.depth, height: blk.height ?? room.height } }));
+    for (const pt of room.points ?? []) { const [x, y, z] = pointPosition(room, pt); wallNodes.push(boxNode(pt.name, { min: [x - 45, y - 60, z - 45], max: [x + 45, y + 60, z + 45] }, "white", { handy: { point: pt.id, kind: pt.kind } })); }
     const walls = add({ name: "Muros", children: wallNodes });
 
     const itemNodes: number[] = [];

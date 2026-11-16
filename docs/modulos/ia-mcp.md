@@ -41,6 +41,8 @@ El mundo vive en `~/.handy/mundo.world.json` o donde indique `HANDY_WORLD`. La I
 | `world_assembly` | Pasos de armado de un mueble en tres niveles (`guided`, `normal`, `expert`), con acciones, medidas de cada herraje y comprobaciones; escribe el manual imprimible. |
 | `world_drilling` | Plano de perforación por pieza: herraje, diámetro, profundidad, cara o canto y distancias a los bordes. |
 | `world_add_block`, `world_remove_block` | Columna, buitrón, muro bajo o esquina cerrada (habitación en L) dentro de una habitación. Para moverlos o cambiarlos: `world_command` con `roomId` y `blockId`. |
+| `world_add_point` | Toma, interruptor o punto de datos en un muro, o luz en el techo, a la altura habitual de su tipo. Para mover o quitar: `world_command` con `roomId` y `pointId`. |
+| `world_electrical` | Puntos de una habitación, franjas donde no perforar, estimado de cajas, tubería y cable, y avisos. Con `spread: true` reparte tomas. |
 | `prices_needed` | Renglones del presupuesto con su clave y el precio que tienen hoy: falta, viejo o al día. Es la lista de compras que la IA debe ir a buscar. |
 | `price_set` | Anota un precio visto en una tienda (nombre, tienda, valor, presentación, enlace, fecha) para la clave de un renglón. |
 | `price_list`, `price_remove` | Ver y borrar precios anotados. |

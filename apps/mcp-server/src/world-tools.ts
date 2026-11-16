@@ -8,6 +8,11 @@ import {
   addRoom,
   activeProviders,
   addBlock,
+  addPoint,
+  describeElectrical,
+  drillBands,
+  electricalTakeoff,
+  spreadOutlets,
   getRoom,
   removeBlock,
   roomArea,
@@ -309,14 +314,65 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
     {
       title: "Orden en lenguaje natural sobre una selección",
       description: 'Aplica una orden corta en español sobre lo seleccionado, igual que la barra de comandos del visor: "pon una puerta de 80 x 205 a 2 m de la izquierda" (muro), "ensancha 10 cm" (mueble), "muévela 20 cm a la derecha" (abertura), "cocina de 2,8 x 2,4 m" (sin selección). Para la selección envía roomId + wall, o itemId, o roomId + openingId, o solo roomId, o nada.',
-      inputSchema: { text: z.string(), roomId: z.string().optional(), wall: wall.optional(), itemId: z.string().optional(), openingId: z.string().optional(), blockId: z.string().optional().describe("Con roomId: una columna o esquina cerrada de esa habitación") },
+      inputSchema: { text: z.string(), roomId: z.string().optional(), wall: wall.optional(), itemId: z.string().optional(), openingId: z.string().optional(), blockId: z.string().optional().describe("Con roomId: una columna o esquina cerrada de esa habitación"), pointId: z.string().optional().describe("Con roomId: una toma, un interruptor o una luz de esa habitación") },
     },
-    async ({ text: order, roomId, wall: w, itemId, openingId, blockId }) => {
-      const selection: Selection = itemId ? { kind: "item", itemId } : roomId && blockId ? { kind: "block", roomId, blockId } : roomId && openingId ? { kind: "opening", roomId, openingId } : roomId && w ? { kind: "wall", roomId, wall: w } : roomId ? { kind: "room", roomId } : { kind: "world" };
+    async ({ text: order, roomId, wall: w, itemId, openingId, blockId, pointId }) => {
+      const selection: Selection = itemId ? { kind: "item", itemId } : roomId && pointId ? { kind: "point", roomId, pointId } : roomId && blockId ? { kind: "block", roomId, blockId } : roomId && openingId ? { kind: "opening", roomId, openingId } : roomId && w ? { kind: "wall", roomId, wall: w } : roomId ? { kind: "room", roomId } : { kind: "world" };
       const world = store.load();
       const result = runCommand(world, selection, order);
       if (result.ok) store.save(world);
       return { ...text(result.message, { ...result }), isError: !result.ok };
+    },
+  );
+
+  server.registerTool(
+    "world_add_point",
+    {
+      title: "Agregar punto eléctrico",
+      description: "Agrega una toma, un interruptor o un punto de datos en un muro, o una luz en el techo. Sin altura usa la habitual: tomas y datos a 300 mm, interruptores a 1100 mm, tomas sobre mesón a 1100 mm (pásala en height). En cocina, baño, lavadero y exteriores las tomas salen con protección GFCI. No deja poner puntos dentro de puertas o ventanas ni en muro tapado por una columna. Son alturas de práctica común, no una revisión de norma: la instalación la valida un electricista. Para mover o quitar: world_command con roomId y pointId.",
+      inputSchema: {
+        roomId: z.string(),
+        kind: z.enum(["outlet", "switch", "data", "light"]).describe("outlet = toma; switch = interruptor; data = red o TV; light = luz de techo"),
+        name: z.string().optional(),
+        wall: wall.optional().describe("Para toma, interruptor y datos"),
+        offset: z.number().int().min(0).optional().describe("mm desde el extremo izquierdo del muro, mirándolo desde dentro"),
+        height: z.number().int().min(100).optional().describe("mm sobre el piso terminado"),
+        x: z.number().int().min(0).optional().describe("Solo luz: mm desde el muro oeste"),
+        z: z.number().int().min(0).optional().describe("Solo luz: mm desde el muro norte"),
+        gfci: z.boolean().optional().describe("Toma con protección de falla a tierra"),
+      },
+    },
+    async ({ roomId, ...input }) => {
+      const world = store.load();
+      const point = addPoint(world, roomId, input);
+      store.save(world);
+      const issues = checkWorld(world).filter((i) => i.roomId === roomId && /point|drill/.test(i.code));
+      return text([`${point.name} (id: ${point.id}) ${point.kind === "light" ? `en el techo, a ${point.x} mm del muro oeste y ${point.z} del norte` : `en el ${WALL_NAMES[point.wall!]}, a ${point.offset} mm de la izquierda y ${point.height} mm del piso${point.gfci ? ", con protección GFCI" : ""}`}.`, ...issues.map((i) => `[${i.level}] ${i.message}`)].join("\n"), { point, issues });
+    },
+  );
+
+  server.registerTool(
+    "world_electrical",
+    {
+      title: "Resumen eléctrico de una habitación",
+      description: "Puntos eléctricos de una habitación, las franjas donde no conviene perforar (la vertical de cada toma e interruptor, por donde suele ir la tubería), el estimado de cajas, tubería y cable, y los avisos: puntos tapados por muebles y muebles que se fijan sobre una franja. Con spread: true reparte tomas generales por los tramos libres para que ningún punto del muro quede a más de 1,8 m de una.",
+      inputSchema: { roomId: z.string(), spread: z.boolean().default(false).describe("Repartir tomas automáticamente antes de resumir") },
+    },
+    async ({ roomId, spread }) => {
+      const world = store.load();
+      const made = spread ? spreadOutlets(world, roomId) : [];
+      if (made.length) store.save(world);
+      const room = getRoom(world, roomId);
+      const t = electricalTakeoff(room);
+      const bands = drillBands(room);
+      const issues = checkWorld(world).filter((i) => i.roomId === roomId && /point|drill/.test(i.code));
+      return text([
+        ...(made.length ? [`Repartí ${made.length} toma(s): ${made.map((m) => `${WALL_NAMES[m.wall!]} a ${m.offset}`).join("; ")}.`] : []),
+        `${room.name}: ${t.outlets} toma(s) (${t.gfci} con GFCI), ${t.switches} interruptor(es), ${t.data} de datos, ${t.lights} luz(ces). Estimado: ${t.boxes} cajas, ${t.conduitM} m de tubería, ${t.wireM} m de cable.`,
+        ...describeElectrical(room).slice(1),
+        ...(bands.length ? [`No perforar sin comprobar, de piso a techo: ${bands.map((b) => `${WALL_NAMES[b.wall]} de ${b.from} a ${b.to} (${b.name})`).join("; ")}.`] : []),
+        ...issues.map((i) => `[${i.level}] ${i.message}`),
+      ].join("\n"), { takeoff: t, points: room.points ?? [], bands, issues, made });
     },
   );
 
@@ -384,7 +440,7 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
       const source = book.entries.length ? "precios propios del usuario" : "CATÁLOGO DE EJEMPLO, precios ficticios: sirve para comparar opciones, no para comprar";
       const stores = book.entries.length && quote.byStore.length > 1 ? [`Por tienda: ${quote.byStore.map((s) => `${s.store} ${s.total}`).join(" · ")}`] : [];
       return text(
-        [`Cotización: ${quote.subtotal} ${quote.currency} (muebles ${quote.groups.furniture}, pisos ${quote.groups.floors})${quote.missingCount ? ` · INCOMPLETA: ${quote.missingCount} ítems sin precio` : ""} · ${source}${quote.staleCount ? ` · ${quote.staleCount} precios con más de 30 días` : ""}`, ...lines, ...stores].join("\n"),
+        [`Cotización: ${quote.subtotal} ${quote.currency} (muebles ${quote.groups.furniture}, pisos ${quote.groups.floors}, eléctrico ${quote.groups.electrical})${quote.missingCount ? ` · INCOMPLETA: ${quote.missingCount} ítems sin precio` : ""} · ${source}${quote.staleCount ? ` · ${quote.staleCount} precios con más de 30 días` : ""}`, ...lines, ...stores].join("\n"),
         { currency: quote.currency, subtotal: quote.subtotal, groups: quote.groups, missingCount: quote.missingCount, staleCount: quote.staleCount, byStore: quote.byStore, ownPrices: book.entries.length > 0, lines: quote.lines },
       );
     },

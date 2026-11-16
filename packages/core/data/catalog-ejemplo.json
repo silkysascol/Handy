@@ -331,6 +331,76 @@
       "price": 3.5,
       "currency": "USD",
       "unit": "unit"
+    },
+    {
+      "sku": "ELE-TOMA",
+      "category": "outlet",
+      "name": "Toma doble con polo a tierra",
+      "price": 2.4,
+      "currency": "USD",
+      "unit": "unit",
+      "attributes": {
+        "gfci": false
+      }
+    },
+    {
+      "sku": "ELE-GFCI",
+      "category": "outlet",
+      "name": "Toma GFCI 15 A",
+      "price": 11.5,
+      "currency": "USD",
+      "unit": "unit",
+      "attributes": {
+        "gfci": true
+      }
+    },
+    {
+      "sku": "ELE-INT",
+      "category": "switch",
+      "name": "Interruptor sencillo",
+      "price": 1.9,
+      "currency": "USD",
+      "unit": "unit"
+    },
+    {
+      "sku": "ELE-DAT",
+      "category": "data-outlet",
+      "name": "Toma de datos RJ45 o coaxial",
+      "price": 3.2,
+      "currency": "USD",
+      "unit": "unit"
+    },
+    {
+      "sku": "ELE-ROS",
+      "category": "lamp-holder",
+      "name": "Roseta de porcelana",
+      "price": 1.1,
+      "currency": "USD",
+      "unit": "unit"
+    },
+    {
+      "sku": "ELE-CAJA",
+      "category": "electrical-box",
+      "name": "Caja eléctrica 2 x 4 PVC",
+      "price": 0.6,
+      "currency": "USD",
+      "unit": "unit"
+    },
+    {
+      "sku": "ELE-TUBO",
+      "category": "conduit",
+      "name": "Tubería conduit PVC 1/2 pulgada (m)",
+      "price": 0.7,
+      "currency": "USD",
+      "unit": "meter"
+    },
+    {
+      "sku": "ELE-CABLE",
+      "category": "wire",
+      "name": "Cable de cobre THHN calibre 12 (m)",
+      "price": 0.55,
+      "currency": "USD",
+      "unit": "meter"
     }
   ]
 }

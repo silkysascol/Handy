@@ -26,7 +26,7 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [x] Herramientas MCP `world_*` para que la IA cree, consulte, coloque, revise, cotice y exporte.
 - [x] Intérprete de órdenes en español acotado a la selección (`runCommand`) y funciones para modificar habitaciones, aberturas y muebles con validación.
 - [x] Visor web: clic para seleccionar muro, abertura, mueble o habitación; barra de órdenes; precio en la esquina; avisos; deshacer; importar y exportar; tema claro y oscuro; actualización en vivo cuando la IA cambia el mundo.
-- [x] Pruebas de navegador en el repo (`pnpm e2e`): 24 casos de extremo a extremo con servidor y mundo temporales. `pnpm check` corre todo.
+- [x] Pruebas de navegador en el repo (`pnpm e2e`): 25 casos de extremo a extremo con servidor y mundo temporales. `pnpm check` corre todo.
 - [x] Plano de corte real: piezas acomodadas en tableros con ancho de disco, refilado y veta; despiece imprimible y CSV para la tienda (botón Despiece, `world_cutplan`). La cotización usa esos tableros, no un porcentaje.
 - [x] Pisos: baldosas dibujadas en la habitación, piezas enteras y cortes, cajas según la tienda, pega por formato y material, boquilla, guardaescobas; sumado al precio del mundo (`world_floor_plan`).
 - [x] Más muebles con el mismo generador: divisiones verticales (cuerpos iguales), cajones con correderas (frente visible o interiores tras puertas), barra de colgar con maletero, puertas de 2 por cuerpo. Con eso salen closets, cajoneras y bibliotecas con divisiones. Reglas nuevas: barra larga, closet poco profundo, cajón ancho.
@@ -39,6 +39,8 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [x] Precios reales con libro de precios propio (`precios.json`): se anotan escribiendo ("precio melamina 18 blanco 185.000 en Madecentro") o los anota la IA del usuario por MCP (`prices_needed`, `price_set`), con tienda, enlace y fecha. El presupuesto deja el catálogo de ejemplo, marca faltantes y precios viejos, compra por caja o rollo y suma por tienda.
 - [ ] **Cargar la casa real del autor** y anotar lo que falte.
 - [x] Habitaciones en L y con columnas: macizos dentro de la habitación (columna, buitrón, chimenea, muro bajo, esquina cerrada). Descuentan piso, recortan baldosas, bloquean tramos de muro, chocan con los muebles y se exportan a Blender. Se crean y se mueven con palabras o con las flechas (`world_add_block`).
+- [x] Electricidad: tomas, interruptores, datos y luces a alturas habituales, con palabras o repartidas solas; franjas de no perforar sobre cada punto; avisos de puntos tapados y de muebles que se fijan sobre una franja; GFCI en zonas húmedas; cajas, tubería y cable estimados en el presupuesto (`world_add_point`, `world_electrical`).
+- [ ] Electricidad: tablero y circuitos, cargas, puntos de agua y desagüe, gas.
 - [ ] Muros inclinados o curvos, niveles; puertas y ventanas en las caras de una esquina cerrada; importar RoomPlan/LiDAR.
 - [x] Muebles sueltos en el cuarto: separación del muro (`gap`), "en el centro del cuarto", "sepáralo 60 cm", "gíralo", "pásalo al muro sur"; arrastrar hacia adentro los despega; avisos de pasillo angosto y de poco espacio frente a una puerta.
 - [ ] Manija de fondo; ángulos libres (hoy un mueble mira a uno de los cuatro muros).

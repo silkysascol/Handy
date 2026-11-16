@@ -364,6 +364,62 @@ test("habitación en L y columnas: se crean con palabras, se seleccionan en 3D, 
   assert.ok(item.itemId);
 });
 
+test("electricidad: tomas, interruptores y luces con palabras, franjas de no perforar, avisos y costo", async ({ h }) => {
+  await h.page.evaluate(() => window.__handy.select({ kind: "world" }));
+  assert.match(await h.say("estudio de 4 x 3 m"), /Estudio/);
+  const room = (await h.world()).rooms.find((r) => r.name === "Estudio");
+  const sel = (s) => h.page.evaluate((x) => window.__handy.select(x), s);
+  const points = async () => (await h.world()).rooms.find((r) => r.id === room.id).points ?? [];
+
+  // Una toma en un muro: sale a 300 mm del piso, queda seleccionada y aparece su franja.
+  await sel({ kind: "wall", roomId: room.id, wall: "north" });
+  assert.equal(await h.say("toma a 1 m de la izquierda"), "Toma en el muro norte, a 1000 mm de la izquierda y 300 mm del piso.");
+  assert.deepEqual(await h.selection(), { kind: "point", roomId: room.id, pointId: "toma" });
+  assert.equal(await h.page.evaluate(() => window.__handy.bands()), 1);
+  assert.match(await h.page.textContent("#props"), /Del piso\s*300 mm/);
+  assert.match(await h.page.textContent("#props"), /suele subir o bajar la tubería/);
+  await h.page.keyboard.press("ArrowUp");
+  await h.page.keyboard.press("Shift+ArrowRight");
+  await h.page.waitForFunction((id) => { const p = window.__handy.getWorld().rooms.find((r) => r.id === id).points[0]; return p.height === 310 && p.offset === 1100; }, room.id);
+
+  // Luces y tomas repartidas, con la habitación seleccionada.
+  await sel({ kind: "room", roomId: room.id });
+  assert.match(await h.say("2 luces"), /2 luces en el techo de Estudio/);
+  await sel({ kind: "room", roomId: room.id });
+  assert.match(await h.say("reparte las tomas"), /toma\(s\) repartidas en Estudio a 300 mm del piso/);
+  const all = await points();
+  assert.equal(all.filter((p) => p.kind === "light").length, 2);
+  assert.ok(all.filter((p) => p.kind === "outlet").length >= 4);
+  assert.ok((await h.page.evaluate(() => window.__handy.bands())) >= 4);
+  await h.page.waitForFunction(() => /punto\(s\) eléctrico\(s\)/.test(document.getElementById("price-sub").textContent));
+  await h.page.hover("#price");
+  await h.page.waitForFunction(() => /Eléctrico/.test(document.getElementById("price-pop").textContent));
+  assert.match(await h.page.textContent("#price-pop"), /Estudio · Tubería conduit/);
+  await h.page.mouse.move(5, 300);
+
+  // Un mueble colgado sobre la vertical de la toma: aviso de no perforar ahí.
+  await sel({ kind: "wall", roomId: room.id, wall: "north" });
+  assert.match(await h.say("alacena de 80 x 70 x 30 a 70 cm de la izquierda a 1,5 m del piso"), /Alacena de 800/);
+  await h.page.waitForFunction(() => /suele pasar la tubería/.test(document.getElementById("props").textContent + document.getElementById("issues").textContent));
+  await h.say("quítalo");
+
+  // Los puntos se seleccionan con un clic en la vista y aparecen en la lista bajo su muro.
+  await h.page.click("#frame");
+  await h.page.waitForTimeout(400);
+  await sel({ kind: "world" });
+  // Se escoge una toma del muro que queda al fondo de la vista, para que nada la tape.
+  const visible = (await points()).find((p) => p.kind === "outlet" && p.wall === "north");
+  const at = await h.page.evaluate(([r, id]) => window.__handy.pointScreen(r, id), [room.id, visible.id]);
+  await h.page.mouse.click(at.x, at.y);
+  assert.deepEqual(await h.selection(), { kind: "point", roomId: room.id, pointId: visible.id });
+  assert.ok((await h.page.locator(".node", { hasText: "Toma" }).count()) >= 4);
+
+  // Se quitan uno por uno; sin puntos, el presupuesto vuelve a no tener grupo eléctrico.
+  for (const p of await points()) { await sel({ kind: "point", roomId: room.id, pointId: p.id }); await h.say("quítala"); }
+  assert.equal((await points()).length, 0);
+  await h.page.waitForFunction(() => window.__handy.getQuote() && window.__handy.getQuote().groups.electrical === 0);
+});
+
 test("armado paso a paso en 3D: niveles de detalle, piezas que entran, puntos de herraje y manual imprimible", async ({ h }) => {
   // Con varios muebles y nada seleccionado, pide escoger uno.
   await h.page.keyboard.press("Escape");
