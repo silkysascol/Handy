@@ -1,6 +1,7 @@
 import type { FurnitureModel, HardwareItem, Joinery } from "./model/index.js";
 import { panelBox, panelInstances, type AABB } from "./collision.js";
 import { computeJoints, drillSheets, drillSheetSvg, type Fastening, type JointSet } from "./joints.js";
+import { roundedPieces } from "./rounding.js";
 
 /**
  * Instrucciones de armado generadas desde el modelo: en qué orden entran las piezas, con qué herrajes
@@ -102,6 +103,7 @@ const GROUP_TITLE: Record<string, string> = {
   caja: "Une el piso y el techo al costado izquierdo", fijos: "Coloca las divisiones y los entrepaños fijos", fondo: "Desliza el fondo en la ranura",
   cierre: "Cierra la caja con el costado derecho", repisas: "Pon las repisas", barra: "Monta la barra de colgar", cajones: "Arma y monta los cajones",
   puertas: "Cuelga las puertas", final: "Nivela y fija al muro",
+  redondear: "Redondea las esquinas", cubierta_mueble: "Fija la cubierta",
   marcos: "Arma los dos marcos laterales", largos: "Une los marcos con los travesaños largos", pintura: "Limpia y pinta", cubierta: "Fija la cubierta",
 };
 const PHASE_TITLE: Record<Op["phase"], string> = { caja: "Arma la caja", interior: "Monta el interior", frentes: "Pon los frentes", final: "Nivela y fija" };
@@ -130,6 +132,17 @@ function buildOps(model: FurnitureModel, parts: AssemblyPart[], joints: JointSet
   const ops: Op[] = [];
   const op = (o: Partial<Op> & Pick<Op, "group" | "phase" | "title" | "brief" | "short">) => ops.push({ detail: [], checks: [], partIds: [], hardware: [], tools: [], minutes: 5, points: [], ...o });
 
+  const rounded = roundedPieces(model);
+  /** Redondear se hace con la pieza suelta, antes de montarla. */
+  const rounding = (phase: Op["phase"]) => {
+    if (!rounded.length) return;
+    const what = rounded.map((p) => `${p.corners === 4 ? "las 4 esquinas" : "las 2 esquinas del frente"} de ${L(p.id)} a R${p.radius} mm`).join("; ");
+    op({ group: "redondear", phase, title: "Redondea las esquinas", tools: ["plantilla impresa del despiece", "caladora", "lija en taco o router con broca de copiar", "plancha para el tapacanto"], minutes: 15 * rounded.reduce((a, p) => a + p.corners * p.qty, 0) / 2,
+      brief: `Antes de montarla, redondea ${what}.`, short: "esquinas redondeadas",
+      detail: [`Vas a redondear ${what}.`, "Imprime la plantilla del despiece al 100 % y comprueba con la regla que trae que mide lo que dice.", "Recórtala por la línea gruesa. Apóyala en la esquina de la pieza con sus dos tramos rectos cortos a ras de los dos cantos, y marca el arco con lápiz.", "Corta con caladora dejando 2 mm por fuera de la línea, con hoja de diente fino y la cara buena hacia abajo para que no astille.", "Llega hasta la línea con lija de grano 80 en un taco, o con router y broca de copiar sobre una plantilla de MDF.", "Pega el tapacanto de PVC delgado: en la curva caliéntalo un poco y avanza presionando de a poco. Refila el sobrante con formón o cuchilla y lija el filo."],
+      checks: ["Pasando el dedo por la esquina no se siente escalón entre la curva y el canto recto.", "Las esquinas quedaron iguales entre sí: compáralas con la plantilla."], tip: "Practica primero en un retal del mismo tablero." });
+  };
+
   if (model.bars?.length) {
     const meta = (model.meta ?? {}) as { joint?: string };
     const welded = meta.joint !== "bolt";
@@ -152,6 +165,7 @@ function buildOps(model: FurnitureModel, parts: AssemblyPart[], joints: JointSet
       brief: `${welded ? "Pule las soldaduras. " : ""}Desengrasa, aplica anticorrosivo y dos manos de pintura. Pon los regatones en las patas.`, short: "pulir, anticorrosivo, pintura y regatones",
       detail: [...(welded ? ["Pule las soldaduras con disco flap hasta que queden a ras."] : []), "Limpia toda la estructura con un trapo con thinner para quitar grasa.", "Da una mano de anticorrosivo y deja secar lo que diga el envase.", "Da dos manos de pintura, dejando secar entre una y otra.", "Mete un regatón en cada pata."],
       checks: ["No queda metal desnudo, tampoco por dentro de las uniones."] });
+    rounding("interior");
     if (has("deck")) op({ group: "cubierta", phase: "interior", title: model.panels[0].qty > 1 ? "Fija los entrepaños" : "Fija la cubierta", partIds: ["deck"], hardware: take(["screw"]), tools: ["taladro atornillador", "broca para metal de 4,5 mm"], minutes: 15 * model.panels[0].qty,
       brief: "Apoya el tablero sobre el marco y atorníllalo desde abajo, a través de los travesaños.", short: "tablero atornillado desde abajo",
       detail: ["Apoya el tablero centrado sobre los travesaños.", "Desde abajo, perfora el tubo con broca de 4,5 mm cada 30 cm, sin llegar a la madera.", "Atornilla desde abajo, a través del tubo, hasta que la cabeza asiente."],
@@ -232,6 +246,14 @@ function buildOps(model: FurnitureModel, parts: AssemblyPart[], joints: JointSet
       brief: "Para el mueble, comprueba la escuadra midiendo las dos diagonales y asegura el fondo.", short: "parar, escuadrar y asegurar el fondo",
       detail: [model.dims.height > 1500 ? "Entre dos personas, levanta el mueble por el techo y páralo. No lo arrastres sobre el zócalo." : "Para el mueble sobre su base.", "Mide las dos diagonales del frente, de esquina a esquina. Si no son iguales, empuja la esquina de la diagonal larga hasta que lo sean.", "Con el mueble a escuadra, fija el fondo por detrás con un tornillo cada 15 cm contra los entrepaños fijos y las divisiones."],
       checks: ["Las dos diagonales miden lo mismo, con 2 mm de tolerancia."], tip: "El fondo es lo que mantiene el mueble a escuadra: no lo dejes suelto." });
+
+    if (has("countertop")) {
+      rounding("caja");
+      op({ group: "cubierta_mueble", phase: "caja", title: "Fija la cubierta", partIds: ["countertop"], hardware: takeId("countertop-screw"), tools: ["taladro atornillador", "broca de 4 mm", "prensas"], minutes: 15,
+        brief: "Apoya la cubierta sobre el mueble, a ras por detrás y volando al frente, y atorníllala desde adentro por el techo.", short: "cubierta atornillada desde adentro",
+        detail: [`Apoya ${L("countertop")} sobre el mueble: a ras por detrás y por los lados, y volando al frente.`, "Sujétala con dos prensas, con un cartón entre la prensa y la cubierta para no marcarla.", "Desde adentro del mueble, perfora el techo con broca de 4 mm cada 30 cm, a 5 cm del frente y del fondo. Pon un tope de cinta en la broca para no pasar a la cubierta.", "Atornilla desde adentro con tornillos de 30 mm: atraviesan el techo y entran 12 mm en la cubierta, sin salir por arriba."],
+        checks: ["La cubierta vuela lo mismo en todo el frente.", "Ningún tornillo asoma por arriba."], tip: "Si la cubierta es de otro material más grueso, usa tornillos que entren como mucho dos tercios de su espesor." });
+    }
 
     const fx = (kind: Fastening["kind"]) => joints.fastenings.filter((f) => f.kind === kind);
     const heights = (fs: Fastening[]) => [...new Set(fs.flatMap((f) => f.points.map((p) => Math.round(p[1]))))].sort((a, b) => a - b);
@@ -339,7 +361,7 @@ export function buildAssemblyPlan(model: FurnitureModel, level: AssemblyLevel = 
 const ARRIVES_FROM: Record<string, Vec3> = {
   bottom: [260, 0, 0], top: [260, 0, 0], plinth: [260, 0, 0], divider: [0, 0, 420], "shelf-fixed": [0, 0, 420], "shelf-top": [0, 0, 420],
   back: [420, 0, 0], "side-right": [320, 0, 0], shelf: [0, 0, 420], rod: [0, 0, 420],
-  "drawer-side": [0, 0, 480], "drawer-end": [0, 0, 480], "drawer-bottom": [0, 0, 480], "drawer-front": [0, 0, 480], door: [0, 0, 320], deck: [0, 280, 0],
+  "drawer-side": [0, 0, 480], "drawer-end": [0, 0, 480], "drawer-bottom": [0, 0, 480], "drawer-front": [0, 0, 480], door: [0, 0, 320], deck: [0, 280, 0], countertop: [0, 280, 0],
 };
 
 const C = Math.cos(Math.PI / 6), S = 0.5;

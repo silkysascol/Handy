@@ -177,6 +177,17 @@ describe("Handy MCP server", () => {
     expect((await call("world_sun")).data.days).toHaveLength(3);
     expect((await call("world_set_site", { place: "Springfield" })).isError).toBe(true);
 
+    // Cubierta con esquinas redondeadas: la IA coloca una isla y el despiece trae la plantilla.
+    const isle = await call("world_place_cabinet", { roomId: "dormitorio", wall: "north", offset: 1200, gap: 1300, name: "Isla", width: 1200, height: 900, depth: 500, drawers: 3, countertop: true, cornerRadius: 60 });
+    expect(isle.data.item.params.countertop).toEqual({ overhang: 20, cornerRadius: 60, roundAll: true });
+    expect((await call("world_command", { itemId: isle.data.item.id, text: "radio 9 cm" })).text).toMatch(/las 4 esquinas redondeadas a R90 mm/);
+    const roundCut = await call("world_cutplan", { itemIds: [isle.data.item.id] });
+    expect(readFileSync(roundCut.data.html, "utf8")).toContain("Plantilla R90 mm, tamaño real");
+    const roundSteps = await call("world_assembly", { itemId: isle.data.item.id, level: "normal" });
+    expect(roundSteps.text).toMatch(/Redondea las esquinas/);
+    expect((await call("world_place_frame", { roomId: "dormitorio", wall: "south", offset: 1500, type: "table", width: 1000, height: 750, depth: 600, cornerRadius: 900 })).isError).toBe(true);
+    await call("world_remove_item", { itemId: isle.data.item.id });
+
     // Precios reales: la IA ve qué falta, anota lo que encontró y el presupuesto deja el catálogo de ejemplo.
     expect(withFloor.text).toContain("CATÁLOGO DE EJEMPLO");
     const needed = await call("prices_needed");

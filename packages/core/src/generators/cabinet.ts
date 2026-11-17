@@ -35,10 +35,30 @@ export interface CabinetParams {
   joinery?: Joinery;
   /** Zócalo frontal (altura). 0 = sin zócalo. */
   plinthHeight?: Millimeters;
+  /**
+   * Cubierta sobre el mueble, en el mismo tablero: vuela al frente y puede llevar esquinas redondeadas.
+   * Su espesor cuenta dentro de la altura total: el cuerpo del mueble queda más bajo.
+   */
+  countertop?: CountertopOptions;
   materialId?: string;
   backMaterialId?: string;
   edgeMaterialId?: string;
   name?: string;
+}
+
+export interface CountertopOptions {
+  /** Cuánto sobresale del frente del mueble (puertas incluidas). Por defecto 20 mm. */
+  overhang?: Millimeters;
+  /** Radio de las esquinas redondeadas; sin él, esquinas rectas. */
+  cornerRadius?: Millimeters;
+  /** Redondear las cuatro esquinas (mueble suelto) y no solo las dos del frente. */
+  roundAll?: boolean;
+}
+
+/** Límites del radio de una esquina redondeada: menos de 10 mm no se nota, y no puede pasar de la mitad del lado corto. */
+export function assertCornerRadius(radius: number, width: number, depth: number): void {
+  if (radius < 10) throw new Error("El radio de las esquinas debe ser de al menos 10 mm.");
+  if (radius > Math.min(width, depth) / 2) throw new Error(`El radio de ${radius} mm no cabe: la pieza mide ${width} x ${depth} mm, así que el máximo es ${Math.floor(Math.min(width, depth) / 2)} mm.`);
 }
 
 /** Holguras y constantes constructivas estándar en carpintería de melamina. */
@@ -96,7 +116,10 @@ const DEFAULT_MATERIALS: Material[] = [
 export function generateCabinet(params: CabinetParams): FurnitureModel {
   const t = params.boardThickness ?? 18;
   const tb = params.backThickness ?? 3;
-  const { width: W, height: H, depth: D } = params;
+  const { width: W, depth: D } = params;
+  // Con cubierta, el cuerpo del mueble baja lo que mide ella: la altura pedida es la total.
+  const counterT = params.countertop ? t : 0;
+  const H = params.height - counterT;
   const shelves = params.shelves ?? 0;
   const doors = params.doors ?? 0;
   const dividers = params.dividers ?? 0;
@@ -285,6 +308,22 @@ export function generateCabinet(params: CabinetParams): FurnitureModel {
   hardware.push({ id: "back-screw", name: "Tornillo 3,5 x 16 mm para fondo", qty: Math.max(8, Math.round((2 * (innerW + innerH)) / 150)), category: "screw" });
   if (plinth > 0) hardware.push({ id: "leveling-foot", name: "Pata niveladora", qty: W > 1200 ? 6 : 4, category: "foot" });
 
+  if (params.countertop) {
+    const c = params.countertop;
+    const frontT = doors > 0 || drawers > 0 ? t : 0;
+    const depth = D + frontT + (c.overhang ?? 20);
+    if (c.cornerRadius) assertCornerRadius(c.cornerRadius, W, depth);
+    const all = !!c.roundAll;
+    panels.push({
+      id: "countertop", name: "Cubierta", height: W, width: depth, thickness: t, materialId, qty: 1, grain: "along-height",
+      // "right" es el canto del frente y "left" el de atrás, que solo se enchapa si el mueble va suelto.
+      edgeBanding: { top: true, bottom: true, left: all, right: true }, edgeMaterialId,
+      placement: { x: 0, y: H, z: 0, normal: "y" },
+      ...(c.cornerRadius ? { cornerRadius: c.cornerRadius, roundedCorners: all ? "all" as const : "front" as const } : {}),
+      notes: `Vuela ${c.overhang ?? 20} mm del frente. Se fija desde adentro, por el techo del mueble.${c.cornerRadius ? ` Redondear ${all ? "las 4 esquinas" : "las 2 esquinas del frente"} a R${c.cornerRadius} después del corte.` : ""}`,
+    });
+    hardware.push({ id: "countertop-screw", name: "Tornillo 4 x 30 mm para fijar la cubierta", qty: Math.max(4, Math.ceil(W / 300) * 2), category: "screw" });
+  }
   // Un mismo herraje puede venir de varias partes (tiradores de puertas y de cajones): se suma.
   const merged = new Map<string, HardwareItem>();
   for (const h of hardware) { const cur = merged.get(h.id); if (cur) cur.qty += h.qty; else merged.set(h.id, { ...h }); }
@@ -294,9 +333,9 @@ export function generateCabinet(params: CabinetParams): FurnitureModel {
 
   const kind = hasBar ? "Closet" : drawers > 0 && doors === 0 && shelves === 0 && dividers === 0 ? "Cajonera" : "Gabinete";
   return {
-    id: `cabinet-${W}x${H}x${D}`,
-    name: params.name ?? `${kind} ${W} x ${H} x ${D} mm`,
-    dims: { width: W, height: H, depth: D },
+    id: `cabinet-${W}x${params.height}x${D}`,
+    name: params.name ?? `${kind} ${W} x ${params.height} x ${D} mm`,
+    dims: { width: W, height: params.height, depth: D },
     joinery,
     panels,
     hardware: [...merged.values()],

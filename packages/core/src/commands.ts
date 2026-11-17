@@ -151,6 +151,14 @@ const DELETE = /\b(borra|borrar|borral[ao]|quita|quitar|quital[ao]|elimina|elimi
 const fail = (message: string): CommandResult => ({ ok: false, understood: true, message });
 const unknown = (hint: string): CommandResult => ({ ok: false, understood: false, message: `No entendí esa orden. ${hint}` });
 
+/** Radio de esquina: "radio 5 cm", "redondeadas 80 mm", "radio 30". Sin unidad, hasta 20 son centímetros y lo demás milímetros. */
+function parseRadius(t: string): number | undefined {
+  const m = t.match(new RegExp(`(?:radio|redondead[ao]s?|redondea(?:r|las|los)?(?: las esquinas| los bordes)?)(?: de| a| con)? ?(?:r ?)?${NUM} ?${UNIT}`));
+  if (!m) return undefined;
+  const n = Number(m[1]);
+  return m[2] ? toMm(n, m[2]) : n <= 20 ? Math.round(n * 10) : Math.round(n);
+}
+
 /** Alto de zócalo: sin unidad, hasta 20 son centímetros y lo demás milímetros (nadie hace un zócalo de metros). */
 function plinthFrom(t: string): number | undefined {
   const bare = t.match(new RegExp(`zocalo(?: de| a)? ${NUM}(?![\\d.])(?! ?(?:mm|cm|m))`));
@@ -194,7 +202,7 @@ function wallCommand(world: World, sel: Extract<Selection, { kind: "wall" }>, t:
     const [width, height, depth] = [dims?.[0] ?? def[0], dims?.[1] ?? def[1], dims?.[2] ?? def[2]];
     const offset = offsetFor(gapWanted === "center" ? { from: "center" } : anchor, len, width);
     const gap = gapWanted === "center" ? Math.max(0, Math.round((roomSpan(room, sel.wall) - depth) / 2)) : gapWanted;
-    const frame: FrameOptions = { type: shelving ? "shelving" : "table", ...parseFrame(t) };
+    const frame: FrameOptions = { type: shelving ? "shelving" : "table", ...parseFrame(t), ...(!shelving && /redond/.test(t) ? { cornerRadius: parseRadius(t) ?? 50 } : {}) };
     const item = placeCabinet(world, { roomId: room.id, wall: sel.wall, offset, gap, name: shelving ? "Estantería de tubo" : /banco/.test(t) ? "Banco de tubo" : "Mesa de tubo", params: { width, height, depth }, frame });
     const meta = itemModel(item).meta as { profile: string; steelKg: number };
     return { ok: true, understood: true, select: { kind: "item", itemId: item.id }, message: `${item.name} de ${width} x ${height} x ${depth} mm en ${meta.profile}, ${String(meta.steelKg).replace(".", ",")} kg de acero, ${where(gap, offset, anchor)}.` };
@@ -219,6 +227,7 @@ function wallCommand(world: World, sel: Extract<Selection, { kind: "wall" }>, t:
         drawers: countOf(t, "cajones|cajon|gavetas?") ?? (/cajonera|comoda/.test(t) ? Math.max(1, Math.floor((height - 40) / 200)) : 0),
         hangingBar: /\b(barra|tubo|colgar|colgador)\b/.test(t) && !/sin (barra|tubo)/.test(t),
         plinthHeight: plinthFrom(t) ?? 0,
+        ...(/cubierta|meson|encimera|redond/.test(t) || /\bisla\b/.test(t) ? { countertop: { ...(/redond/.test(t) ? { cornerRadius: parseRadius(t) ?? 50, roundAll: !!gap } : {}) } } : {}),
       },
     });
     return { ok: true, understood: true, select: { kind: "item", itemId: item.id }, message: `${item.name} de ${width} x ${height} x ${depth} mm ${where(gap, offset, anchor)}${elevation ? `, a ${elevation} mm del piso` : ""}.` };
@@ -315,6 +324,32 @@ function itemCommand(world: World, sel: Extract<Selection, { kind: "item" }>, t:
   if (/sin tornillos|tornillos ocultos|minifix/.test(t)) { updateItem(world, item.id, { params: { joinery: "minifix" } }); return done(`${item.name}: unión minifix, sin tornillos a la vista.`); }
   if (/confirmat/.test(t)) { updateItem(world, item.id, { params: { joinery: "confirmat" } }); return done(`${item.name}: unión confirmat.`); }
   if (/tarugo/.test(t)) { updateItem(world, item.id, { params: { joinery: "dowel" } }); return done(`${item.name}: unión con tarugos.`); }
+
+  // Cubierta y esquinas redondeadas: "ponle cubierta", "esquinas redondeadas", "radio 8 cm", "esquinas rectas"
+  if (/redond|\bradio\b|esquinas (rectas|vivas|cuadradas)|cubierta|meson|encimera|\bvuel[oa]\b/.test(t) && !/tablero/.test(t)) {
+    const straight = /esquinas (rectas|vivas|cuadradas)|sin redond/.test(t);
+    const rounds = /redond|\bradio\b/.test(t) && !straight;
+    const radius = rounds ? parseRadius(t) ?? 50 : undefined;
+    const allFour = /4 esquinas|cuatro esquinas|todas/.test(t) ? true : /del frente|de adelante|dos esquinas|2 esquinas/.test(t) ? false : undefined;
+    if (item.kind === "frame") {
+      if (item.frame?.type === "shelving") return fail("Solo la cubierta de una mesa se redondea; los entrepaños de una estantería van entre parales.");
+      if (item.frame?.top === false) return fail(`${item.name} no tiene cubierta. Dile primero "con tablero".`);
+      if (!rounds && !straight) return fail(`${item.name} ya lleva cubierta. Puedes decir "esquinas redondeadas" o "radio 8 cm".`);
+      updateItem(world, item.id, { frame: { cornerRadius: radius } });
+      return done(radius ? `${item.name}: cubierta con las 4 esquinas redondeadas a R${radius} mm. El despiece trae la plantilla a tamaño real.` : `${item.name}: cubierta con esquinas rectas.`);
+    }
+    if (/sin (cubierta|meson|encimera)|quita la (cubierta|encimera)|quita el meson/.test(t)) { updateItem(world, item.id, { params: { countertop: undefined } }); return done(`${item.name}: sin cubierta.`); }
+    const prev = p.countertop ?? {};
+    const overhang = lengthAfter(t, "vuelo|vuela|sobresal[a-z]*") ?? prev.overhang;
+    const next = {
+      ...(overhang !== undefined ? { overhang } : {}),
+      ...(straight ? {} : radius ? { cornerRadius: radius } : prev.cornerRadius ? { cornerRadius: prev.cornerRadius } : {}),
+      ...((straight ? false : (radius ?? prev.cornerRadius)) ? { roundAll: allFour ?? prev.roundAll ?? !!item.gap } : {}),
+    };
+    updateItem(world, item.id, { params: { countertop: next } });
+    const c = item.params.countertop!;
+    return done(`${item.name}: cubierta que vuela ${c.overhang ?? 20} mm al frente${c.cornerRadius ? `, con ${c.roundAll ? "las 4 esquinas" : "las 2 esquinas del frente"} redondeadas a R${c.cornerRadius} mm. El despiece trae la plantilla a tamaño real` : ", con esquinas rectas"}. La altura total sigue en ${item.params.height} mm.`);
+  }
 
   // Girar sin moverlo de sitio: "gíralo", "gíralo a la izquierda", "dale media vuelta"
   if (/\b(gira|giral[oa]|rota|rotal[oa]|voltea|volteal[oa])\b|media vuelta/.test(t)) {

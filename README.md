@@ -90,6 +90,8 @@ También caben los puntos eléctricos. Con un muro seleccionado: "toma a 1 m de 
 
 Y el sol. Di "estamos en Bogotá" y, si hace falta, "el muro norte mira al este". Luego "sol a las 3 pm" o el botón **Sol**: Handy pinta en el piso dónde entra el sol por cada ventana a esa hora y fecha, y en cada habitación dice cuántas horas de sol directo recibe cada ventana en junio, marzo y diciembre.
 
+Los muebles pueden llevar cubierta y esquinas redondeadas: "isla de 180 x 90 x 60 con 4 cajones y esquinas redondeadas", "ponle cubierta", "radio 8 cm". La tienda corta rectangular y tú redondeas en casa: el despiece trae la plantilla de cada radio a tamaño real y el armado explica cómo hacerlo.
+
 Un mueble no tiene que ir pegado a un muro. Con la habitación seleccionada, "mesa de tubo de 120 x 75 x 60" o "isla de 180 x 90 x 60 con 4 cajones" lo pone en el centro. Con el mueble seleccionado: "sepáralo 60 cm", "en el centro del cuarto", "gíralo", "pásalo al muro sur", "pégalo al muro". Con el mouse, arrastrarlo hacia adentro lo despega; la tecla R lo gira. Handy avisa si queda un pasillo de menos de 60 cm o poco espacio frente a una puerta.
 
 Los números sin unidad se leen como se habla en obra: menos de 10 son metros, menos de 300 centímetros, el resto milímetros. La respuesta siempre repite la medida en mm.

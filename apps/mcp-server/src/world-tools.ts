@@ -219,10 +219,15 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
         plinthHeight: z.number().int().min(0).max(200).default(0),
         joinery: z.enum(["confirmat", "minifix", "dowel", "pocket-screw"]).default("minifix").describe("minifix o dowel = sin tornillos a la vista"),
         boardThickness: z.number().int().min(12).max(30).default(18),
+        countertop: z.boolean().default(false).describe("Cubierta sobre el mueble, en el mismo tablero; su espesor cuenta dentro de la altura total"),
+        countertopOverhang: z.number().int().min(0).max(300).default(20).describe("Cuánto vuela la cubierta del frente, en mm"),
+        cornerRadius: z.number().int().min(10).max(600).optional().describe("Radio de las esquinas redondeadas de la cubierta. Se corta rectangular y se redondea en casa con la plantilla del despiece"),
+        roundAll: z.boolean().optional().describe("Redondear las cuatro esquinas (mueble suelto) y no solo las dos del frente. Por defecto, las cuatro si gap > 0"),
       },
     },
-    async ({ roomId, wall: w, offset, elevation, gap, name, ...params }) => {
+    async ({ roomId, wall: w, offset, elevation, gap, name, countertop, countertopOverhang, cornerRadius, roundAll, ...rest }) => {
       const world = store.load();
+      const params = { ...rest, ...(countertop || cornerRadius ? { countertop: { overhang: countertopOverhang, ...(cornerRadius ? { cornerRadius, roundAll: roundAll ?? gap > 0 } : {}) } } : {}) };
       const item = placeCabinet(world, { roomId, wall: w, offset, elevation, gap, name, params });
       store.save(world);
       const issues = checkWorld(world).filter((i) => i.itemId === item.id);
@@ -252,11 +257,12 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
         levels: z.number().int().min(2).max(8).default(4).describe("Solo estantería"),
         top: z.boolean().default(true).describe("Cubierta o entrepaños de tablero"),
         joint: z.enum(["weld", "bolt"]).default("weld").describe("weld = soldada; bolt = atornillada con conectores, para quien no suelda"),
+        cornerRadius: z.number().int().min(10).max(600).optional().describe("Solo mesa: radio de las cuatro esquinas de la cubierta"),
       },
     },
-    async ({ roomId, wall: w, offset, gap, name, type, width, height, depth, profileId, levels, top, joint }) => {
+    async ({ roomId, wall: w, offset, gap, name, type, width, height, depth, profileId, levels, top, joint, cornerRadius }) => {
       const world = store.load();
-      const item = placeCabinet(world, { roomId, wall: w, offset, gap, name, params: { width, height, depth }, frame: { type, profileId, top, joint, ...(type === "shelving" ? { levels } : {}) } });
+      const item = placeCabinet(world, { roomId, wall: w, offset, gap, name, params: { width, height, depth }, frame: { type, profileId, top, joint, ...(type === "shelving" ? { levels } : {}), ...(cornerRadius && type === "table" ? { cornerRadius } : {}) } });
       store.save(world);
       const issues = checkWorld(world).filter((i) => i.itemId === item.id);
       const plan = planBars(itemModel(item).bars ?? []);

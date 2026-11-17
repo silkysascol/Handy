@@ -141,3 +141,21 @@ CSV y PDF de lista de corte, DXF por pieza, plano de armado, glTF/OBJ para Blend
 - Formatos de tablero por país (1830x2500, 1830x2750, 2150x2440, 1220x2440) y espesores comunes.
 - Enchapado: descontar o no el canto de 1 mm en la medida de las piezas.
 - Aserradero corta a medida (precio por corte) o el usuario corta: afecta la cotización.
+
+## Cubiertas y esquinas redondeadas
+
+Es el primer paso hacia muebles con curvas, pensado para lo que se puede hacer en casa: la tienda corta **rectangular** y el redondeo se hace después.
+
+- **Cubierta sobre un mueble de tablero.** "ponle cubierta", o al crearlo: "gabinete de 120 x 90 x 60 con 2 puertas y cubierta". Va en el mismo tablero, vuela 20 mm del frente ("vuelo de 3 cm" lo cambia) y su espesor cuenta dentro de la altura total: el cuerpo del mueble baja lo que mide ella. Una isla siempre lleva cubierta.
+- **Esquinas redondeadas.** "esquinas redondeadas", "radio 8 cm", "esquinas rectas". Contra un muro se redondean las dos del frente; en un mueble suelto, las cuatro. "redondea las 4 esquinas" lo fuerza.
+- **Mesa de tubo.** Lo mismo sobre su cubierta: "mesa de tubo de 140 x 75 x 70 con esquinas redondeadas".
+
+Qué cambia en el resto de Handy:
+
+- **Despiece:** la pieza sale rectangular en el plano de corte. Al final hay una sección "Esquinas redondeadas" con qué redondear y la **plantilla de cada radio a tamaño real**, con una regla de 100 mm para comprobar que la impresora no cambió la escala. La plantilla se recorta por la línea gruesa y se apoya en la esquina con sus dos tramos rectos a ras de los cantos.
+- **Tapacanto:** el largo descuenta lo que cada esquina cambia de recto a arco. En la curva va tapacanto de PVC delgado.
+- **Armado:** un paso "Redondea las esquinas" antes de fijar la cubierta, con el método: caladora 2 mm por fuera de la línea, y lija en taco o router con broca de copiar hasta la línea.
+- **Visor:** la cubierta se dibuja curva. El volumen que ocupa el mueble incluye el vuelo.
+- **Blender:** la pieza sale como caja con el radio anotado en sus datos (`cornerRadiusMm`), para biselarla allá.
+
+Límites: el radio va de 10 mm a la mitad del lado corto. Solo se redondean cubiertas horizontales, y las cuatro esquinas llevan el mismo radio. La cubierta es del mismo tablero del mueble; un mesón de otro material se cotiza aparte. No hay frentes ni costados curvos, ni formas libres: eso pide tablero flexible y molde, que es trabajo de taller.

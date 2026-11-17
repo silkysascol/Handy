@@ -413,7 +413,7 @@ export function itemModel(item: Pick<PlacedItem, "kind" | "params" | "frame" | "
 }
 
 /** Fondo total del mueble cerrado: puertas y frentes de cajón van por fuera de la caja. */
-export const frontDepth = (p: CabinetParams): Millimeters => p.depth + ((p.doors ?? 0) > 0 || (p.drawers ?? 0) > 0 ? (p.boardThickness ?? 18) : 0);
+export const frontDepth = (p: CabinetParams): Millimeters => p.depth + ((p.doors ?? 0) > 0 || (p.drawers ?? 0) > 0 ? (p.boardThickness ?? 18) : 0) + (p.countertop ? p.countertop.overhang ?? 20 : 0);
 
 /** Cuánto mide la habitación desde un muro hasta el de enfrente. */
 export const roomSpan = (room: Room, wall: WallSide): Millimeters => (wall === "north" || wall === "south" ? room.depth : room.width);

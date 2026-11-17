@@ -1,5 +1,6 @@
 import type { Bar, FurnitureModel, HardwareItem, Material, Millimeters, Panel } from "../model/index.js";
 import { DEFAULT_PROFILE, getProfile } from "../profiles.js";
+import { assertCornerRadius } from "./cabinet.js";
 
 export interface FrameOptions {
   /** Mesa o base (4 patas y marco superior) o estantería (4 parales y un marco por nivel). */
@@ -11,6 +12,8 @@ export interface FrameOptions {
   top?: boolean;
   /** Soldado, o atornillado con conectores para quien no suelda. */
   joint?: "weld" | "bolt";
+  /** Radio de las cuatro esquinas de la cubierta de una mesa. Sin él, esquinas rectas. */
+  cornerRadius?: Millimeters;
 }
 
 export interface FrameParams extends FrameOptions {
@@ -54,12 +57,16 @@ export function generateFrame(params: FrameParams): FurnitureModel {
   if (withTop) {
     // Mesa: una cubierta arriba. Estantería: un entrepaño por nivel, apoyado sobre su marco.
     const deckTops = type === "table" ? [postH] : tops;
+    // Solo la cubierta de una mesa se redondea: los entrepaños van entre parales.
+    const radius = type === "table" ? params.cornerRadius : undefined;
+    if (radius) assertCornerRadius(radius, W, D);
     panels.push({
       id: "deck", name: type === "table" ? "Cubierta" : "Entrepaño", height: W, width: D, thickness: DECK.thickness!, materialId: DECK.id, qty: deckTops.length, grain: "along-height",
       edgeBanding: { top: true, bottom: true, left: true, right: true }, edgeMaterialId: EDGE.id,
       placement: { x: 0, y: deckTops[0], z: 0, normal: "y" },
       instances: deckTops.length > 1 ? deckTops.map((y) => ({ placement: { x: 0, y, z: 0, normal: "y" as const } })) : undefined,
-      notes: "Se fija desde abajo con tornillos a través del marco, con agujeros ovalados para la dilatación.",
+      notes: `Se fija desde abajo con tornillos a través del marco, con agujeros ovalados para la dilatación.${radius ? ` Redondear las 4 esquinas a R${radius} después del corte.` : ""}`,
+      ...(radius ? { cornerRadius: radius, roundedCorners: "all" as const } : {}),
     });
   }
 

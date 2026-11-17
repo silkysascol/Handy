@@ -59,6 +59,13 @@ export interface Panel {
   /** Cuando qty > 1: posición (y movimiento) de cada unidad. Si falta, todas comparten `placement`. */
   instances?: PanelInstance[];
   notes?: string;
+  /**
+   * Radio de las esquinas redondeadas. La pieza se corta rectangular en la tienda y se redondea después,
+   * con plantilla. Solo aplica a piezas horizontales (cubiertas).
+   */
+  cornerRadius?: Millimeters;
+  /** Cuáles se redondean: las dos del frente (mueble contra un muro) o las cuatro (mueble suelto). */
+  roundedCorners?: "front" | "all";
 }
 
 export interface HardwareItem {

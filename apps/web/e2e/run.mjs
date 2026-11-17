@@ -467,6 +467,56 @@ test("sol: pide el lugar, pinta dónde entra por las ventanas y cambia con la ho
   await h.say("el muro norte mira al norte");
 });
 
+test("cubierta y esquinas redondeadas: se piden con palabras, se dibujan curvas y el despiece trae la plantilla", async ({ h }) => {
+  await h.page.evaluate(() => window.__handy.select({ kind: "world" }));
+  assert.match(await h.say("comedor de 5 x 4 m"), /Comedor/);
+  const room = (await h.world()).rooms.find((r) => r.name === "Comedor");
+  const selRoom = () => h.page.evaluate((id) => window.__handy.select({ kind: "room", roomId: id }), room.id);
+  const rounded = () => h.page.evaluate(() => window.__handy.rounded());
+
+  // Una isla suelta con esquinas redondeadas: lleva cubierta y se redondean las cuatro.
+  await selRoom();
+  assert.match(await h.say("isla de 180 x 90 x 60 con 4 cajones y esquinas redondeadas"), /Isla de 1800 x 900 x 600 mm/);
+  const isla = await h.selection();
+  const params = async () => (await h.world()).items.find((i) => i.id === isla.itemId).params;
+  assert.deepEqual((await params()).countertop, { cornerRadius: 50, roundAll: true });
+  let r = await rounded();
+  assert.equal(r.length, 1);
+  assert.equal(r[0].radius, 50);
+  // Una pieza curva tiene muchos más vértices que una caja.
+  assert.ok(r[0].vertices > 100, `la cubierta debía dibujarse curva y tiene ${r[0].vertices} vértices`);
+
+  assert.match(await h.say("radio 10 cm"), /las 4 esquinas redondeadas a R100 mm\. El despiece trae la plantilla/);
+  assert.equal((await rounded())[0].radius, 100);
+  assert.match(await h.say("radio 2 m"), /no cabe/);
+  assert.equal((await params()).countertop.cornerRadius, 100);
+  assert.match(await h.say("esquinas rectas"), /con esquinas rectas/);
+  assert.equal((await rounded()).length, 0);
+  assert.match(await h.say("esquinas redondeadas 6 cm"), /R60 mm/);
+
+  // El despiece la pide rectangular y trae la plantilla a tamaño real.
+  const [download] = await Promise.all([h.page.waitForEvent("download"), h.page.click("#export-cut")]);
+  const html = readFileSync(await download.path(), "utf8");
+  assert.match(html, /Isla · Cubierta<\/strong>|<strong>Isla · Cubierta|Cubierta<\/strong>: las 4 esquinas a R60 mm/);
+  assert.match(html, /Plantilla R60 mm, tamaño real/);
+  const doc = await h.page.context().newPage();
+  await doc.setContent(html);
+  const size = await doc.evaluate(() => { const svg = [...document.querySelectorAll("svg")].at(-1); return [svg.getAttribute("width"), svg.getAttribute("height")]; });
+  assert.match(size[0], /^\d+mm$/);
+  await doc.close();
+
+  // Una mesa de tubo también: su cubierta sale con las cuatro esquinas curvas.
+  await selRoom();
+  assert.match(await h.say("mesa de tubo de 140 x 75 x 70 con esquinas redondeadas contra el muro sur"), /Mesa de tubo de 1400/);
+  const mesa = await h.selection();
+  assert.equal((await rounded()).length, 2);
+  await h.say("quítalo");
+  await h.page.evaluate((id) => window.__handy.select({ kind: "item", itemId: id }), isla.itemId);
+  await h.say("quítalo");
+  assert.equal((await rounded()).length, 0);
+  assert.ok(mesa.itemId);
+});
+
 test("armado paso a paso en 3D: niveles de detalle, piezas que entran, puntos de herraje y manual imprimible", async ({ h }) => {
   // Con varios muebles y nada seleccionado, pide escoger uno.
   await h.page.keyboard.press("Escape");

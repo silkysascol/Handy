@@ -172,6 +172,29 @@ function box(b: AABB, color: number, data: Record<string, unknown>, opts: { opac
   return mesh;
 }
 
+/** Tablero horizontal con esquinas redondeadas: las dos del frente (z mayor) o las cuatro. */
+function roundedSlab(b: AABB, radius: number, all: boolean, color: number, data: Record<string, unknown>): Pick {
+  const x0 = b.min[0] * M, x1 = b.max[0] * M, z0 = b.min[2] * M, z1 = b.max[2] * M, r = radius * M, rb = all ? r : 0;
+  // El contorno se dibuja visto desde arriba (x, z) y luego se acuesta: girar un cuarto de vuelta lleva la z del dibujo al fondo del mueble.
+  const s = new THREE.Shape();
+  s.moveTo(x0 + rb, z0);
+  s.lineTo(x1 - rb, z0);
+  if (rb) s.absarc(x1 - rb, z0 + rb, rb, -Math.PI / 2, 0, false);
+  s.lineTo(x1, z1 - r);
+  s.absarc(x1 - r, z1 - r, r, 0, Math.PI / 2, false);
+  s.lineTo(x0 + r, z1);
+  s.absarc(x0 + r, z1 - r, r, Math.PI / 2, Math.PI, false);
+  s.lineTo(x0, z0 + rb);
+  if (rb) s.absarc(x0 + rb, z0 + rb, rb, Math.PI, 1.5 * Math.PI, false);
+  const geo = new THREE.ExtrudeGeometry(s, { depth: (b.max[1] - b.min[1]) * M, bevelEnabled: false, curveSegments: 12 });
+  geo.rotateX(Math.PI / 2);
+  geo.translate(0, b.max[1] * M, 0);
+  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color, roughness: 0.85 })) as unknown as Pick;
+  mesh.userData = { ...data, baseColor: color, baseOpacity: 1, rounded: radius };
+  mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 30), new THREE.LineBasicMaterial({ color: 0x1b1f23, transparent: true, opacity: 0.55 })));
+  return mesh;
+}
+
 function buildScene() {
   for (const child of [...content.children]) content.remove(child);
   pickables = [];
@@ -259,8 +282,8 @@ function buildScene() {
         for (const u of panelInstances(p)) {
           const b = panelBox(p, u.placement);
           if (!b) continue;
-          const color = p.id === "door" || p.id === "drawer-front" ? COLORS.door : p.id === "back" || p.id === "drawer-bottom" ? COLORS.back : COLORS.board;
-          const m = box(b, color, { sel: { kind: "item", itemId: item.id } });
+          const color = p.id === "door" || p.id === "drawer-front" || p.id === "countertop" ? COLORS.door : p.id === "back" || p.id === "drawer-bottom" ? COLORS.back : COLORS.board;
+          const m = p.cornerRadius ? roundedSlab(b, p.cornerRadius, p.roundedCorners === "all", color, { sel: { kind: "item", itemId: item.id } }) : box(b, color, { sel: { kind: "item", itemId: item.id } });
           group.add(m); pickables.push(m);
         }
       }
@@ -703,10 +726,10 @@ const EXAMPLES: Record<Selection["kind"], string[]> = {
   room: ["mesa de tubo de 120 x 75 x 60", "isla de 180 x 90 x 60 con 4 cajones", "columna de 30 x 30 a 2 m del muro oeste y 1 m del muro norte", "recorta la esquina noreste 2 x 1,5 m", "buitrón de 60 x 40 en la esquina suroeste", "2 luces", "reparte las tomas", "piso de porcelanato 60 x 60", "piso de cerámica 45 x 45 trabado", "junta 3", "quita el piso", "alto 2,6 m", "ancho 4 m"],
   wall: ["toma a 1 m de la izquierda", "interruptor", "toma de mesón a 60 cm de la derecha", "pon una puerta de 80 x 205 a 2 m de la izquierda", "ventana de 120 x 100 centrada, antepecho 110", "armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas", "closet de 180 x 220 x 60 con 2 divisiones, barra y 3 cajones", "cajonera de 80 x 90 x 50", "mesa de tubo de 120 x 75 x 60", "estantería metálica de 100 x 200 x 40 con 5 niveles", "alacena de 900 x 700 x 350 a 1,5 m del piso con 2 puertas", "grosor 20 cm"],
   opening: ["muévela 20 cm a la derecha", "a 1 m de la izquierda", "90 x 210", "céntrala", "quítala"],
-  item: ["ensancha 10 cm", "alto 1800", "muévelo 30 cm a la derecha", "sepáralo 60 cm", "en el centro del cuarto", "gíralo", "pásalo al muro sur", "agrega una repisa", "2 divisiones", "3 cajones", "con barra de colgar", "2 puertas", "sin tornillos a la vista", "quítalo"],
+  item: ["ponle cubierta", "esquinas redondeadas", "radio 8 cm", "ensancha 10 cm", "alto 1800", "muévelo 30 cm a la derecha", "sepáralo 60 cm", "en el centro del cuarto", "gíralo", "pásalo al muro sur", "agrega una repisa", "2 divisiones", "3 cajones", "con barra de colgar", "2 puertas", "sin tornillos a la vista", "quítalo"],
 };
 
-const FRAME_EXAMPLES = ["tubo de 50", "tubo de 25", "5 niveles", "sin tablero", "atornillada", "ensancha 20 cm", "alto 90 cm", "muévelo 30 cm a la derecha", "en el centro del cuarto", "gíralo", "pégalo al muro", "quítalo"];
+const FRAME_EXAMPLES = ["esquinas redondeadas", "radio 8 cm", "esquinas rectas", "tubo de 50", "tubo de 25", "5 niveles", "sin tablero", "atornillada", "ensancha 20 cm", "alto 90 cm", "muévelo 30 cm a la derecha", "en el centro del cuarto", "gíralo", "pégalo al muro", "quítalo"];
 
 // ---------- Paneles ----------
 
@@ -1080,7 +1103,7 @@ const toScreen = (v: THREE.Vector3) => {
   return { x: r.left + ((q.x + 1) / 2) * r.width, y: r.top + ((1 - q.y) / 2) * r.height };
 };
 (window as unknown as Record<string, unknown>).__handy = {
-  ready: true, getWorld: () => world, select, getSelection: () => selection, getPrices: () => book, bands: () => bands.length, sun: () => ({ view: sunView, patches: sunMeshes.length, note: $("sun-note").textContent }), pointScreen: (roomId: string, pointId: string) => { const r = world.rooms.find((x) => x.id === roomId), p = r?.points?.find((x) => x.id === pointId); if (!r || !p) return null; const [x, y, z] = pointPosition(r, p); return toScreen(new THREE.Vector3(x * M, (p.kind === "light" ? y - 20 : y) * M, z * M)); }, getQuote: () => lastQuote, assembly: () => assembly,
+  ready: true, getWorld: () => world, select, getSelection: () => selection, getPrices: () => book, bands: () => bands.length, rounded: () => pickables.filter((m) => m.userData.rounded).map((m) => ({ radius: m.userData.rounded, vertices: (m.geometry as unknown as THREE.BufferGeometry).getAttribute("position").count })), sun: () => ({ view: sunView, patches: sunMeshes.length, note: $("sun-note").textContent }), pointScreen: (roomId: string, pointId: string) => { const r = world.rooms.find((x) => x.id === roomId), p = r?.points?.find((x) => x.id === pointId); if (!r || !p) return null; const [x, y, z] = pointPosition(r, p); return toScreen(new THREE.Vector3(x * M, (p.kind === "light" ? y - 20 : y) * M, z * M)); }, getQuote: () => lastQuote, assembly: () => assembly,
   /** Punto en pantalla del centro del frente de lo seleccionado, y de sus manijas. */
   selectionScreen: () => { const t = dragTarget(selection); if (!t) return null; const [x, y, z] = wallPoint(t.room, t.wall, t.offset + t.width / 2, t.base + t.height / 2, t.front); return toScreen(new THREE.Vector3(x * M, y * M, z * M)); },
   handleScreen: (kind: string) => { const h = handles.find((m) => m.userData.handle === kind); return h ? toScreen(h.getWorldPosition(new THREE.Vector3())) : null; },

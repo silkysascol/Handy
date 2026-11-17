@@ -1,4 +1,5 @@
 import type { FurnitureModel, Material, Millimeters, Panel } from "./model/index.js";
+import { roundingSection } from "./rounding.js";
 import { planBars } from "./barcut.js";
 
 /**
@@ -286,6 +287,7 @@ ${plan.oversize.length ? `<p style="color:#8c1d18">Piezas que no caben en un tab
 ${barsSection(model)}<h2>Lista de piezas de tablero</h2>${table}
 <p><a class="csv" download="despiece.csv" href="data:text/csv;charset=utf-8,${encodeURIComponent(csv)}">Descargar la lista como CSV</a></p>
 <h2>Plano de corte</h2>${cutPlanSvg(plan)}
+${roundingSection(model)}
 </body></html>
 `;
 }

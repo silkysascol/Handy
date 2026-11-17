@@ -46,7 +46,10 @@ function edgeMeters(p: Panel): number {
   const perUnit =
     (Number(p.edgeBanding.left) + Number(p.edgeBanding.right)) * p.height +
     (Number(p.edgeBanding.top) + Number(p.edgeBanding.bottom)) * p.width;
-  return (perUnit * p.qty) / 1000;
+  // Cada esquina redondeada cambia dos tramos rectos de largo R por un arco de un cuarto de círculo.
+  const corners = p.cornerRadius ? (p.roundedCorners === "all" ? 4 : 2) : 0;
+  const rounded = corners * (p.cornerRadius ?? 0) * (2 - Math.PI / 2);
+  return (Math.max(0, perUnit - rounded) * p.qty) / 1000;
 }
 
 /** Genera la lista de corte y el resumen de materiales de un mueble. */
