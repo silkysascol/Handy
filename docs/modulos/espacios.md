@@ -179,3 +179,37 @@ Qué muestra:
 Cómo se calcula: posición solar con las fórmulas de la NOAA (error menor de un grado), comprobada en las pruebas contra la altura del sol al mediodía en Bogotá y Buenos Aires en los solsticios. Las horas de sol se muestrean cada 10 minutos.
 
 Límites: no cuenta edificios vecinos, árboles, aleros, balcones ni cortinas. El grosor del muro no recorta la mancha. Solo estudia ventanas, no puertas. La mancha se dibuja en el piso, aunque haya un mueble encima.
+
+## Agua, desagüe y gas
+
+Son puntos de pared como las tomas: tienen muro, distancia desde la izquierda y altura, se seleccionan, se mueven y se quitan igual, y cada uno lleva su franja de no perforar.
+
+Con un muro seleccionado, lo más cómodo es pedir el conjunto de un aparato:
+
+| Dices | Sale |
+| --- | --- |
+| "punto de lavaplatos a 1,5 m de la izquierda" | agua a 550 mm y desagüe a 500 mm |
+| "punto de lavamanos" | agua a 550 y desagüe a 500 |
+| "punto de lavadora" | agua a 1100 y desagüe a 900 |
+| "punto de lavadero" | agua a 1100 y desagüe a 500 |
+| "punto de sanitario" | agua a 200; el desagüe va en el piso y no se dibuja |
+| "ducha a 1 m de la derecha" | mezclador a 1100 y salida a 2000 |
+| "calentador" | agua y gas a 1300 |
+| "estufa" o "punto de gas" | gas a 700 |
+
+"con agua caliente" agrega el segundo punto de agua. También hay puntos sueltos: "punto de agua", "desagüe a 1,2 m de la izquierda", "punto de gas a 1,3 m del piso". "toma para la lavadora" es una toma eléctrica; "punto de lavadora" es el agua y el desagüe.
+
+Avisos:
+
+- `service-drawers`: un mueble con cajones delante de un punto de agua o desagüe. Chocan con el sifón: ese módulo debe ser de puertas.
+- `service-shelf`: un mueble con repisa delante de un desagüe.
+- `gas-enclosed`: un punto de gas dentro de un mueble cerrado. La válvula debe quedar a la mano y ventilada.
+- `gas-near-electric`: una toma o un interruptor a menos de 50 cm de un punto de gas.
+- `outlet-near-water`: una toma sin protección GFCI a menos de 60 cm de un punto de agua.
+- `drill-band`: un mueble colgado o alto que se fija sobre la vertical de un punto.
+
+Un gabinete de puertas delante del lavaplatos no da aviso: es lo que se espera.
+
+Costo: por cada punto de agua una llave angular con acople, por cada desagüe un sifón, y por cada punto de gas una válvula con manguera. Van en un grupo aparte, "Agua y gas". La tubería no se estima.
+
+Límites: son alturas de práctica común, no una revisión de norma, y las confirma quien instala. No hay redes, diámetros, pendientes ni ventilación de gas. Los desagües de piso (sanitario, ducha, sifón de piso) no se modelan.

@@ -3,7 +3,7 @@ import { defaultFloorSpec, planFloor, type FloorSpec } from "./flooring.js";
 import type { FrameOptions } from "./generators/frame.js";
 import { profileBySide } from "./profiles.js";
 import { compassName, setSite } from "./sun.js";
-import { addPoint, isWetRoom, POINT_HEIGHT, removePoint, spreadOutlets, updatePoint } from "./electrical.js";
+import { addFixture, FIXTURES, addPoint, isWetRoom, POINT_HEIGHT, removePoint, spreadOutlets, updatePoint } from "./electrical.js";
 import {
   addBlock, addOpening, addRoom, attachRoom, frontDepth, removeBlock, updateBlock, getRoom, itemModel, placeCabinet, removeItem, removeOpening, roomSpan, rotateItem, updateItem, updateOpening, updateRoom,
   wallLength, WALL_NAMES, type WallSide, type World,
@@ -192,6 +192,9 @@ function wallCommand(world: World, sel: Extract<Selection, { kind: "wall" }>, t:
   const len = wallLength(room, sel.wall);
   const anchor = parseAnchor(t);
   const dims = parseDims(t);
+  // "toma para la lavadora" es eléctrica; "punto de lavadora" o "toma de agua" son de servicio.
+  const electricWord = ELECTRIC.test(t) && !/toma de (agua|gas)/.test(t);
+  if (SERVICE.test(t) && !electricWord && !DELETE.test(t) && !FURNITURE.test(t)) return createServicePoints(world, sel, t);
   if (ELECTRIC.test(t) && !DELETE.test(t)) return createWallPoints(world, sel, t);
   const gapWanted = parseGap(t);
   const where = (gap: number | undefined, offset: number, a: Anchor) => (gap ? `a ${gap} mm del ${WALL_NAMES[sel.wall]} de ${room.name} y a ${offset} mm de su izquierda, mirando al ${FACES[sel.wall]}` : `en el ${WALL_NAMES[sel.wall]}, ${describeAnchor(a, offset)}`);
@@ -484,6 +487,29 @@ function createWallPoints(world: World, sel: Extract<Selection, { kind: "wall" }
   }
 }
 
+const SERVICE = /\b(agua|desague|desagues|sifon|gas|lavaplatos|lavamanos|lavadora|lavadero|sanitario|inodoro|ducha|regadera|calentador|estufa|fogon)\b/;
+const FIXTURE_WORD: [RegExp, string][] = [[/lavaplatos|fregadero/, "lavaplatos"], [/lavamanos/, "lavamanos"], [/lavadora/, "lavadora"], [/lavadero/, "lavadero"], [/sanitario|inodoro/, "sanitario"], [/ducha|regadera/, "ducha"], [/calentador/, "calentador"], [/estufa|fogon/, "estufa"]];
+
+/** Puntos de agua, desagüe y gas: sueltos ("punto de agua", "desagüe", "punto de gas") o el conjunto de un aparato ("punto de lavaplatos"). */
+function createServicePoints(world: World, sel: Extract<Selection, { kind: "wall" }>, t: string): CommandResult {
+  const room = getRoom(world, sel.roomId);
+  const len = wallLength(room, sel.wall);
+  const offset = offsetFor(parseAnchor(t), len, 0);
+  const height = fromFloor(t) ?? lengthAfter(t, "altura|alto");
+  const fixture = FIXTURE_WORD.find(([re]) => re.test(t))?.[1];
+  let made;
+  if (fixture) {
+    if (height !== undefined) return fail(`Los puntos de ${FIXTURES[fixture].label.toLowerCase()} salen a su altura habitual. Créalos sin altura y luego selecciona el que quieras cambiar y di "a ${height} mm del piso".`);
+    made = addFixture(world, room.id, fixture, sel.wall, offset, { hot: /caliente/.test(t) });
+  } else {
+    const kind = /gas/.test(t) ? "gas" : /desague|sifon/.test(t) ? "drain" : "water";
+    made = [addPoint(world, room.id, { kind, wall: sel.wall, offset, height, ...(kind === "water" && /caliente/.test(t) ? { name: "Agua caliente" } : {}) })];
+  }
+  const p = made[made.length - 1];
+  const note = fixture ? FIXTURES[fixture].note : undefined;
+  return { ok: true, understood: true, select: { kind: "point", roomId: room.id, pointId: p.id }, message: `${fixture ? `${FIXTURES[fixture].label} en el ${WALL_NAMES[sel.wall]}, con eje a ${offset} mm de la izquierda: ` : `En el ${WALL_NAMES[sel.wall]}: `}${made.map((m) => `${m.name.toLowerCase()} a ${m.offset} mm de la izquierda y ${m.height} mm del piso`).join("; ")}.${note ? ` ${note}` : ""} Son alturas habituales: confírmalas con quien instala.` };
+}
+
 function createLights(world: World, roomId: string, t: string): CommandResult {
   const room = getRoom(world, roomId);
   const dist = wallDistances(t);
@@ -646,6 +672,7 @@ function roomCommand(world: World, sel: Extract<Selection, { kind: "room" }>, t:
     if (!made.length) return fail(`No encontré tramos de muro libres en ${room.name} donde haga falta otra toma.`);
     return done(`${made.length} toma(s) repartidas en ${room.name} a ${POINT_HEIGHT.outlet} mm del piso: ${made.map((m) => `${WALL_NAMES[m.wall!]} a ${m.offset}`).join("; ")}. Así ningún punto de muro libre queda a más de 1,8 m de una toma.${isWetRoom(room) ? " Es zona húmeda: salen con protección GFCI." : ""}`);
   }
+  if (SERVICE.test(t) && !ELECTRIC.test(t) && !DELETE.test(t) && !FURNITURE.test(t) && !/\b(piso|baldosa|ceramica|porcelanato)\b/.test(t) && !(METAL.test(t) && FRAME_WORD.test(t))) return fail('Los puntos de agua, desagüe y gas van en un muro: haz clic en el muro y escribe "punto de lavaplatos a 1 m de la izquierda", "punto de lavadora", "punto de gas" o "desagüe a 50 cm de la derecha".');
   if (ELECTRIC.test(t) && !DELETE.test(t)) return fail('Las tomas y los interruptores van en un muro: haz clic en el muro y escribe "toma a 1 m de la izquierda" o "interruptor". Para repartirlas solas: "reparte las tomas".');
   if (LIGHT.test(t) && !DELETE.test(t) && !/\bluz de \d/.test(t)) return createLights(world, room.id, t);
 

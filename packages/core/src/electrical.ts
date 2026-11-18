@@ -19,6 +19,12 @@ export const POINT_HEIGHT = {
   counter: 1100,
   switch: 1100,
   data: 300,
+  /** Abasto de lavaplatos o lavamanos: unos 5 cm sobre el desagüe. */
+  water: 550,
+  /** Desagüe de lavaplatos o lavamanos. */
+  drain: 500,
+  /** Salida de gas para estufa, con la válvula a mano. */
+  gas: 700,
 } as const;
 
 /** Media franja a cada lado de un punto de pared: la tubería suele subir o bajar en vertical por ahí. */
@@ -26,7 +32,39 @@ export const DRILL_BAND = 100;
 /** Con tomas repartidas así, ningún punto del muro queda a más de 1,8 m de una. */
 export const MAX_OUTLET_SPACING = 3600;
 
-const KIND_NAME: Record<PointKind, string> = { outlet: "Toma", switch: "Interruptor", data: "Punto de datos", light: "Luz" };
+const KIND_NAME: Record<PointKind, string> = { outlet: "Toma", switch: "Interruptor", data: "Punto de datos", light: "Luz", water: "Punto de agua", drain: "Desagüe", gas: "Punto de gas" };
+/** Agua, desagüe y gas: no llevan caja ni cable. */
+export const isService = (p: Pick<ElectricPoint, "kind">): boolean => p.kind === "water" || p.kind === "drain" || p.kind === "gas";
+
+/**
+ * Conjuntos de puntos de un aparato, a sus alturas habituales. `dx` es el corrimiento respecto al eje del aparato.
+ * El desagüe del sanitario va en el piso y no se modela.
+ */
+export const FIXTURES: Record<string, { label: string; points: { kind: PointKind; name: string; dx: number; height: number }[]; note?: string }> = {
+  lavaplatos: { label: "Lavaplatos", points: [{ kind: "water", name: "Agua · lavaplatos", dx: -100, height: 550 }, { kind: "drain", name: "Desagüe · lavaplatos", dx: 0, height: 500 }] },
+  lavamanos: { label: "Lavamanos", points: [{ kind: "water", name: "Agua · lavamanos", dx: -100, height: 550 }, { kind: "drain", name: "Desagüe · lavamanos", dx: 0, height: 500 }] },
+  lavadero: { label: "Lavadero", points: [{ kind: "water", name: "Agua · lavadero", dx: -100, height: 1100 }, { kind: "drain", name: "Desagüe · lavadero", dx: 0, height: 500 }] },
+  lavadora: { label: "Lavadora", points: [{ kind: "water", name: "Agua · lavadora", dx: -100, height: 1100 }, { kind: "drain", name: "Desagüe · lavadora", dx: 100, height: 900 }], note: "El desagüe de la lavadora va alto para que no se devuelva el agua." },
+  sanitario: { label: "Sanitario", points: [{ kind: "water", name: "Agua · sanitario", dx: -150, height: 200 }], note: "El desagüe del sanitario va en el piso, a unos 30 cm del muro: Handy no lo dibuja." },
+  ducha: { label: "Ducha", points: [{ kind: "water", name: "Mezclador de ducha", dx: 0, height: 1100 }, { kind: "water", name: "Salida de ducha", dx: 0, height: 2000 }], note: "El desagüe de la ducha va en el piso." },
+  calentador: { label: "Calentador", points: [{ kind: "water", name: "Agua · calentador", dx: -100, height: 1300 }, { kind: "gas", name: "Gas · calentador", dx: 100, height: 1300 }], note: "Un calentador a gas necesita ventilación al exterior: confírmalo con el instalador." },
+  estufa: { label: "Estufa", points: [{ kind: "gas", name: "Gas · estufa", dx: 0, height: 700 }] },
+};
+
+/** Agrega los puntos de un aparato centrados en `offset`. Si alguno no cabe, no queda ninguno. */
+export function addFixture(world: World, roomId: string, fixture: string, wall: WallSide, offset: Millimeters, opts: { hot?: boolean } = {}): ElectricPoint[] {
+  const def = FIXTURES[fixture];
+  if (!def) throw new Error(`No conozco el aparato "${fixture}". Conozco: ${Object.keys(FIXTURES).join(", ")}.`);
+  const room = getRoom(world, roomId);
+  const before = room.points ? [...room.points] : undefined;
+  const list = [...def.points, ...(opts.hot && def.points.some((p) => p.kind === "water") && fixture !== "ducha" ? [{ ...def.points.find((p) => p.kind === "water")!, name: `Agua caliente · ${def.label.toLowerCase()}`, dx: 100 }] : [])];
+  try {
+    return list.map((p) => addPoint(world, roomId, { kind: p.kind, name: p.name, wall, offset: offset + p.dx, height: p.height }));
+  } catch (e) {
+    if (before) room.points = before; else delete room.points;
+    throw e;
+  }
+}
 const WET = /bano|cocina|lavadero|ropas|patio|terraza|balcon|garaje|lavanderia/;
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 export const isWetRoom = (room: Pick<Room, "name">): boolean => WET.test(norm(room.name));
@@ -108,6 +146,16 @@ export function electricalIssues(world: World, room: Room): WorldIssue[] {
   const issues: WorldIssue[] = [];
   const points = (room.points ?? []).filter(onWall);
   if (!points.length) return issues;
+  // Una toma sin protección a menos de 60 cm de un punto de agua.
+  for (const o of points.filter((p) => p.kind === "outlet" && !p.gfci)) {
+    const wet = points.find((p) => p.kind === "water" && p.wall === o.wall && Math.abs(p.offset - o.offset) < 600);
+    if (wet) issues.push({ level: "warning", code: "outlet-near-water", roomId: room.id, message: `${o.name} del ${WALL_NAMES[o.wall]} en ${room.name} queda a ${Math.abs(wet.offset - o.offset)} mm de ${wet.name.toLowerCase()} y no tiene protección de falla a tierra. Ponle GFCI: "con protección".` });
+  }
+  // Una toma o un interruptor a menos de 50 cm de un punto de gas.
+  for (const g of points.filter((p) => p.kind === "gas")) {
+    const near = points.find((p) => (p.kind === "outlet" || p.kind === "switch") && p.wall === g.wall && Math.abs(p.offset - g.offset) < 500 && Math.abs(p.height - g.height) < 500);
+    if (near) issues.push({ level: "warning", code: "gas-near-electric", roomId: room.id, message: `${near.name} queda a menos de 50 cm de ${g.name.toLowerCase()} en el ${WALL_NAMES[g.wall]} de ${room.name}. Sepáralos: una chispa junto a una fuga de gas es el riesgo que se evita.` });
+  }
   for (const item of world.items.filter((i) => i.roomId === room.id)) {
     const box = itemBox(room, item);
     for (const wall of ["north", "east", "south", "west"] as WallSide[]) {
@@ -117,7 +165,13 @@ export function electricalIssues(world: World, room: Room): WorldIssue[] {
       const fixed = item.elevation > 0 || item.params.height > 1200;
       for (const p of points.filter((x) => x.wall === wall)) {
         const covered = p.offset > s0 - 40 && p.offset < s1 + 40 && p.height > box.min[1] - 60 && p.height < box.max[1] + 60;
-        if (covered) {
+        if (covered && isService(p)) {
+          // Un mueble delante de un punto de agua o desagüe es lo normal (el mueble del lavaplatos), pero no cualquiera sirve.
+          const cp = item.params;
+          if (p.kind === "gas" && ((cp.doors ?? 0) > 0 || (cp.drawers ?? 0) > 0)) issues.push({ level: "warning", code: "gas-enclosed", itemId: item.id, roomId: room.id, message: `${p.name} queda dentro de ${item.name}, que es cerrado. La válvula de gas debe quedar a la mano y con ventilación: deja ese tramo abierto o ponle rejillas, y confírmalo con el instalador.` });
+          else if (p.kind !== "gas" && (cp.drawers ?? 0) > 0 && item.kind === "cabinet" && p.height < item.elevation + (cp.plinthHeight ?? 0) + (cp.drawers ?? 0) * (cp.drawerHeight ?? 200) + 60) issues.push({ level: "warning", code: "service-drawers", itemId: item.id, roomId: room.id, message: `${item.name} tiene cajones justo donde va ${p.name.toLowerCase()}: chocan con el sifón y la tubería. Ese módulo debe ser de puertas, o los cajones más cortos de fondo.` });
+          else if (p.kind === "drain" && item.kind === "cabinet" && (cp.shelves ?? 0) > 0) issues.push({ level: "warning", code: "service-shelf", itemId: item.id, roomId: room.id, message: `${item.name} tiene repisa donde va ${p.name.toLowerCase()}: el sifón necesita ese espacio. Quita la repisa de ese cuerpo o hazle un recorte.` });
+        } else if (covered) {
           issues.push({ level: "warning", code: "point-covered", itemId: item.id, roomId: room.id, message: p.kind === "switch" ? `${item.name} tapa ${p.name.toLowerCase()} del ${WALL_NAMES[wall]} en ${room.name}: no se podrá accionar. Corre el mueble o el interruptor.` : `${item.name} tapa ${p.name.toLowerCase()} del ${WALL_NAMES[wall]} en ${room.name}. Si la necesitas, corre el mueble o hazle un calado en el fondo.` });
         } else if (fixed && p.offset + DRILL_BAND > s0 && p.offset - DRILL_BAND < s1) {
           issues.push({ level: "warning", code: "drill-band", itemId: item.id, roomId: room.id, message: `${item.name} se fija al ${WALL_NAMES[wall]} sobre la vertical de ${p.name.toLowerCase()} (a ${p.offset} mm de la izquierda): por ahí suele pasar la tubería. No perfores en esa franja de ${2 * DRILL_BAND} mm, o comprueba antes con un detector.` });
@@ -159,7 +213,7 @@ export function electricalTakeoff(room: Room): ElectricalTakeoff {
   const hubs = lights.length ? lights.map((l) => [l.x ?? 0, l.z ?? 0]) : [[room.width / 2, room.depth / 2]];
   const nearest = (x: number, z: number, skip = -1) => Math.min(...hubs.filter((_, i) => i !== skip).map(([hx, hz]) => Math.abs(hx - x) + Math.abs(hz - z)));
   let mm = 0;
-  for (const p of points.filter(onWall)) {
+  for (const p of points.filter(onWall).filter((x) => !isService(x))) {
     const [x, , z] = pointPosition({ ...room, origin: [0, 0] }, p);
     mm += room.height - p.height + nearest(x, z);
   }
@@ -167,7 +221,7 @@ export function electricalTakeoff(room: Room): ElectricalTakeoff {
   lights.forEach((l, i) => { if (lights.length > 1 && i > 0) mm += nearest(l.x ?? 0, l.z ?? 0, i); });
   const conduitM = Number((mm / 1000).toFixed(1));
   const count = (k: PointKind) => points.filter((p) => p.kind === k).length;
-  return { outlets: count("outlet"), gfci: points.filter((p) => p.gfci).length, switches: count("switch"), data: count("data"), lights: lights.length, boxes: points.length, conduitM, wireM: Number((conduitM * 3 * 1.1).toFixed(1)) };
+  return { outlets: count("outlet"), gfci: points.filter((p) => p.gfci).length, switches: count("switch"), data: count("data"), lights: lights.length, boxes: points.filter((p) => !isService(p)).length, conduitM, wireM: Number((conduitM * 3 * 1.1).toFixed(1)) };
 }
 
 export interface ElectricalQuoteLine { description: string; category: string; qty: number; unit: PriceOffer["unit"]; unitPrice: number; total: number; offer?: PriceOffer; missing: boolean; need: PriceNeed }
@@ -195,12 +249,29 @@ export async function quoteElectrical(roomName: string, t: ElectricalTakeoff, pr
   return out;
 }
 
+/** Renglones de presupuesto de los puntos de agua, desagüe y gas: lo que se compra por punto, sin tubería. */
+export async function quoteServices(room: Room, providers: PriceProvider[]): Promise<ElectricalQuoteLine[]> {
+  const count = (k: PointKind) => (room.points ?? []).filter((p) => p.kind === k).length;
+  const rows: [string, string, number][] = [
+    ["Llave angular y acople flexible", "water-stop", count("water")],
+    ["Sifón y desagüe", "drain-trap", count("drain")],
+    ["Válvula y manguera de gas", "gas-valve", count("gas")],
+  ];
+  const out: ElectricalQuoteLine[] = [];
+  for (const [label, category, qty] of rows) {
+    if (qty <= 0) continue;
+    const offer = (await Promise.all(providers.map((p) => p.search({ category }).catch(() => [] as PriceOffer[])))).flat().sort((a, b) => unitCost(a) - unitCost(b))[0];
+    out.push({ description: `${room.name} · ${label}`, category, qty, unit: offer?.unit ?? "unit", unitPrice: offer?.price ?? 0, total: (offer?.price ?? 0) * qty, offer, missing: !offer, need: { category, unit: "unit" } });
+  }
+  return out;
+}
+
 /** Los puntos de una habitación, dichos para la IA. */
 export function describeElectrical(room: Room): string[] {
   if (!room.points?.length) return [];
   const t = electricalTakeoff(room);
   return [
-    `Eléctrico (alturas sobre piso terminado; estimado ${t.conduitM} m de tubería y ${t.wireM} m de cable):`,
+    `Instalaciones: eléctrico, agua, desagüe y gas (alturas sobre piso terminado; estimado eléctrico ${t.conduitM} m de tubería y ${t.wireM} m de cable):`,
     ...room.points.map((p) => (onWall(p) ? `- ${p.name} (id: ${p.id}): ${WALL_NAMES[p.wall]}, a ${p.offset} de la izquierda y ${p.height} de alto${p.gfci ? ", con protección GFCI" : ""}` : `- ${p.name} (id: ${p.id}): en el techo, a ${p.x} del muro oeste y ${p.z} del muro norte`)),
   ];
 }

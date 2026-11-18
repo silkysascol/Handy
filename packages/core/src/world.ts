@@ -48,10 +48,11 @@ export interface Block {
   height?: Millimeters;
 }
 
-export type PointKind = "outlet" | "switch" | "data" | "light";
+export type PointKind = "outlet" | "switch" | "data" | "light" | "water" | "drain" | "gas";
 
 /**
- * Punto eléctrico. Tomas, interruptores y puntos de datos van en un muro (`wall`, `offset`, `height`);
+ * Punto de instalación: eléctrico (toma, interruptor, datos, luz) o de servicio (agua, desagüe, gas).
+ * Tomas, interruptores, datos y servicios van en un muro (`wall`, `offset`, `height`);
  * las luces van en el techo (`x` desde el muro oeste, `z` desde el muro norte).
  */
 export interface ElectricPoint {

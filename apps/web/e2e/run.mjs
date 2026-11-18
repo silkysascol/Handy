@@ -391,7 +391,7 @@ test("electricidad: tomas, interruptores y luces con palabras, franjas de no per
   assert.equal(all.filter((p) => p.kind === "light").length, 2);
   assert.ok(all.filter((p) => p.kind === "outlet").length >= 4);
   assert.ok((await h.page.evaluate(() => window.__handy.bands())) >= 4);
-  await h.page.waitForFunction(() => /punto\(s\) eléctrico\(s\)/.test(document.getElementById("price-sub").textContent));
+  await h.page.waitForFunction(() => /punto\(s\) de instalación/.test(document.getElementById("price-sub").textContent));
   await h.page.hover("#price");
   await h.page.waitForFunction(() => /Eléctrico/.test(document.getElementById("price-pop").textContent));
   assert.match(await h.page.textContent("#price-pop"), /Estudio · Tubería conduit/);
@@ -515,6 +515,50 @@ test("cubierta y esquinas redondeadas: se piden con palabras, se dibujan curvas 
   await h.say("quítalo");
   assert.equal((await rounded()).length, 0);
   assert.ok(mesa.itemId);
+});
+
+test("agua, desagüe y gas: el punto de un aparato, el aviso de cajones contra el sifón y su costo aparte", async ({ h }) => {
+  await h.page.evaluate(() => window.__handy.select({ kind: "world" }));
+  assert.match(await h.say("taller de 4 x 3 m"), /Taller/);
+  const room = (await h.world()).rooms.find((r) => r.name === "Taller");
+  const sel = (s) => h.page.evaluate((x) => window.__handy.select(x), s);
+  const north = { kind: "wall", roomId: room.id, wall: "north" };
+  const points = async () => (await h.world()).rooms.find((r) => r.id === room.id).points ?? [];
+  const warnings = () => h.page.evaluate(() => document.getElementById("props").textContent + document.getElementById("issues").textContent);
+
+  // El punto de lavaplatos trae agua y desagüe a sus alturas, y cada uno su franja de no perforar.
+  await sel(north);
+  assert.match(await h.say("punto de lavaplatos a 1,5 m de la izquierda"), /Lavaplatos en el muro norte, con eje a 1500 mm de la izquierda: agua · lavaplatos a 1400 mm de la izquierda y 550 mm del piso; desagüe · lavaplatos a 1500 mm de la izquierda y 500 mm del piso/);
+  assert.deepEqual((await points()).map((p) => [p.kind, p.height]), [["water", 550], ["drain", 500]]);
+  assert.equal(await h.page.evaluate(() => window.__handy.bands()), 2);
+  assert.match(await h.page.textContent("#props"), /Tipo\s*desagüe/);
+
+  // Una cajonera delante choca con el sifón; un gabinete de puertas no.
+  await sel(north);
+  assert.match(await h.say("cajonera de 80 x 90 x 60 a 1,1 m de la izquierda"), /Cajonera de 800/);
+  await h.page.waitForFunction(() => /chocan con el sifón/.test(document.getElementById("props").textContent + document.getElementById("issues").textContent));
+  await h.say("quítalo");
+  await sel(north);
+  assert.match(await h.say("gabinete de 80 x 90 x 60 con 2 puertas a 1,1 m de la izquierda"), /Gabinete de 800/);
+  await h.page.waitForTimeout(300);
+  assert.doesNotMatch(await warnings(), /sifón/);
+  const cabinet = await h.selection();
+
+  // Punto de gas, y el presupuesto con su grupo aparte.
+  await sel(north);
+  assert.match(await h.say("punto de gas a 50 cm de la derecha"), /punto de gas a 3500 mm de la izquierda y 700 mm del piso/);
+  await h.page.waitForFunction(() => /punto\(s\) de instalación/.test(document.getElementById("price-sub").textContent));
+  await h.page.hover("#price");
+  await h.page.waitForFunction(() => /Agua y gas/.test(document.getElementById("price-pop").textContent));
+  assert.match(await h.page.textContent("#price-pop"), /Taller · Sifón y desagüe/);
+  await h.page.mouse.move(5, 300);
+  // Con la habitación seleccionada, pide un muro.
+  await sel({ kind: "room", roomId: room.id });
+  assert.match(await h.say("punto de lavadora"), /haz clic en el muro/);
+
+  for (const p of await points()) { await sel({ kind: "point", roomId: room.id, pointId: p.id }); await h.say("quítala"); }
+  await sel(cabinet); await h.say("quítalo");
+  assert.equal((await points()).length, 0);
 });
 
 test("armado paso a paso en 3D: niveles de detalle, piezas que entran, puntos de herraje y manual imprimible", async ({ h }) => {

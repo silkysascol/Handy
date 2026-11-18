@@ -8,6 +8,8 @@ import {
   addRoom,
   activeProviders,
   addBlock,
+  addFixture,
+  FIXTURES,
   compassName,
   REFERENCE_DAYS,
   setSite,
@@ -387,7 +389,7 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
       description: "Agrega una toma, un interruptor o un punto de datos en un muro, o una luz en el techo. Sin altura usa la habitual: tomas y datos a 300 mm, interruptores a 1100 mm, tomas sobre mesón a 1100 mm (pásala en height). En cocina, baño, lavadero y exteriores las tomas salen con protección GFCI. No deja poner puntos dentro de puertas o ventanas ni en muro tapado por una columna. Son alturas de práctica común, no una revisión de norma: la instalación la valida un electricista. Para mover o quitar: world_command con roomId y pointId.",
       inputSchema: {
         roomId: z.string(),
-        kind: z.enum(["outlet", "switch", "data", "light"]).describe("outlet = toma; switch = interruptor; data = red o TV; light = luz de techo"),
+        kind: z.enum(["outlet", "switch", "data", "light", "water", "drain", "gas"]).describe("outlet = toma; switch = interruptor; data = red o TV; light = luz de techo; water = punto de agua (550 mm); drain = desagüe (500 mm); gas = punto de gas (700 mm)"),
         name: z.string().optional(),
         wall: wall.optional().describe("Para toma, interruptor y datos"),
         offset: z.number().int().min(0).optional().describe("mm desde el extremo izquierdo del muro, mirándolo desde dentro"),
@@ -403,6 +405,22 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
       store.save(world);
       const issues = checkWorld(world).filter((i) => i.roomId === roomId && /point|drill/.test(i.code));
       return text([`${point.name} (id: ${point.id}) ${point.kind === "light" ? `en el techo, a ${point.x} mm del muro oeste y ${point.z} del norte` : `en el ${WALL_NAMES[point.wall!]}, a ${point.offset} mm de la izquierda y ${point.height} mm del piso${point.gfci ? ", con protección GFCI" : ""}`}.`, ...issues.map((i) => `[${i.level}] ${i.message}`)].join("\n"), { point, issues });
+    },
+  );
+
+  server.registerTool(
+    "world_add_fixture",
+    {
+      title: "Puntos de un aparato: agua, desagüe y gas",
+      description: "Agrega de una vez los puntos de servicio de un aparato, a sus alturas habituales y centrados en un eje del muro: lavaplatos y lavamanos (agua a 550, desagüe a 500), lavadero, lavadora (agua a 1100, desagüe a 900), sanitario (agua a 200; su desagüe va en el piso), ducha (mezclador a 1100, salida a 2000), calentador (agua y gas a 1300) y estufa (gas a 700). Después, world_check avisa si un mueble con cajones o repisas choca con el sifón, si un punto de gas queda dentro de un mueble cerrado, o si hay una toma sin protección junto al agua. Son alturas de práctica común; las confirma quien instala.",
+      inputSchema: { roomId: z.string(), fixture: z.enum(["lavaplatos", "lavamanos", "lavadero", "lavadora", "sanitario", "ducha", "calentador", "estufa"]), wall, offset: z.number().int().min(0).describe("Eje del aparato, en mm desde el extremo izquierdo del muro"), hot: z.boolean().default(false).describe("Agregar punto de agua caliente") },
+    },
+    async ({ roomId, fixture, wall: w, offset, hot }) => {
+      const world = store.load();
+      const made = addFixture(world, roomId, fixture, w, offset, { hot });
+      store.save(world);
+      const issues = checkWorld(world).filter((i) => i.roomId === roomId && /point|drill|service|gas|outlet-near/.test(i.code));
+      return text([`${FIXTURES[fixture].label} en el ${WALL_NAMES[w]}: ${made.map((m) => `${m.name} (id: ${m.id}) a ${m.offset} de la izquierda y ${m.height} del piso`).join("; ")}.`, ...(FIXTURES[fixture].note ? [FIXTURES[fixture].note!] : []), ...issues.map((i) => `[${i.level}] ${i.message}`)].join("\n"), { points: made, issues });
     },
   );
 
@@ -495,7 +513,7 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
       const source = book.entries.length ? "precios propios del usuario" : "CATÁLOGO DE EJEMPLO, precios ficticios: sirve para comparar opciones, no para comprar";
       const stores = book.entries.length && quote.byStore.length > 1 ? [`Por tienda: ${quote.byStore.map((s) => `${s.store} ${s.total}`).join(" · ")}`] : [];
       return text(
-        [`Cotización: ${quote.subtotal} ${quote.currency} (muebles ${quote.groups.furniture}, pisos ${quote.groups.floors}, eléctrico ${quote.groups.electrical})${quote.missingCount ? ` · INCOMPLETA: ${quote.missingCount} ítems sin precio` : ""} · ${source}${quote.staleCount ? ` · ${quote.staleCount} precios con más de 30 días` : ""}`, ...lines, ...stores].join("\n"),
+        [`Cotización: ${quote.subtotal} ${quote.currency} (muebles ${quote.groups.furniture}, pisos ${quote.groups.floors}, eléctrico ${quote.groups.electrical}, agua y gas ${quote.groups.services})${quote.missingCount ? ` · INCOMPLETA: ${quote.missingCount} ítems sin precio` : ""} · ${source}${quote.staleCount ? ` · ${quote.staleCount} precios con más de 30 días` : ""}`, ...lines, ...stores].join("\n"),
         { currency: quote.currency, subtotal: quote.subtotal, groups: quote.groups, missingCount: quote.missingCount, staleCount: quote.staleCount, byStore: quote.byStore, ownPrices: book.entries.length > 0, lines: quote.lines },
       );
     },

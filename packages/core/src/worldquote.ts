@@ -1,6 +1,6 @@
 import { buildQuote, type QuoteLine } from "./quote.js";
 import { planFloor, quoteFloor } from "./flooring.js";
-import { electricalTakeoff, quoteElectrical } from "./electrical.js";
+import { electricalTakeoff, quoteElectrical, quoteServices } from "./electrical.js";
 import type { PriceProvider } from "./providers/types.js";
 import { priceAgeDays } from "./pricebook.js";
 import { mergedModel, type World } from "./world.js";
@@ -12,7 +12,7 @@ export interface WorldQuote {
   missingCount: number;
   oldestPrice?: string;
   /** Subtotales por grupo: muebles y pisos. */
-  groups: { furniture: number; floors: number; electrical: number };
+  groups: { furniture: number; floors: number; electrical: number; services: number };
   /** Qué se compra en cada tienda y cuánto suma, de mayor a menor. */
   byStore: { store: string; total: number; lines: number }[];
   /** Renglones cuyo precio tiene más de `staleDays` días. */
@@ -33,7 +33,7 @@ export async function quoteWorld(world: World, providers: PriceProvider[], itemI
   const today = opts.today ?? new Date().toISOString().slice(0, 10);
   const staleDays = opts.staleDays ?? 30;
   const lines: QuoteLine[] = [];
-  let oldest: string | undefined, furniture = 0, floors = 0, electrical = 0;
+  let oldest: string | undefined, furniture = 0, floors = 0, electrical = 0, services = 0;
   const stores = new Map<string, { total: number; lines: number }>();
   const currencies = new Set<string>();
   let stale = 0;
@@ -59,16 +59,17 @@ export async function quoteWorld(world: World, providers: PriceProvider[], itemI
     for (const room of world.rooms) {
       if (!room.points?.length) continue;
       for (const l of await quoteElectrical(room.name, electricalTakeoff(room), providers)) { lines.push(l); note(l); electrical += l.total; }
+      for (const l of await quoteServices(room, providers)) { lines.push(l); note(l); services += l.total; }
     }
   }
   const round = (n: number) => Number(n.toFixed(2));
   return {
     currency: [...currencies][0] ?? "?",
     lines,
-    subtotal: round(furniture + floors + electrical),
+    subtotal: round(furniture + floors + electrical + services),
     missingCount: lines.filter((l) => l.missing).length,
     oldestPrice: oldest,
-    groups: { furniture: round(furniture), floors: round(floors), electrical: round(electrical) },
+    groups: { furniture: round(furniture), floors: round(floors), electrical: round(electrical), services: round(services) },
     byStore: [...stores].map(([store, s]) => ({ store, total: round(s.total), lines: s.lines })).sort((a, b) => b.total - a.total),
     staleCount: stale,
     currencies: [...currencies],

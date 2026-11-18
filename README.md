@@ -92,6 +92,8 @@ Y el sol. Di "estamos en Bogotá" y, si hace falta, "el muro norte mira al este"
 
 Los muebles pueden llevar cubierta y esquinas redondeadas: "isla de 180 x 90 x 60 con 4 cajones y esquinas redondeadas", "ponle cubierta", "radio 8 cm". La tienda corta rectangular y tú redondeas en casa: el despiece trae la plantilla de cada radio a tamaño real y el armado explica cómo hacerlo.
 
+Y el agua y el gas: con un muro seleccionado, "punto de lavaplatos a 1,5 m de la izquierda", "punto de lavadora", "punto de gas". Handy avisa si pones una cajonera donde va el sifón, si el gas queda encerrado en un mueble, o si hay una toma sin protección junto al agua.
+
 Un mueble no tiene que ir pegado a un muro. Con la habitación seleccionada, "mesa de tubo de 120 x 75 x 60" o "isla de 180 x 90 x 60 con 4 cajones" lo pone en el centro. Con el mueble seleccionado: "sepáralo 60 cm", "en el centro del cuarto", "gíralo", "pásalo al muro sur", "pégalo al muro". Con el mouse, arrastrarlo hacia adentro lo despega; la tecla R lo gira. Handy avisa si queda un pasillo de menos de 60 cm o poco espacio frente a una puerta.
 
 Los números sin unidad se leen como se habla en obra: menos de 10 son metros, menos de 300 centímetros, el resto milímetros. La respuesta siempre repite la medida en mm.
@@ -116,7 +118,7 @@ Configuración para Claude Desktop o Claude Code (`claude mcp add handy -- pnpm 
 }
 ```
 
-Herramientas expuestas hoy: las del mundo (`world_create`, `world_describe`, `world_add_room`, `world_add_opening`, `world_free_runs`, `world_place_cabinet`, `world_place_frame`, `world_update_item`, `world_command`, `world_remove_item`, `world_add_block`, `world_remove_block`, `world_add_point`, `world_electrical`, `world_set_site`, `world_sun`, `world_check`, `world_quote`, `world_cutplan`, `world_assembly`, `world_drilling`, `world_floor_plan`, `world_export_gltf`) las de precios (`prices_needed`, `price_set`, `price_list`, `price_remove`) y las de mueble suelto (`design_cabinet`, `cutlist`, `search_prices`, `check_collisions`). Con `HANDY_WORLD` eliges el archivo de tu mundo. Ver [docs/modulos/ia-mcp.md](docs/modulos/ia-mcp.md).
+Herramientas expuestas hoy: las del mundo (`world_create`, `world_describe`, `world_add_room`, `world_add_opening`, `world_free_runs`, `world_place_cabinet`, `world_place_frame`, `world_update_item`, `world_command`, `world_remove_item`, `world_add_block`, `world_remove_block`, `world_add_point`, `world_add_fixture`, `world_electrical`, `world_set_site`, `world_sun`, `world_check`, `world_quote`, `world_cutplan`, `world_assembly`, `world_drilling`, `world_floor_plan`, `world_export_gltf`) las de precios (`prices_needed`, `price_set`, `price_list`, `price_remove`) y las de mueble suelto (`design_cabinet`, `cutlist`, `search_prices`, `check_collisions`). Con `HANDY_WORLD` eliges el archivo de tu mundo. Ver [docs/modulos/ia-mcp.md](docs/modulos/ia-mcp.md).
 
 ### Usar tus precios locales
 

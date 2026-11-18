@@ -401,6 +401,30 @@
       "price": 0.55,
       "currency": "USD",
       "unit": "meter"
+    },
+    {
+      "sku": "HID-LLAVE",
+      "category": "water-stop",
+      "name": "Llave angular con acople flexible",
+      "price": 6.5,
+      "currency": "USD",
+      "unit": "unit"
+    },
+    {
+      "sku": "HID-SIFON",
+      "category": "drain-trap",
+      "name": "Sifón en P con desagüe",
+      "price": 5.2,
+      "currency": "USD",
+      "unit": "unit"
+    },
+    {
+      "sku": "GAS-VALV",
+      "category": "gas-valve",
+      "name": "Válvula de gas con manguera certificada",
+      "price": 14.0,
+      "currency": "USD",
+      "unit": "unit"
     }
   ]
 }

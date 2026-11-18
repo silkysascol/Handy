@@ -177,6 +177,7 @@ const CATEGORY_WORDS: Record<string, string> = {
   board: "tablero lamina melamina madera mdf", edgeband: "canto tapacanto enchape", hinge: "bisagra", slide: "corredera riel", handle: "tirador manija manilla",
   "steel-profile": "tubo perfil acero barra", tile: "baldosa piso ceramica porcelanato", "tile-adhesive": "pega pegante adhesivo", grout: "boquilla fragua",
   "cam-lock": "minifix excentrica perno", dowel: "tarugo", confirmat: "confirmat tornillo", screw: "tornillo", "shelf-pin": "soporte repisa", foot: "pata niveladora",
+  "water-stop": "llave agua acople", "drain-trap": "sifon desague", "gas-valve": "valvula gas manguera",
   outlet: "toma tomacorriente enchufe", switch: "interruptor suiche", "data-outlet": "toma datos red tv", "lamp-holder": "roseta plafon luz", "electrical-box": "caja", conduit: "tuberia tubo conduit", wire: "cable alambre",
   "closet-rod": "tubo colgar barra", "rod-support": "soporte tubo", "welding-rod": "soldadura electrodo", "paint-m2": "pintura anticorrosivo", "tube-cap": "regaton tapa",
 };
@@ -246,7 +247,7 @@ export function runPriceCommand(book: PriceBook, lines: PricedLine[], text: stri
 }
 
 /** Nombre del producto sin el nombre de la habitación ni la presentación de la tienda. */
-const plainName = (l: PricedLine) => (["tile", "tile-adhesive", "grout", "outlet", "switch", "data-outlet", "lamp-holder", "electrical-box", "conduit", "wire"].includes(l.category) ? l.description.replace(/^.*? · /, "") : l.description).replace(/\s*\(caja de \d+\)$/, "");
+const plainName = (l: PricedLine) => (["tile", "tile-adhesive", "grout", "outlet", "switch", "data-outlet", "lamp-holder", "electrical-box", "conduit", "wire", "water-stop", "drain-trap", "gas-valve"].includes(l.category) ? l.description.replace(/^.*? · /, "") : l.description).replace(/\s*\(caja de \d+\)$/, "");
 
 const titleCase = (s: string) => s.replace(/\b[a-z]/g, (c) => c.toUpperCase());
 

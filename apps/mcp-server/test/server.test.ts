@@ -188,6 +188,17 @@ describe("Handy MCP server", () => {
     expect((await call("world_place_frame", { roomId: "dormitorio", wall: "south", offset: 1500, type: "table", width: 1000, height: 750, depth: 600, cornerRadius: 900 })).isError).toBe(true);
     await call("world_remove_item", { itemId: isle.data.item.id });
 
+    // Agua, desagüe y gas: la IA pone el lavamanos y la estufa, y el presupuesto los suma aparte.
+    const sink = await call("world_add_fixture", { roomId: "dormitorio", fixture: "lavamanos", wall: "south", offset: 2400, hot: true });
+    expect(sink.text).toMatch(/Lavamanos en el muro sur: Agua · lavamanos \(id: agua-lavamanos\) a 2300 de la izquierda y 550 del piso; Desagüe · lavamanos/);
+    expect(sink.data.points).toHaveLength(3);
+    const gasPoint = await call("world_add_point", { roomId: "dormitorio", kind: "gas", wall: "south", offset: 3200 });
+    expect(gasPoint.data.point.height).toBe(700);
+    expect((await call("world_quote")).data.groups.services).toBeGreaterThan(0);
+    expect((await call("world_add_fixture", { roomId: "dormitorio", fixture: "lavadora", wall: "south", offset: 600 })).isError).toBe(true);
+    for (const p of [...sink.data.points, gasPoint.data.point]) await call("world_command", { roomId: "dormitorio", pointId: p.id, text: "quítala" });
+    expect((await call("world_quote")).data.groups.services).toBe(0);
+
     // Precios reales: la IA ve qué falta, anota lo que encontró y el presupuesto deja el catálogo de ejemplo.
     expect(withFloor.text).toContain("CATÁLOGO DE EJEMPLO");
     const needed = await call("prices_needed");

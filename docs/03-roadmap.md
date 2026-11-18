@@ -26,7 +26,7 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [x] Herramientas MCP `world_*` para que la IA cree, consulte, coloque, revise, cotice y exporte.
 - [x] Intérprete de órdenes en español acotado a la selección (`runCommand`) y funciones para modificar habitaciones, aberturas y muebles con validación.
 - [x] Visor web: clic para seleccionar muro, abertura, mueble o habitación; barra de órdenes; precio en la esquina; avisos; deshacer; importar y exportar; tema claro y oscuro; actualización en vivo cuando la IA cambia el mundo.
-- [x] Pruebas de navegador en el repo (`pnpm e2e`): 27 casos de extremo a extremo con servidor y mundo temporales. `pnpm check` corre todo.
+- [x] Pruebas de navegador en el repo (`pnpm e2e`): 28 casos de extremo a extremo con servidor y mundo temporales. `pnpm check` corre todo.
 - [x] Plano de corte real: piezas acomodadas en tableros con ancho de disco, refilado y veta; despiece imprimible y CSV para la tienda (botón Despiece, `world_cutplan`). La cotización usa esos tableros, no un porcentaje.
 - [x] Pisos: baldosas dibujadas en la habitación, piezas enteras y cortes, cajas según la tienda, pega por formato y material, boquilla, guardaescobas; sumado al precio del mundo (`world_floor_plan`).
 - [x] Más muebles con el mismo generador: divisiones verticales (cuerpos iguales), cajones con correderas (frente visible o interiores tras puertas), barra de colgar con maletero, puertas de 2 por cuerpo. Con eso salen closets, cajoneras y bibliotecas con divisiones. Reglas nuevas: barra larga, closet poco profundo, cajón ancho.
@@ -44,7 +44,8 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [ ] Sol: sombra de aleros, vecinos y árboles; grosor del muro; sol sobre las caras de los muebles.
 - [x] Cubierta sobre muebles de tablero y esquinas redondeadas en cubiertas (también en mesas de tubo): se corta rectangular y se redondea en casa con la plantilla a tamaño real del despiece; paso de redondeo en el armado; tapacanto ajustado; dibujo curvo en el visor.
 - [ ] Curvas: repisas de remate en cuarto de círculo, radios distintos por esquina, geometría curva en la exportación a Blender; frentes curvos con tablero flexible.
-- [ ] Electricidad: tablero y circuitos, cargas, puntos de agua y desagüe, gas.
+- [x] Agua, desagüe y gas: puntos sueltos o el conjunto de un aparato (lavaplatos, lavamanos, lavadora, lavadero, sanitario, ducha, calentador, estufa) a alturas habituales; avisos de cajones o repisas contra el sifón, gas encerrado, electricidad junto al gas y tomas sin protección junto al agua; llaves, sifones y válvulas en el presupuesto (`world_add_fixture`).
+- [ ] Instalaciones: tablero y circuitos, cargas; redes de agua con diámetros y pendientes; desagües de piso; ventilación de gas.
 - [ ] Muros inclinados o curvos, niveles; puertas y ventanas en las caras de una esquina cerrada; importar RoomPlan/LiDAR.
 - [x] Muebles sueltos en el cuarto: separación del muro (`gap`), "en el centro del cuarto", "sepáralo 60 cm", "gíralo", "pásalo al muro sur"; arrastrar hacia adentro los despega; avisos de pasillo angosto y de poco espacio frente a una puerta.
 - [ ] Manija de fondo; ángulos libres (hoy un mueble mira a uno de los cuatro muros).

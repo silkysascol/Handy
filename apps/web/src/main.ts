@@ -157,7 +157,7 @@ scene.add(content);
 
 const unitBox = new THREE.BoxGeometry(1, 1, 1);
 const unitEdges = new THREE.EdgesGeometry(unitBox);
-const COLORS = { wall: 0xcfd3d6, floor: 0x8f9396, ceramic: 0xd9cdb8, porcelain: 0xbfc3c4, board: 0xece9e2, back: 0xdedad2, door: 0xb98a5a, window: 0x7fc4d9, opening: 0x9a6b3f, metal: 0xa7adb3, steel: 0x3d4247, accent: 0xe8933a, outlet: 0xf2f2ee, switch: 0xf4c98b, data: 0x5cc3ca, light: 0xffd766, band: 0xe5534b };
+const COLORS = { wall: 0xcfd3d6, floor: 0x8f9396, ceramic: 0xd9cdb8, porcelain: 0xbfc3c4, board: 0xece9e2, back: 0xdedad2, door: 0xb98a5a, window: 0x7fc4d9, opening: 0x9a6b3f, metal: 0xa7adb3, steel: 0x3d4247, accent: 0xe8933a, outlet: 0xf2f2ee, switch: 0xf4c98b, data: 0x5cc3ca, light: 0xffd766, band: 0xe5534b, water: 0x4a90e2, drain: 0x5b6168, gas: 0xf2c200 };
 const M = 0.001;
 type Pick = THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial>;
 let pickables: Pick[] = [];
@@ -724,7 +724,7 @@ const EXAMPLES: Record<Selection["kind"], string[]> = {
   point: ["muévela 20 cm a la derecha", "a 1 m de la izquierda", "a 1,1 m del piso", "súbela 10 cm", "con protección", "quítala"],
   block: ["muévela 20 cm al este", "muévela 50 cm al sur", "a 1 m del muro norte", "céntrala", "40 x 60", "alto 1 m", "hasta el techo", "quítala"],
   room: ["mesa de tubo de 120 x 75 x 60", "isla de 180 x 90 x 60 con 4 cajones", "columna de 30 x 30 a 2 m del muro oeste y 1 m del muro norte", "recorta la esquina noreste 2 x 1,5 m", "buitrón de 60 x 40 en la esquina suroeste", "2 luces", "reparte las tomas", "piso de porcelanato 60 x 60", "piso de cerámica 45 x 45 trabado", "junta 3", "quita el piso", "alto 2,6 m", "ancho 4 m"],
-  wall: ["toma a 1 m de la izquierda", "interruptor", "toma de mesón a 60 cm de la derecha", "pon una puerta de 80 x 205 a 2 m de la izquierda", "ventana de 120 x 100 centrada, antepecho 110", "armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas", "closet de 180 x 220 x 60 con 2 divisiones, barra y 3 cajones", "cajonera de 80 x 90 x 50", "mesa de tubo de 120 x 75 x 60", "estantería metálica de 100 x 200 x 40 con 5 niveles", "alacena de 900 x 700 x 350 a 1,5 m del piso con 2 puertas", "grosor 20 cm"],
+  wall: ["toma a 1 m de la izquierda", "interruptor", "toma de mesón a 60 cm de la derecha", "punto de lavaplatos a 1 m de la izquierda", "punto de lavadora", "punto de gas a 50 cm de la derecha", "pon una puerta de 80 x 205 a 2 m de la izquierda", "ventana de 120 x 100 centrada, antepecho 110", "armario de 800 x 2000 x 500 a 60 cm de la derecha con 2 puertas y 3 repisas", "closet de 180 x 220 x 60 con 2 divisiones, barra y 3 cajones", "cajonera de 80 x 90 x 50", "mesa de tubo de 120 x 75 x 60", "estantería metálica de 100 x 200 x 40 con 5 niveles", "alacena de 900 x 700 x 350 a 1,5 m del piso con 2 puertas", "grosor 20 cm"],
   opening: ["muévela 20 cm a la derecha", "a 1 m de la izquierda", "90 x 210", "céntrala", "quítala"],
   item: ["ponle cubierta", "esquinas redondeadas", "radio 8 cm", "ensancha 10 cm", "alto 1800", "muévelo 30 cm a la derecha", "sepáralo 60 cm", "en el centro del cuarto", "gíralo", "pásalo al muro sur", "agrega una repisa", "2 divisiones", "3 cajones", "con barra de colgar", "2 puertas", "sin tornillos a la vista", "quítalo"],
 };
@@ -807,9 +807,9 @@ function renderProps() {
     const t = electricalTakeoff(r);
     body = (p.kind === "light"
       ? kv("Dónde", "en el techo") + kv("Del muro oeste", `${fmt(p.x ?? 0)} mm`) + kv("Del muro norte", `${fmt(p.z ?? 0)} mm`)
-      : kv("Muro", WALL_NAMES[p.wall!]) + kv("Desde la izquierda", `${fmt(p.offset ?? 0)} mm`) + kv("Del piso", `${fmt(p.height ?? 0)} mm`) + (p.kind === "outlet" ? kv("Protección GFCI", p.gfci ? "sí" : "no") : "")) +
-      kv("Puntos en la habitación", String(t.boxes)) + kv("Tubería estimada", `${String(t.conduitM).replace(".", ",")} m`) + kv("Cable estimado", `${String(t.wireM).replace(".", ",")} m`) +
-      `<p class="note">${p.kind === "light" ? "Flechas: la mueven 10 mm hacia el oeste, el este, el norte o el sur." : "La franja roja marca por dónde suele subir o bajar la tubería: no perfores ahí sin comprobar. Flechas: 10 mm, con Mayús 100."} Alturas habituales, no una revisión de norma: la instalación la valida un electricista.</p>`;
+      : kv("Tipo", p.kind === "water" ? "agua" : p.kind === "drain" ? "desagüe" : p.kind === "gas" ? "gas" : p.kind === "switch" ? "interruptor" : p.kind === "data" ? "datos" : "toma") + kv("Muro", WALL_NAMES[p.wall!]) + kv("Desde la izquierda", `${fmt(p.offset ?? 0)} mm`) + kv("Del piso", `${fmt(p.height ?? 0)} mm`) + (p.kind === "outlet" ? kv("Protección GFCI", p.gfci ? "sí" : "no") : "")) +
+      (p.kind === "water" || p.kind === "drain" || p.kind === "gas" ? "" : kv("Puntos eléctricos en la habitación", String(t.boxes)) + kv("Tubería estimada", `${String(t.conduitM).replace(".", ",")} m`) + kv("Cable estimado", `${String(t.wireM).replace(".", ",")} m`)) +
+      `<p class="note">${p.kind === "light" ? "Flechas: la mueven 10 mm hacia el oeste, el este, el norte o el sur." : "La franja roja marca por dónde suele subir o bajar la tubería: no perfores ahí sin comprobar. Flechas: 10 mm, con Mayús 100."} Alturas habituales, no una revisión de norma: la instalación la valida quien la hace.</p>`;
   } else if (s.kind === "block") {
     const r = world.rooms.find((x) => x.id === s.roomId)!;
     const b = r.blocks!.find((x) => x.id === s.blockId)!;
@@ -878,11 +878,11 @@ async function renderPrice() {
   renderProps();
   const cur = q.currency === "?" ? book.currency : q.currency;
   $("price-total").textContent = money(q.subtotal, cur);
-  const parts = [world.items.length ? `${world.items.length} mueble(s)` : "", hasFloor ? `${world.rooms.filter((r) => r.floor).length} piso(s)` : "", nPoints ? `${nPoints} punto(s) eléctrico(s)` : ""].filter(Boolean).join(" + ");
+  const parts = [world.items.length ? `${world.items.length} mueble(s)` : "", hasFloor ? `${world.rooms.filter((r) => r.floor).length} piso(s)` : "", nPoints ? `${nPoints} punto(s) de instalación` : ""].filter(Boolean).join(" + ");
   $("price-sub").textContent = `${cur} · ${parts}${q.missingCount ? ` · faltan ${q.missingCount} precios` : ""} · ${own ? "tus precios" : "precios de ejemplo"}`;
   const old = (l: WorldQuote["lines"][number]) => own && l.offer && priceAgeDays(l.offer.fetchedAt, today()) > 30;
   const where = (l: WorldQuote["lines"][number]) => (own && l.offer ? `<small class="muted"> · ${esc(l.offer.store)}${old(l) ? " · precio viejo" : ""}</small>` : "");
-  const groupRows = ([["Muebles", q.groups.furniture], ["Pisos", q.groups.floors], ["Eléctrico", q.groups.electrical]] as [string, number][]).filter(([, v]) => v > 0);
+  const groupRows = ([["Muebles", q.groups.furniture], ["Pisos", q.groups.floors], ["Eléctrico", q.groups.electrical], ["Agua y gas", q.groups.services]] as [string, number][]).filter(([, v]) => v > 0);
   $("price-pop").innerHTML =
     (groupRows.length > 1 ? groupRows.map(([label, value]) => `<span class="pl"><strong>${label}</strong><span class="num">${money(value, cur)}</span></span>`).join("") : "") +
     q.lines.map((l) => `<span class="pl${l.missing ? " missing" : ""}"><span>${esc(l.description)} × ${l.qty}${where(l)}</span><span class="num">${l.missing ? "sin precio" : money(l.total, cur)}</span></span>`).join("") +
