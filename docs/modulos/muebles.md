@@ -155,7 +155,23 @@ Qué cambia en el resto de Handy:
 - **Despiece:** la pieza sale rectangular en el plano de corte. Al final hay una sección "Esquinas redondeadas" con qué redondear y la **plantilla de cada radio a tamaño real**, con una regla de 100 mm para comprobar que la impresora no cambió la escala. La plantilla se recorta por la línea gruesa y se apoya en la esquina con sus dos tramos rectos a ras de los cantos.
 - **Tapacanto:** el largo descuenta lo que cada esquina cambia de recto a arco. En la curva va tapacanto de PVC delgado.
 - **Armado:** un paso "Redondea las esquinas" antes de fijar la cubierta, con el método: caladora 2 mm por fuera de la línea, y lija en taco o router con broca de copiar hasta la línea.
-- **Visor:** la cubierta se dibuja curva. El volumen que ocupa el mueble incluye el vuelo.
+- **Visor:** la cubierta se dibuja curva. Para solapes y choques cuenta el cuerpo del mueble, sin el vuelo.
 - **Blender:** la pieza sale como caja con el radio anotado en sus datos (`cornerRadiusMm`), para biselarla allá.
 
 Límites: el radio va de 10 mm a la mitad del lado corto. Solo se redondean cubiertas horizontales, y las cuatro esquinas llevan el mismo radio. La cubierta es del mismo tablero del mueble; un mesón de otro material se cotiza aparte. No hay frentes ni costados curvos, ni formas libres: eso pide tablero flexible y molde, que es trabajo de taller.
+
+## Cocina por módulos
+
+Con un muro seleccionado, "cocina" arma de una vez una cocina lineal sobre el tramo libre: bajos de 90 x 60 con un mesón corrido y zócalo, y altos de 70 x 35 a 1,5 m del piso. Variantes: "cocina de 2,4 m", "cocina a 20 cm de la izquierda", "cocina sin altos".
+
+Cómo decide:
+
+1. **Usa lo que ya hay en el muro.** El módulo del lavaplatos (80 cm, de puertas y sin repisa) se centra sobre su desagüe. El de la estufa (60 cm, abierto para que la válvula quede a la mano) se centra sobre el punto de gas. Por eso conviene poner primero "punto de lavaplatos" y "punto de gas".
+2. **Llena el resto** con módulos iguales de hasta 80 cm: más ancho, la repisa se pandea. Junto a la estufa va una cajonera para ollas y cubiertos; lo demás, puertas.
+3. **Un solo mesón.** Lo lleva el primer módulo y cubre toda la fila; los demás van debajo, con el cuerpo 18 mm más bajo. Si mide más de 2,44 m, avisa: no sale de un tablero, y se hace en dos tramos o se compra postformado o en piedra.
+4. **Altos** donde el muro está libre a esa altura: saltan las ventanas y dejan libre sobre la estufa para la campana.
+5. **Remates.** Un hueco de menos de 30 cm se deja para una regleta, y lo dice.
+
+Queda seleccionado el primer módulo. Cada módulo es un mueble normal: se ensancha, se le cambian puertas por cajones, se mueve o se quita como cualquier otro, y un "deshacer" quita la cocina entera.
+
+Es un punto de partida, no un diseño cerrado. Límites: solo cocinas en línea sobre un muro, sin esquinas en L ni islas automáticas; no hay módulos para nevera, horno de torre ni lavavajillas; los calados del mesón para lavaplatos y estufa se anotan pero no se dibujan; el mesón se cotiza como tablero.

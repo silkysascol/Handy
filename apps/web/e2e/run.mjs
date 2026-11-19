@@ -561,6 +561,40 @@ test("agua, desagüe y gas: el punto de un aparato, el aviso de cajones contra e
   assert.equal((await points()).length, 0);
 });
 
+test("cocina por módulos: se pide sobre un muro y sale acomodada al lavaplatos y a la estufa, con mesón corrido", async ({ h }) => {
+  await h.page.evaluate(() => window.__handy.select({ kind: "world" }));
+  assert.match(await h.say("cocineta de 4 x 3 m"), /Cocineta/);
+  const room = (await h.world()).rooms.find((r) => r.name === "Cocineta");
+  const sel = (s) => h.page.evaluate((x) => window.__handy.select(x), s);
+  const north = { kind: "wall", roomId: room.id, wall: "north" };
+  const mine = async () => (await h.world()).items.filter((i) => i.roomId === room.id);
+  await sel(north); await h.say("punto de lavaplatos a 1,2 m de la izquierda");
+  await sel(north); await h.say("punto de gas a 1,1 m de la derecha");
+
+  await sel(north);
+  const said = await h.say("cocina");
+  assert.match(said, /Cocina de 4000 mm en el muro norte, desde 0 mm de la izquierda: 6 bajo\(s\) con mesón corrido y \d+ alto\(s\)/);
+  assert.match(said, /Bajos: Bajo 1 800 · Bajo lavaplatos 800 · Bajo 2 500 · Cajonera de cocina 500 · Bajo estufa 600 · Bajo 3 800/);
+  const items = await mine();
+  const bases = items.filter((i) => i.elevation === 0).sort((a, b) => a.offset - b.offset);
+  assert.equal(bases.length, 6);
+  assert.deepEqual(bases.map((b) => !!b.params.countertop), [true, false, false, false, false, false]);
+  assert.equal(bases[0].params.countertop.span, 4000);
+  assert.ok(items.some((i) => i.elevation === 1500));
+  // Queda seleccionado el primer módulo, listo para ajustar; cada uno aparece en la lista.
+  assert.equal((await h.selection()).itemId, bases[0].id);
+  assert.equal(await h.page.locator(".node", { hasText: "Bajo lavaplatos" }).count(), 1);
+  // Ningún aviso de cajones contra el sifón ni de gas encerrado.
+  await sel({ kind: "room", roomId: room.id });
+  await h.page.waitForTimeout(300);
+  assert.doesNotMatch(await h.page.textContent("#props"), /sifón|queda dentro de/);
+
+  // Deshacer quita la cocina entera de un golpe.
+  await h.page.click("#undo");
+  await h.page.waitForFunction((id) => window.__handy.getWorld().items.filter((i) => i.roomId === id).length === 0, room.id);
+  for (const p of (await h.world()).rooms.find((r) => r.id === room.id).points ?? []) { await sel({ kind: "point", roomId: room.id, pointId: p.id }); await h.say("quítala"); }
+});
+
 test("armado paso a paso en 3D: niveles de detalle, piezas que entran, puntos de herraje y manual imprimible", async ({ h }) => {
   // Con varios muebles y nada seleccionado, pide escoger uno.
   await h.page.keyboard.press("Escape");

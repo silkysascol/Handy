@@ -44,6 +44,7 @@ El mundo vive en `~/.handy/mundo.world.json` o donde indique `HANDY_WORLD`. La I
 | `world_add_point` | Toma, interruptor o punto de datos en un muro, o luz en el techo, a la altura habitual de su tipo. Para mover o quitar: `world_command` con `roomId` y `pointId`. |
 | `world_electrical` | Puntos de una habitación, franjas donde no perforar, estimado de cajas, tubería y cable, y avisos. Con `spread: true` reparte tomas. |
 | `world_add_fixture` | Puntos de agua, desagüe y gas de un aparato (lavaplatos, lavamanos, lavadora, lavadero, sanitario, ducha, calentador, estufa) a sus alturas habituales. Los puntos sueltos van con `world_add_point` (`water`, `drain`, `gas`). |
+| `world_kitchen` | Propone una cocina lineal por módulos sobre un muro y, con `apply: true`, la coloca. Usa los puntos de lavaplatos y gas que ya estén en ese muro. |
 | `world_set_site` | Ciudad o coordenadas de la casa y hacia dónde mira de verdad el muro norte del modelo. |
 | `world_sun` | Por ventana: horas de sol directo, horario, alcance y muebles asoleados, en una fecha o en solsticios y equinoccio. |
 | `prices_needed` | Renglones del presupuesto con su clave y el precio que tienen hoy: falta, viejo o al día. Es la lista de compras que la IA debe ir a buscar. |

@@ -40,6 +40,8 @@ export interface CabinetParams {
    * Su espesor cuenta dentro de la altura total: el cuerpo del mueble queda más bajo.
    */
   countertop?: CountertopOptions;
+  /** El módulo va bajo el mesón corrido de un vecino: su cuerpo baja el espesor del tablero y no lleva cubierta propia. */
+  underCountertop?: boolean;
   materialId?: string;
   backMaterialId?: string;
   edgeMaterialId?: string;
@@ -53,6 +55,8 @@ export interface CountertopOptions {
   cornerRadius?: Millimeters;
   /** Redondear las cuatro esquinas (mueble suelto) y no solo las dos del frente. */
   roundAll?: boolean;
+  /** Largo total cuando la cubierta sigue sobre los módulos vecinos de la derecha (mesón corrido). Por defecto, el ancho del mueble. */
+  span?: Millimeters;
 }
 
 /** Límites del radio de una esquina redondeada: menos de 10 mm no se nota, y no puede pasar de la mitad del lado corto. */
@@ -118,7 +122,7 @@ export function generateCabinet(params: CabinetParams): FurnitureModel {
   const tb = params.backThickness ?? 3;
   const { width: W, depth: D } = params;
   // Con cubierta, el cuerpo del mueble baja lo que mide ella: la altura pedida es la total.
-  const counterT = params.countertop ? t : 0;
+  const counterT = params.countertop || params.underCountertop ? t : 0;
   const H = params.height - counterT;
   const shelves = params.shelves ?? 0;
   const doors = params.doors ?? 0;
@@ -312,10 +316,12 @@ export function generateCabinet(params: CabinetParams): FurnitureModel {
     const c = params.countertop;
     const frontT = doors > 0 || drawers > 0 ? t : 0;
     const depth = D + frontT + (c.overhang ?? 20);
-    if (c.cornerRadius) assertCornerRadius(c.cornerRadius, W, depth);
+    // Un mesón corrido arranca en este módulo y sigue sobre los vecinos de su derecha.
+    const span = Math.max(W, c.span ?? W);
+    if (c.cornerRadius) assertCornerRadius(c.cornerRadius, span, depth);
     const all = !!c.roundAll;
     panels.push({
-      id: "countertop", name: "Cubierta", height: W, width: depth, thickness: t, materialId, qty: 1, grain: "along-height",
+      id: "countertop", name: span > W ? "Mesón corrido" : "Cubierta", height: span, width: depth, thickness: t, materialId, qty: 1, grain: "along-height",
       // "right" es el canto del frente y "left" el de atrás, que solo se enchapa si el mueble va suelto.
       edgeBanding: { top: true, bottom: true, left: all, right: true }, edgeMaterialId,
       placement: { x: 0, y: H, z: 0, normal: "y" },

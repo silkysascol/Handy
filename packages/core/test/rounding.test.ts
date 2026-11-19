@@ -94,9 +94,9 @@ describe("cubierta y esquinas redondeadas", () => {
     expect(r.message).toMatch(/cubierta que vuela 20 mm al frente, con las 4 esquinas redondeadas a R80 mm\. El despiece trae la plantilla/);
     say(w, island, "vuelo de 3 cm");
     expect(w.items[0].params.countertop).toEqual({ overhang: 30, cornerRadius: 80, roundAll: true });
-    // El volumen que ocupa incluye el vuelo.
+    // El volumen del mueble para solapes y choques es el del cuerpo: el vuelo solo existe arriba.
     const b = itemBox(room, w.items[0]);
-    expect(b.max[2] - b.min[2]).toBe(600 + 18 + 30);
+    expect(b.max[2] - b.min[2]).toBe(600 + 18);
     say(w, island, "esquinas rectas");
     expect(w.items[0].params.countertop).toEqual({ overhang: 30 });
     expect(say(w, island, "sin cubierta").message).toMatch(/sin cubierta/);

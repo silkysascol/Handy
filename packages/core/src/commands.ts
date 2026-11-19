@@ -3,6 +3,7 @@ import { defaultFloorSpec, planFloor, type FloorSpec } from "./flooring.js";
 import type { FrameOptions } from "./generators/frame.js";
 import { profileBySide } from "./profiles.js";
 import { compassName, setSite } from "./sun.js";
+import { buildKitchen, describeKitchen } from "./kitchen.js";
 import { addFixture, FIXTURES, addPoint, isWetRoom, POINT_HEIGHT, removePoint, spreadOutlets, updatePoint } from "./electrical.js";
 import {
   addBlock, addOpening, addRoom, attachRoom, frontDepth, removeBlock, updateBlock, getRoom, itemModel, placeCabinet, removeItem, removeOpening, roomSpan, rotateItem, updateItem, updateOpening, updateRoom,
@@ -194,8 +195,8 @@ function wallCommand(world: World, sel: Extract<Selection, { kind: "wall" }>, t:
   const dims = parseDims(t);
   // "toma para la lavadora" es eléctrica; "punto de lavadora" o "toma de agua" son de servicio.
   const electricWord = ELECTRIC.test(t) && !/toma de (agua|gas)/.test(t);
-  if (SERVICE.test(t) && !electricWord && !DELETE.test(t) && !FURNITURE.test(t)) return createServicePoints(world, sel, t);
-  if (ELECTRIC.test(t) && !DELETE.test(t)) return createWallPoints(world, sel, t);
+  if (SERVICE.test(t) && !electricWord && !DELETE.test(t) && !FURNITURE.test(t) && !/\bcocina\b/.test(t)) return createServicePoints(world, sel, t);
+  if (ELECTRIC.test(t) && !DELETE.test(t) && !/\bcocina\b/.test(t)) return createWallPoints(world, sel, t);
   const gapWanted = parseGap(t);
   const where = (gap: number | undefined, offset: number, a: Anchor) => (gap ? `a ${gap} mm del ${WALL_NAMES[sel.wall]} de ${room.name} y a ${offset} mm de su izquierda, mirando al ${FACES[sel.wall]}` : `en el ${WALL_NAMES[sel.wall]}, ${describeAnchor(a, offset)}`);
 
@@ -209,6 +210,13 @@ function wallCommand(world: World, sel: Extract<Selection, { kind: "wall" }>, t:
     const item = placeCabinet(world, { roomId: room.id, wall: sel.wall, offset, gap, name: shelving ? "Estantería de tubo" : /banco/.test(t) ? "Banco de tubo" : "Mesa de tubo", params: { width, height, depth }, frame });
     const meta = itemModel(item).meta as { profile: string; steelKg: number };
     return { ok: true, understood: true, select: { kind: "item", itemId: item.id }, message: `${item.name} de ${width} x ${height} x ${depth} mm en ${meta.profile}, ${String(meta.steelKg).replace(".", ",")} kg de acero, ${where(gap, offset, anchor)}.` };
+  }
+
+  // Cocina por módulos sobre este muro: "cocina", "cocina de 3 m a 20 cm de la izquierda", "cocina sin altos"
+  if (/\bcocina\b/.test(t) && !FURNITURE.test(t.replace(/cajonera de cocina/, ""))) {
+    const anchorLeft = anchor && anchor.from === "left" ? anchor.distance : undefined;
+    const { plan, items } = buildKitchen(world, { roomId: room.id, wall: sel.wall, from: anchorLeft, length: lengthAfter(t, "cocina(?: lineal| recta)?") ?? undefined, uppers: !/sin (los )?(altos|muebles altos|gabinetes altos)/.test(t) });
+    return { ok: true, understood: true, select: { kind: "item", itemId: items[0].id }, message: describeKitchen(plan).join(" ") };
   }
 
   if (FURNITURE.test(t)) {

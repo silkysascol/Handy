@@ -26,7 +26,7 @@ El centro de Handy es el duplicado virtual de los espacios del autor, sobre el q
 - [x] Herramientas MCP `world_*` para que la IA cree, consulte, coloque, revise, cotice y exporte.
 - [x] Intérprete de órdenes en español acotado a la selección (`runCommand`) y funciones para modificar habitaciones, aberturas y muebles con validación.
 - [x] Visor web: clic para seleccionar muro, abertura, mueble o habitación; barra de órdenes; precio en la esquina; avisos; deshacer; importar y exportar; tema claro y oscuro; actualización en vivo cuando la IA cambia el mundo.
-- [x] Pruebas de navegador en el repo (`pnpm e2e`): 28 casos de extremo a extremo con servidor y mundo temporales. `pnpm check` corre todo.
+- [x] Pruebas de navegador en el repo (`pnpm e2e`): 29 casos de extremo a extremo con servidor y mundo temporales. `pnpm check` corre todo.
 - [x] Plano de corte real: piezas acomodadas en tableros con ancho de disco, refilado y veta; despiece imprimible y CSV para la tienda (botón Despiece, `world_cutplan`). La cotización usa esos tableros, no un porcentaje.
 - [x] Pisos: baldosas dibujadas en la habitación, piezas enteras y cortes, cajas según la tienda, pega por formato y material, boquilla, guardaescobas; sumado al precio del mundo (`world_floor_plan`).
 - [x] Más muebles con el mismo generador: divisiones verticales (cuerpos iguales), cajones con correderas (frente visible o interiores tras puertas), barra de colgar con maletero, puertas de 2 por cuerpo. Con eso salen closets, cajoneras y bibliotecas con divisiones. Reglas nuevas: barra larga, closet poco profundo, cajón ancho.
@@ -74,7 +74,8 @@ Ver `docs/modulos/metal.md`.
 
 ## M2 · Editor completo y cocina
 
-- [ ] Generador de cocina por módulos estándar con mesón, servicios (desagüe, agua, gas, tomas) y electrodomésticos.
+- [x] Cocina lineal por módulos sobre un muro: bajos con mesón corrido y altos, acomodados al punto de lavaplatos y al de gas, respetando ventanas y campana (`world_kitchen`, orden "cocina").
+- [ ] Cocina: esquinas en L, isla automática, módulos para nevera, horno y lavavajillas, calados dibujados y mesón por metro en otro material.
 - [ ] Asistente de decisiones: cajón vs tapa con pistón, 15 vs 18 mm, telescópica vs oculta, con precio y movimiento de cada opción.
 
 - [ ] Menú de tres secciones: Espacios, Muebles, Objetos.

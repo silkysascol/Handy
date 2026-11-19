@@ -199,6 +199,21 @@ describe("Handy MCP server", () => {
     for (const p of [...sink.data.points, gasPoint.data.point]) await call("world_command", { roomId: "dormitorio", pointId: p.id, text: "quítala" });
     expect((await call("world_quote")).data.groups.services).toBe(0);
 
+    // Cocina: la IA primero propone y, con el visto bueno, coloca.
+    await call("world_add_fixture", { roomId: "bano", fixture: "lavaplatos", wall: "east", offset: 1100 });
+    const proposal = await call("world_kitchen", { roomId: "bano", wall: "east", uppers: false });
+    expect(proposal.isError, proposal.text).toBeFalsy();
+    expect(proposal.data.applied).toBe(false);
+    expect(proposal.text).toMatch(/Cocina de \d+ mm en el muro este.*con mesón corrido/);
+    expect(proposal.text).toMatch(/Propuesta sin colocar/);
+    const itemsBefore = (await call("world_describe")).data.world.items.length;
+    const kitchenPlaced = await call("world_kitchen", { roomId: "bano", wall: "east", uppers: false, apply: true });
+    expect(kitchenPlaced.data.itemIds.length).toBe(proposal.data.plan.modules.length);
+    expect(kitchenPlaced.data.itemIds).toContain("bajo-lavaplatos");
+    expect((await call("world_describe")).data.world.items.length).toBe(itemsBefore + kitchenPlaced.data.itemIds.length);
+    for (const id of kitchenPlaced.data.itemIds) await call("world_remove_item", { itemId: id });
+    for (const id of ["agua-lavaplatos", "desague-lavaplatos"]) await call("world_command", { roomId: "bano", pointId: id, text: "quítala" });
+
     // Precios reales: la IA ve qué falta, anota lo que encontró y el presupuesto deja el catálogo de ejemplo.
     expect(withFloor.text).toContain("CATÁLOGO DE EJEMPLO");
     const needed = await call("prices_needed");

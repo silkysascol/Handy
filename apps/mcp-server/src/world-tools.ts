@@ -8,6 +8,9 @@ import {
   addRoom,
   activeProviders,
   addBlock,
+  buildKitchen,
+  describeKitchen,
+  planKitchen,
   addFixture,
   FIXTURES,
   compassName,
@@ -405,6 +408,32 @@ export function registerWorldTools(server: McpServer, providers: PriceProvider[]
       store.save(world);
       const issues = checkWorld(world).filter((i) => i.roomId === roomId && /point|drill/.test(i.code));
       return text([`${point.name} (id: ${point.id}) ${point.kind === "light" ? `en el techo, a ${point.x} mm del muro oeste y ${point.z} del norte` : `en el ${WALL_NAMES[point.wall!]}, a ${point.offset} mm de la izquierda y ${point.height} mm del piso${point.gfci ? ", con protección GFCI" : ""}`}.`, ...issues.map((i) => `[${i.level}] ${i.message}`)].join("\n"), { point, issues });
+    },
+  );
+
+  server.registerTool(
+    "world_kitchen",
+    {
+      title: "Cocina lineal por módulos",
+      description: "Propone, y con apply coloca, una cocina sobre un muro: bajos de 90 x 60 con un mesón corrido, y altos de 70 x 35 a 1,5 m. Centra el módulo del lavaplatos sobre su desagüe y el de la estufa sobre su punto de gas (ponlos antes con world_add_fixture), pone la cajonera junto a la estufa, respeta ventanas y deja libre para la campana. Sin apply solo devuelve la propuesta, para mostrársela al usuario antes de colocar nada. Es un punto de partida: cada módulo se ajusta después con world_update_item o world_command.",
+      inputSchema: {
+        roomId: z.string(), wall,
+        from: z.number().int().min(0).optional().describe("Dónde arranca, en mm desde la izquierda del muro. Por defecto, el tramo libre más largo"),
+        length: z.number().int().min(300).optional().describe("Largo en mm. Por defecto todo el tramo libre, hasta 4000"),
+        uppers: z.boolean().default(true).describe("Con muebles altos"),
+        apply: z.boolean().default(false).describe("true = colocar los módulos en el mundo; false = solo proponer"),
+      },
+    },
+    async ({ roomId, wall: w, from, length, uppers, apply }) => {
+      const world = store.load();
+      if (!apply) {
+        const plan = planKitchen(world, { roomId, wall: w, from, length, uppers });
+        return text([...describeKitchen(plan), "Propuesta sin colocar. Para colocarla, repite con apply: true."].join("\n"), { plan, applied: false });
+      }
+      const { plan, items } = buildKitchen(world, { roomId, wall: w, from, length, uppers });
+      store.save(world);
+      const issues = checkWorld(world).filter((i) => items.some((it) => it.id === i.itemId));
+      return text([...describeKitchen(plan), `Colocados: ${items.map((i) => i.id).join(", ")}.`, ...issues.map((i) => `[${i.level}] ${i.message}`)].join("\n"), { plan, applied: true, itemIds: items.map((i) => i.id), issues });
     },
   );
 
